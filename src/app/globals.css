@@ -143,7 +143,7 @@ img {
 
 .official-brand-image {
   width: 120px;
-  height: 141px;
+  height: 100px;
   object-fit: contain;
 }
 
@@ -1310,10 +1310,6 @@ img {
   display: grid;
   grid-template-columns: 1.7fr repeat(3, 0.7fr);
   gap: 55px;
-}
-
-.footer-brand-image {
-  filter: brightness(0) invert(1);
 }
 
 .footer-brand .official-brand-divider {
