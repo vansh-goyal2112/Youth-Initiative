@@ -39,7 +39,7 @@ jobs:
       - name: Run lint
         run: npm run lint
 
-      - name: Validate Firebase Admin private key
+      - name: Validate Firebase private key
         env:
           FIREBASE_ADMIN_PRIVATE_KEY_B64: ${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY_B64 }}
         run: |
@@ -51,7 +51,7 @@ jobs:
 
           if (!encoded) {
             throw new Error(
-              "FIREBASE_ADMIN_PRIVATE_KEY_B64 GitHub secret is missing."
+              "FIREBASE_ADMIN_PRIVATE_KEY_B64 secret is missing."
             );
           }
 
@@ -62,10 +62,10 @@ jobs:
 
           crypto.createPrivateKey(privateKey);
 
-          console.log("Firebase Admin private key: VALID");
+          console.log("Firebase private key is VALID");
           NODE
 
-      - name: Create temporary build environment file
+      - name: Create temporary build environment
         env:
           NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
           NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
@@ -92,86 +92,62 @@ jobs:
           import json
           import os
 
-          private_key_base64 = os.environ.get(
-              "FIREBASE_ADMIN_PRIVATE_KEY_B64",
-              "",
-          )
-
-          if not private_key_base64:
-              raise RuntimeError(
-                  "FIREBASE_ADMIN_PRIVATE_KEY_B64 is missing"
-              )
+          encoded_key = os.environ[
+              "FIREBASE_ADMIN_PRIVATE_KEY_B64"
+          ]
 
           private_key = base64.b64decode(
-              private_key_base64
+              encoded_key
           ).decode("utf-8").strip()
 
           values = {
               "NEXT_PUBLIC_FIREBASE_API_KEY":
-                  os.environ.get(
-                      "NEXT_PUBLIC_FIREBASE_API_KEY",
-                      "",
-                  ),
+                  os.environ.get("NEXT_PUBLIC_FIREBASE_API_KEY", ""),
+
               "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN":
-                  os.environ.get(
-                      "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN",
-                      "",
-                  ),
+                  os.environ.get("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN", ""),
+
               "NEXT_PUBLIC_FIREBASE_PROJECT_ID":
-                  os.environ.get(
-                      "NEXT_PUBLIC_FIREBASE_PROJECT_ID",
-                      "",
-                  ),
+                  os.environ.get("NEXT_PUBLIC_FIREBASE_PROJECT_ID", ""),
+
               "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET":
-                  os.environ.get(
-                      "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET",
-                      "",
-                  ),
+                  os.environ.get("NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET", ""),
+
               "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID":
                   os.environ.get(
                       "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
                       "",
                   ),
+
               "NEXT_PUBLIC_FIREBASE_APP_ID":
-                  os.environ.get(
-                      "NEXT_PUBLIC_FIREBASE_APP_ID",
-                      "",
-                  ),
+                  os.environ.get("NEXT_PUBLIC_FIREBASE_APP_ID", ""),
+
               "NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY":
                   os.environ.get(
                       "NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY",
                       "",
                   ),
+
               "FIREBASE_ADMIN_PROJECT_ID":
-                  os.environ.get(
-                      "FIREBASE_ADMIN_PROJECT_ID",
-                      "",
-                  ),
+                  os.environ.get("FIREBASE_ADMIN_PROJECT_ID", ""),
+
               "FIREBASE_ADMIN_CLIENT_EMAIL":
-                  os.environ.get(
-                      "FIREBASE_ADMIN_CLIENT_EMAIL",
-                      "",
-                  ),
+                  os.environ.get("FIREBASE_ADMIN_CLIENT_EMAIL", ""),
+
+              "FIREBASE_ADMIN_PRIVATE_KEY":
+                  private_key,
+
               "RESEND_API_KEY":
-                  os.environ.get(
-                      "RESEND_API_KEY",
-                      "",
-                  ),
+                  os.environ.get("RESEND_API_KEY", ""),
+
               "EMAIL_FROM":
-                  os.environ.get(
-                      "EMAIL_FROM",
-                      "",
-                  ),
+                  os.environ.get("EMAIL_FROM", ""),
+
               "EMAIL_REPLY_TO":
-                  os.environ.get(
-                      "EMAIL_REPLY_TO",
-                      "",
-                  ),
+                  os.environ.get("EMAIL_REPLY_TO", ""),
+
               "NEXT_PUBLIC_APP_URL":
-                  os.environ.get(
-                      "NEXT_PUBLIC_APP_URL",
-                      "",
-                  ),
+                  os.environ.get("NEXT_PUBLIC_APP_URL", ""),
           }
 
           with open(
@@ -179,28 +155,16 @@ jobs:
               "w",
               encoding="utf-8",
           ) as file:
+
               for key, value in values.items():
                   file.write(
                       f"{key}={json.dumps(value)}\n"
                   )
 
-              escaped_private_key = private_key.replace(
-                  "\n",
-                  "\\n",
-              )
-
-              file.write(
-                  "FIREBASE_ADMIN_PRIVATE_KEY="
-                  + escaped_private_key
-                  + "\n"
-              )
-
-          print(
-              "Temporary build environment created successfully."
-          )
+          print("Build environment created.")
           PY
 
-      - name: Login to Azure using OIDC
+      - name: Login to Azure
         uses: azure/login@v3
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -208,7 +172,8 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Login to Azure Container Registry
-        run: az acr login --name "$ACR_NAME"
+        run: |
+          az acr login --name "$ACR_NAME"
 
       - name: Build Docker image
         env:
@@ -222,13 +187,10 @@ jobs:
 
       - name: Push Docker image
         run: |
-          docker push \
-            "$ACR_SERVER/$IMAGE_NAME:${GITHUB_SHA}"
+          docker push "$ACR_SERVER/$IMAGE_NAME:${GITHUB_SHA}"
+          docker push "$ACR_SERVER/$IMAGE_NAME:latest"
 
-          docker push \
-            "$ACR_SERVER/$IMAGE_NAME:latest"
-
-      - name: Deploy image to Azure Container Apps
+      - name: Deploy to Azure Container Apps
         run: |
           az containerapp update \
             --name "$AZURE_CONTAINER_APP" \
@@ -239,7 +201,7 @@ jobs:
         if: always()
         run: rm -f .env.local
 
-      - name: Show deployed application URL
+      - name: Deployment complete
         run: |
           echo "Deployment completed successfully."
           echo "https://youth-initiative-dev.delightfulpebble-0551d09b.canadacentral.azurecontainerapps.io"
