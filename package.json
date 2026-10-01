@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@azure/cosmos": "^4.9.3",
+    "@azure/identity": "^4.13.1",
     "canvas-confetti": "^1.9.4",
     "date-fns": "^4.4.0",
     "firebase": "^12.17.1",
