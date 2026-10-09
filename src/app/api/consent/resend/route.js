@@ -1,29 +1,22 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-} from "firebase-admin/firestore";
-
-import {
-  Resend,
-} from "resend";
-
-import {
-  adminDb,
-} from "@/services/firebaseAdmin";
+  sendAzureEmail,
+} from "@/services/azureEmailServer";
 
 import {
   appCheckErrorResponse,
   requireAppCheck,
 } from "@/services/appCheckServer";
 
+import {
+  cosmosNow,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
+
 export const runtime =
   "nodejs";
-
-const resend =
-  new Resend(
-    process.env.RESEND_API_KEY
-  );
 
 const CONSENT_EXPIRY_MINUTES =
   30;
@@ -92,7 +85,6 @@ function getDate(
   }
 
   const date =
-    value?.toDate?.() ||
     new Date(
       value
     );
@@ -136,6 +128,59 @@ function escapeHtml(
     );
 }
 
+/*
+  Azure Communication Services throws
+  when email delivery fails.
+
+  This wrapper keeps the previous
+  { data, error } result structure so
+  the rest of the route can continue
+  using its existing error handling.
+*/
+async function sendEmail({
+  to,
+  subject,
+  html,
+}) {
+  try {
+    const result =
+      await sendAzureEmail({
+        to,
+        subject,
+        html,
+
+        replyTo:
+          process.env
+            .EMAIL_REPLY_TO ||
+          "youth.programs@sait.ca",
+      });
+
+    return {
+      data: {
+        id:
+          result?.id ||
+          null,
+      },
+
+      error:
+        null,
+    };
+  } catch (
+    error
+  ) {
+    return {
+      data:
+        null,
+
+      error: {
+        message:
+          error?.message ||
+          "Email could not be sent.",
+      },
+    };
+  }
+}
+
 export async function POST(
   request
 ) {
@@ -173,25 +218,20 @@ export async function POST(
             "The resend request is incomplete.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
 
-    const registrationReference =
-      adminDb
-        .collection(
-          "pendingRegistrations"
-        )
-        .doc(
-          registrationId
-        );
-
-    const registrationSnapshot =
-      await registrationReference.get();
+    const registration =
+      await readCosmosDocument(
+        "pendingRegistrations",
+        registrationId
+      );
 
     if (
-      !registrationSnapshot.exists
+      !registration
     ) {
       return Response.json(
         {
@@ -202,13 +242,11 @@ export async function POST(
             "The registration could not be found.",
         },
         {
-          status: 404,
+          status:
+            404,
         }
       );
     }
-
-    const registration =
-      registrationSnapshot.data();
 
     /*
       Only registrations still waiting
@@ -233,7 +271,8 @@ export async function POST(
             "This registration is no longer waiting for parental consent.",
         },
         {
-          status: 409,
+          status:
+            409,
         }
       );
     }
@@ -263,7 +302,8 @@ export async function POST(
             "This resend request is not authorized.",
         },
         {
-          status: 401,
+          status:
+            401,
         }
       );
     }
@@ -288,7 +328,8 @@ export async function POST(
             "The resend session has expired. Please begin registration again.",
         },
         {
-          status: 410,
+          status:
+            410,
         }
       );
     }
@@ -317,7 +358,7 @@ export async function POST(
 
       if (
         secondsSinceLastEmail <
-        RESEND_COOLDOWN_SECONDS
+          RESEND_COOLDOWN_SECONDS
       ) {
         const waitSeconds =
           RESEND_COOLDOWN_SECONDS -
@@ -335,7 +376,8 @@ export async function POST(
               waitSeconds,
           },
           {
-            status: 429,
+            status:
+              429,
           }
         );
       }
@@ -353,7 +395,8 @@ export async function POST(
             "No parent or guardian email is attached to this registration.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
@@ -386,36 +429,35 @@ export async function POST(
           CONSENT_EXPIRY_MINUTES *
             60 *
             1000
-      );
+      ).toISOString();
 
     /*
       Save the new token before sending
       the email.
+
+      Keep the returned Cosmos document
+      because its ETag changes after
+      every successful replacement.
     */
 
-    await registrationReference.update(
-      {
-        consentTokenHash:
-          newConsentTokenHash,
+    let currentRegistration =
+      await replaceCosmosDocument(
+        "pendingRegistrations",
+        registration,
+        {
+          consentTokenHash:
+            newConsentTokenHash,
 
-        consentExpiresAt:
-          newConsentExpiry,
+          consentExpiresAt:
+            newConsentExpiry,
 
-        emailStatus:
-          "sending",
+          emailStatus:
+            "sending",
 
-        updatedAt:
-          FieldValue.serverTimestamp(),
-      }
-    );
-
-    /*
-      Leave the existing environment
-      setup unchanged for now.
-
-      Production sender/domain setup will
-      be handled after client approval.
-    */
+          updatedAt:
+            cosmosNow(),
+        }
+      );
 
     const appUrl =
       process.env
@@ -436,115 +478,113 @@ export async function POST(
       )}`;
 
     const emailResult =
-      await resend.emails.send(
-        {
-          from:
-            process.env.EMAIL_FROM ||
-            "SAIT Youth Initiative <onboarding@resend.dev>",
+      await sendEmail({
+        to: [
+          registration.parentEmail,
+        ],
 
-          to: [
-            registration.parentEmail,
-          ],
+        subject:
+          "New Parental Consent Link – SAIT Youth Initiative",
 
-          subject:
-            "New Parental Consent Link – SAIT Youth Initiative",
+        html: `
+          <!doctype html>
 
-          html: `
-            <!doctype html>
-            <html lang="en">
-              <body
+          <html lang="en">
+            <body
+              style="
+                margin:0;
+                padding:30px;
+                background:#f4f5f7;
+                font-family:Arial,Helvetica,sans-serif;
+                color:#222;
+              "
+            >
+              <div
                 style="
-                  margin:0;
-                  padding:30px;
-                  background:#f4f5f7;
-                  font-family:Arial,Helvetica,sans-serif;
-                  color:#222;
+                  max-width:620px;
+                  margin:auto;
+                  background:#ffffff;
+                  padding:32px;
+                  border-radius:14px;
+                  border-top:4px solid #e2232a;
                 "
               >
                 <div
                   style="
-                    max-width:620px;
-                    margin:auto;
-                    background:#ffffff;
-                    padding:32px;
-                    border-radius:14px;
-                    border-top:4px solid #e2232a;
+                    color:#e2232a;
+                    font-size:34px;
+                    font-weight:900;
                   "
                 >
-                  <div
-                    style="
-                      color:#e2232a;
-                      font-size:34px;
-                      font-weight:900;
-                    "
-                  >
-                    SAIT
-                  </div>
-
-                  <p>
-                    Hello Parent or Guardian,
-                  </p>
-
-                  <p>
-                    A new parental consent link
-                    was requested for
-                    <strong>
-                      ${safeFullName}
-                    </strong>.
-                  </p>
-
-                  <a
-                    href="${consentUrl}"
-                    style="
-                      display:inline-block;
-                      margin-top:12px;
-                      padding:14px 24px;
-                      background:#e2232a;
-                      color:white;
-                      text-decoration:none;
-                      border-radius:8px;
-                      font-weight:700;
-                    "
-                  >
-                    Review and Provide Consent
-                  </a>
-
-                  <p
-                    style="
-                      margin-top:24px;
-                      color:#777;
-                      font-size:13px;
-                    "
-                  >
-                    This new link expires in
-                    30 minutes. Any previous
-                    consent link should no longer
-                    be used.
-                  </p>
+                  SAIT
                 </div>
-              </body>
-            </html>
-          `,
-        }
-      );
+
+                <p>
+                  Hello Parent or Guardian,
+                </p>
+
+                <p>
+                  A new parental consent link
+                  was requested for
+                  <strong>
+                    ${safeFullName}
+                  </strong>.
+                </p>
+
+                <a
+                  href="${consentUrl}"
+                  style="
+                    display:inline-block;
+                    margin-top:12px;
+                    padding:14px 24px;
+                    background:#e2232a;
+                    color:white;
+                    text-decoration:none;
+                    border-radius:8px;
+                    font-weight:700;
+                  "
+                >
+                  Review and Provide Consent
+                </a>
+
+                <p
+                  style="
+                    margin-top:24px;
+                    color:#777;
+                    font-size:13px;
+                  "
+                >
+                  This new link expires in
+                  30 minutes. Any previous
+                  consent link should no longer
+                  be used.
+                </p>
+              </div>
+            </body>
+          </html>
+        `,
+      });
 
     if (
       emailResult.error
     ) {
-      await registrationReference.update(
-        {
-          emailStatus:
-            "failed",
+      currentRegistration =
+        await replaceCosmosDocument(
+          "pendingRegistrations",
+          currentRegistration,
+          {
+            emailStatus:
+              "failed",
 
-          emailError:
-            emailResult.error
-              .message ||
-            "Email could not be sent.",
+            emailError:
+              emailResult.error
+                .message ||
+              "Email could not be sent.",
 
-          updatedAt:
-            FieldValue.serverTimestamp(),
-        }
-      );
+            updatedAt:
+              cosmosNow(),
+          }
+        );
 
       return Response.json(
         {
@@ -555,12 +595,18 @@ export async function POST(
             "The consent email could not be sent. Please try again.",
         },
         {
-          status: 502,
+          status:
+            502,
         }
       );
     }
 
-    await registrationReference.update(
+    const emailSentAt =
+      cosmosNow();
+
+    await replaceCosmosDocument(
+      "pendingRegistrations",
+      currentRegistration,
       {
         emailStatus:
           "sent",
@@ -573,19 +619,22 @@ export async function POST(
         emailError:
           null,
 
-        emailSentAt:
-          FieldValue.serverTimestamp(),
+        emailSentAt,
 
         lastConsentEmailSentAt:
-          FieldValue.serverTimestamp(),
+          emailSentAt,
 
         resendCount:
-          FieldValue.increment(
-            1
-          ),
+          (
+            Number(
+              currentRegistration
+                .resendCount
+            ) ||
+            0
+          ) + 1,
 
         updatedAt:
-          FieldValue.serverTimestamp(),
+          emailSentAt,
       }
     );
 
@@ -598,7 +647,9 @@ export async function POST(
           "A new parental consent email has been sent.",
       }
     );
-  } catch (error) {
+  } catch (
+    error
+  ) {
     const appCheckResponse =
       appCheckErrorResponse(
         error
@@ -624,7 +675,8 @@ export async function POST(
           "The consent email could not be resent. Please try again.",
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }

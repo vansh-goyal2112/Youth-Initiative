@@ -9,15 +9,14 @@ import {
 } from "firebase-admin/auth";
 
 import {
-  getFirestore,
-} from "firebase-admin/firestore";
-
-import {
   getAppCheck,
 } from "firebase-admin/app-check";
 
 function getFirebaseAdminApp() {
-  if (getApps().length > 0) {
+  if (
+    getApps().length >
+    0
+  ) {
     return getApps()[0];
   }
 
@@ -48,21 +47,17 @@ function getFirebaseAdminApp() {
   }
 
   return initializeApp({
-    credential: cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
+    credential:
+      cert({
+        projectId,
+        clientEmail,
+        privateKey,
+      }),
   });
 }
 
 const firebaseAdminApp =
   getFirebaseAdminApp();
-
-const adminDb =
-  getFirestore(
-    firebaseAdminApp
-  );
 
 const adminAuth =
   getAuth(
@@ -77,5 +72,4 @@ const adminAppCheck =
 export {
   adminAppCheck,
   adminAuth,
-  adminDb,
 };

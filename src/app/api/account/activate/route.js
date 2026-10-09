@@ -1,12 +1,7 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-} from "firebase-admin/firestore";
-
-import {
   adminAuth,
-  adminDb,
 } from "@/services/firebaseAdmin";
 
 import {
@@ -18,17 +13,35 @@ import {
   sendWelcomeEmail,
 } from "@/services/accountEmailServer";
 
+import {
+  cosmosNow,
+  createCosmosDocument,
+  deleteCosmosDocument,
+  isCosmosConflict,
+  isCosmosPreconditionFailed,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
+
 export const runtime =
   "nodejs";
 
 const YOUTH_ID_ALPHABET =
   "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-function hashToken(token) {
+function hashToken(
+  token
+) {
   return crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+    .createHash(
+      "sha256"
+    )
+    .update(
+      token
+    )
+    .digest(
+      "hex"
+    );
 }
 
 function hashesMatch(
@@ -70,7 +83,8 @@ function hashesMatch(
 }
 
 function createRandomYouthId() {
-  let randomPart = "";
+  let randomPart =
+    "";
 
   for (
     let index = 0;
@@ -100,57 +114,54 @@ async function reserveUniqueYouthId(
     const youthId =
       createRandomYouthId();
 
-    const reservationReference =
-      adminDb
-        .collection(
-          "youthIdReservations"
-        )
-        .doc(
-          youthId.toLowerCase()
-        );
+    const reservationId =
+      youthId.toLowerCase();
 
-    let reserved =
-      false;
-
-    await adminDb.runTransaction(
-      async (
-        transaction
-      ) => {
-        const snapshot =
-          await transaction.get(
-            reservationReference
-          );
-
-        if (
-          snapshot.exists
-        ) {
-          return;
-        }
-
-        transaction.set(
-          reservationReference,
+    try {
+      const reservation =
+        await createCosmosDocument(
+          "youthIdReservations",
           {
+            id:
+              reservationId,
+
             youthId,
+
             registrationId,
 
             status:
               "reserved",
 
             createdAt:
-              FieldValue.serverTimestamp(),
+              cosmosNow(),
           }
         );
 
-        reserved =
-          true;
-      }
-    );
-
-    if (reserved) {
       return {
         youthId,
-        reservationReference,
+        reservation,
       };
+    } catch (
+      error
+    ) {
+      /*
+        Creating a document with
+        the same Youth ID fails
+        with a Cosmos conflict.
+
+        Generate another random
+        Youth ID and try again.
+      */
+
+      if (
+        isCosmosConflict(
+          error
+        )
+      ) {
+        continue;
+      }
+
+      throw error;
     }
   }
 
@@ -165,7 +176,7 @@ function validatePassword(
 ) {
   if (
     typeof password !==
-    "string"
+      "string"
   ) {
     return "Password is required.";
   }
@@ -232,7 +243,9 @@ function createRequestError(
   code
 ) {
   const error =
-    new Error(message);
+    new Error(
+      message
+    );
 
   error.status =
     status;
@@ -246,12 +259,13 @@ function createRequestError(
 function getExpiryDate(
   value
 ) {
-  if (!value) {
+  if (
+    !value
+  ) {
     return null;
   }
 
   const date =
-    value?.toDate?.() ||
     new Date(
       value
     );
@@ -276,16 +290,23 @@ export async function POST(
   let youthIdReservation =
     null;
 
-  let registrationReference =
+  let studentDocument =
     null;
 
+  let registrationId =
+    "";
+
   let activationClaimed =
+    false;
+
+  let accountCommitted =
     false;
 
   try {
     /*
       Account activation is a
       sensitive one-time action.
+
       The frontend sends a
       limited-use App Check token,
       so consume it here.
@@ -294,25 +315,43 @@ export async function POST(
     await requireAppCheck(
       request,
       {
-        consume: true,
+        consume:
+          true,
       }
     );
 
-    const {
-      registrationId,
-      token,
-      password,
-      confirmPassword,
-    } =
+    const requestBody =
       await request.json();
 
+    const token =
+      typeof requestBody
+        ?.token ===
+      "string"
+        ? requestBody
+            .token
+            .trim()
+        : "";
+
+    const password =
+      requestBody
+        ?.password;
+
+    const confirmPassword =
+      requestBody
+        ?.confirmPassword;
+
+    registrationId =
+      typeof requestBody
+        ?.registrationId ===
+      "string"
+        ? requestBody
+            .registrationId
+            .trim()
+        : "";
+
     if (
-      typeof registrationId !==
-        "string" ||
-      !registrationId.trim() ||
-      typeof token !==
-        "string" ||
-      !token.trim() ||
+      !registrationId ||
+      !token ||
       typeof password !==
         "string" ||
       typeof confirmPassword !==
@@ -352,213 +391,236 @@ export async function POST(
       );
     }
 
-    registrationReference =
-      adminDb
-        .collection(
-          "pendingRegistrations"
-        )
-        .doc(
-          registrationId.trim()
-        );
-
     /*
-      Atomically validate the
-      activation token and lock
-      the registration while the
-      Firebase account is created.
+      Read the pending registration
+      from Cosmos.
     */
 
     const registration =
-      await adminDb.runTransaction(
-        async (
-          transaction
-        ) => {
-          const snapshot =
-            await transaction.get(
-              registrationReference
-            );
-
-          if (
-            !snapshot.exists
-          ) {
-            throw createRequestError(
-              "The registration could not be found.",
-              404,
-              "registration-not-found"
-            );
-          }
-
-          const registrationData =
-            snapshot.data();
-
-          if (
-            registrationData.status ===
-            "account_created"
-          ) {
-            throw createRequestError(
-              "This account has already been activated.",
-              409,
-              "account-already-created"
-            );
-          }
-
-          if (
-            registrationData.activationInProgress ===
-            true
-          ) {
-            throw createRequestError(
-              "This account is already being activated. Please wait and try again.",
-              409,
-              "activation-in-progress"
-            );
-          }
-
-          const requiresParentalConsent =
-            registrationData.requiresParentalConsent ===
-            true;
-
-          let storedTokenHash =
-            null;
-
-          let tokenExpiry =
-            null;
-
-          /*
-            MINOR FLOW
-
-            Parent or guardian consent
-            must already be approved.
-
-            /api/consent/approve creates
-            a separate activation token.
-          */
-
-          if (
-            requiresParentalConsent
-          ) {
-            if (
-              registrationData.status !==
-                "consent_approved" ||
-              registrationData.consentStatus !==
-                "approved"
-            ) {
-              throw createRequestError(
-                "Parental consent must be completed before this account can be activated.",
-                403,
-                "consent-required"
-              );
-            }
-
-            storedTokenHash =
-              registrationData.activationTokenHash;
-
-            tokenExpiry =
-              getExpiryDate(
-                registrationData.activationExpiresAt
-              );
-          } else {
-            /*
-              ADULT FLOW
-
-              The contact email must
-              already have been verified.
-
-              /api/email-verification/verify
-              creates the activation token
-              used here.
-
-              The original email
-              verification token can never
-              activate an account.
-            */
-
-            if (
-              registrationData.status !==
-                "email_verified" ||
-              registrationData.emailVerificationStatus !==
-                "verified" ||
-              registrationData.consentStatus !==
-                "not_required"
-            ) {
-              throw createRequestError(
-                "Please verify your email address before creating your account.",
-                403,
-                "email-verification-required"
-              );
-            }
-
-            storedTokenHash =
-              registrationData.activationTokenHash;
-
-            tokenExpiry =
-              getExpiryDate(
-                registrationData.activationExpiresAt
-              );
-          }
-
-          const providedTokenHash =
-            hashToken(
-              token.trim()
-            );
-
-          if (
-            !hashesMatch(
-              providedTokenHash,
-              storedTokenHash
-            )
-          ) {
-            throw createRequestError(
-              "The account setup link is invalid.",
-              401,
-              "invalid-activation-token"
-            );
-          }
-
-          if (
-            !tokenExpiry ||
-            tokenExpiry.getTime() <
-              Date.now()
-          ) {
-            throw createRequestError(
-              "The account setup link has expired.",
-              410,
-              "activation-token-expired"
-            );
-          }
-
-          const passwordError =
-            validatePassword(
-              password,
-              registrationData
-            );
-
-          if (
-            passwordError
-          ) {
-            throw createRequestError(
-              passwordError,
-              400,
-              "invalid-password"
-            );
-          }
-
-          transaction.update(
-            registrationReference,
-            {
-              activationInProgress:
-                true,
-
-              activationStartedAt:
-                FieldValue.serverTimestamp(),
-
-              updatedAt:
-                FieldValue.serverTimestamp(),
-            }
-          );
-
-          return registrationData;
-        }
+      await readCosmosDocument(
+        "pendingRegistrations",
+        registrationId
       );
+
+    if (
+      !registration
+    ) {
+      throw createRequestError(
+        "The registration could not be found.",
+        404,
+        "registration-not-found"
+      );
+    }
+
+    if (
+      registration.status ===
+      "account_created"
+    ) {
+      throw createRequestError(
+        "This account has already been activated.",
+        409,
+        "account-already-created"
+      );
+    }
+
+    if (
+      registration
+        .activationInProgress ===
+      true
+    ) {
+      throw createRequestError(
+        "This account is already being activated. Please wait and try again.",
+        409,
+        "activation-in-progress"
+      );
+    }
+
+    const requiresParentalConsent =
+      registration
+        .requiresParentalConsent ===
+      true;
+
+    let storedTokenHash =
+      null;
+
+    let tokenExpiry =
+      null;
+
+    /*
+      MINOR FLOW
+
+      Parent or guardian consent
+      must already be approved.
+
+      /api/consent/approve creates
+      a separate activation token.
+    */
+
+    if (
+      requiresParentalConsent
+    ) {
+      if (
+        registration.status !==
+          "consent_approved" ||
+        registration.consentStatus !==
+          "approved"
+      ) {
+        throw createRequestError(
+          "Parental consent must be completed before this account can be activated.",
+          403,
+          "consent-required"
+        );
+      }
+
+      storedTokenHash =
+        registration
+          .activationTokenHash;
+
+      tokenExpiry =
+        getExpiryDate(
+          registration
+            .activationExpiresAt
+        );
+    } else {
+      /*
+        ADULT FLOW
+
+        The contact email must
+        already have been verified.
+
+        /api/email-verification/verify
+        creates the activation token
+        used here.
+
+        The original email
+        verification token can never
+        activate an account.
+      */
+
+      if (
+        registration.status !==
+          "email_verified" ||
+        registration
+          .emailVerificationStatus !==
+          "verified" ||
+        registration.consentStatus !==
+          "not_required"
+      ) {
+        throw createRequestError(
+          "Please verify your email address before creating your account.",
+          403,
+          "email-verification-required"
+        );
+      }
+
+      storedTokenHash =
+        registration
+          .activationTokenHash;
+
+      tokenExpiry =
+        getExpiryDate(
+          registration
+            .activationExpiresAt
+        );
+    }
+
+    const providedTokenHash =
+      hashToken(
+        token
+      );
+
+    if (
+      !hashesMatch(
+        providedTokenHash,
+        storedTokenHash
+      )
+    ) {
+      throw createRequestError(
+        "The account setup link is invalid.",
+        401,
+        "invalid-activation-token"
+      );
+    }
+
+    if (
+      !tokenExpiry ||
+      tokenExpiry.getTime() <
+        Date.now()
+    ) {
+      throw createRequestError(
+        "The account setup link has expired.",
+        410,
+        "activation-token-expired"
+      );
+    }
+
+    const passwordError =
+      validatePassword(
+        password,
+        registration
+      );
+
+    if (
+      passwordError
+    ) {
+      throw createRequestError(
+        passwordError,
+        400,
+        "invalid-password"
+      );
+    }
+
+    /*
+      Claim the activation.
+
+      This uses the registration's
+      current Cosmos ETag.
+
+      If another activation request
+      updates this document first,
+      this conditional replacement
+      fails rather than allowing two
+      accounts to be created.
+    */
+
+    let lockedRegistration =
+      null;
+
+    try {
+      const activationStartedAt =
+        cosmosNow();
+
+      lockedRegistration =
+        await replaceCosmosDocument(
+          "pendingRegistrations",
+          registration,
+          {
+            activationInProgress:
+              true,
+
+            activationStartedAt,
+
+            updatedAt:
+              activationStartedAt,
+          }
+        );
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        throw createRequestError(
+          "This account is already being activated. Please wait and try again.",
+          409,
+          "activation-in-progress"
+        );
+      }
+
+      throw error;
+    }
 
     activationClaimed =
       true;
@@ -573,11 +635,12 @@ export async function POST(
 
     youthIdReservation =
       await reserveUniqueYouthId(
-        registrationId.trim()
+        registrationId
       );
 
     const youthId =
-      youthIdReservation.youthId;
+      youthIdReservation
+        .youthId;
 
     const internalEmail =
       `${youthId.toLowerCase()}@youthinitiative.local`;
@@ -586,8 +649,12 @@ export async function POST(
       Firebase Authentication
       securely stores the password.
 
+      Firebase Auth remains
+      temporarily during this
+      database migration.
+
       The password is never stored
-      in Firestore.
+      in Cosmos DB.
     */
 
     createdUser =
@@ -618,136 +685,197 @@ export async function POST(
         }
       );
 
-    const studentReference =
-      adminDb
-        .collection(
-          "students"
-        )
-        .doc(
-          createdUser.uid
-        );
+    /*
+      Create the student document
+      in Cosmos.
 
-    const batch =
-      adminDb.batch();
+      The document ID remains the
+      Firebase UID so the current
+      Firebase authentication flow
+      continues to map to the same
+      student record.
+    */
 
-    batch.set(
-      studentReference,
-      {
-        firebaseUid:
-          createdUser.uid,
+    const accountCreatedAt =
+      cosmosNow();
 
-        registrationId:
-          registrationId.trim(),
+    studentDocument =
+      await createCosmosDocument(
+        "students",
+        {
+          id:
+            createdUser.uid,
 
-        firstName:
-          registration.firstName,
+          firebaseUid:
+            createdUser.uid,
 
-        lastName:
-          registration.lastName,
+          registrationId,
 
-        fullName:
-          `${registration.firstName} ${registration.lastName}`,
+          firstName:
+            registration.firstName,
 
-        contactEmail:
-          registration.email,
+          lastName:
+            registration.lastName,
 
-        /*
-          Adults proved ownership of
-          their contact email during
-          registration.
+          fullName:
+            `${registration.firstName} ${registration.lastName}`,
 
-          Minor student contact email
-          ownership is not independently
-          verified by the parental
-          consent flow.
-        */
+          contactEmail:
+            registration.email,
 
-        contactEmailVerified:
-          registration.requiresParentalConsent ===
-          true
-            ? false
-            : registration.emailVerificationStatus ===
-                "verified",
+          /*
+            Adults proved ownership of
+            their contact email during
+            registration.
 
-        contactEmailVerifiedAt:
-          registration.requiresParentalConsent ===
-          true
-            ? null
-            : registration.emailVerifiedAt ||
-              null,
+            Minor student contact email
+            ownership is not independently
+            verified by the parental
+            consent flow.
+          */
 
-        parentEmail:
-          registration.parentEmail ||
-          null,
+          contactEmailVerified:
+            registration
+              .requiresParentalConsent ===
+            true
+              ? false
+              : registration
+                    .emailVerificationStatus ===
+                  "verified",
 
-        internalEmail,
+          contactEmailVerifiedAt:
+            registration
+              .requiresParentalConsent ===
+            true
+              ? null
+              : registration
+                  .emailVerifiedAt ||
+                null,
 
-        youthId,
+          parentEmail:
+            registration.parentEmail ||
+            null,
 
-        dateOfBirth:
-          registration.dateOfBirth,
+          internalEmail,
 
-        requiresParentalConsent:
-          registration.requiresParentalConsent ===
-          true,
+          youthId,
 
-        role:
-          "student",
+          dateOfBirth:
+            registration.dateOfBirth,
 
-        accountStatus:
-          "active",
+          requiresParentalConsent:
+            registration
+              .requiresParentalConsent ===
+            true,
 
-        consentStatus:
-          registration.requiresParentalConsent ===
-          true
-            ? "approved"
-            : "not_required",
+          role:
+            "student",
 
-        learningMode:
-          null,
+          accountStatus:
+            "active",
 
-        interests:
-          [],
+          consentStatus:
+            registration
+              .requiresParentalConsent ===
+            true
+              ? "approved"
+              : "not_required",
 
-        onboardingCompleted:
-          false,
+          learningMode:
+            null,
 
-        totalXp:
-          0,
+          interests:
+            [],
 
-        level:
-          1,
+          onboardingCompleted:
+            false,
 
-        badgeCount:
-          0,
+          totalXp:
+            0,
 
-        completedWorkshopCount:
-          0,
+          level:
+            1,
 
-        currentStreak:
-          0,
+          badgeCount:
+            0,
 
-        createdAt:
-          FieldValue.serverTimestamp(),
+          completedWorkshopCount:
+            0,
 
-        updatedAt:
-          FieldValue.serverTimestamp(),
+          currentStreak:
+            0,
 
-        lastLoginAt:
-          null,
-      }
-    );
+          createdAt:
+            accountCreatedAt,
+
+          updatedAt:
+            accountCreatedAt,
+
+          lastLoginAt:
+            null,
+        }
+      );
 
     /*
-      Finalize registration.
+      Mark the Youth ID reservation
+      as assigned.
+
+      The ETag prevents another
+      process from silently replacing
+      a changed reservation.
+    */
+
+    const assignedAt =
+      cosmosNow();
+
+    try {
+      youthIdReservation.reservation =
+        await replaceCosmosDocument(
+          "youthIdReservations",
+          youthIdReservation
+            .reservation,
+          {
+            status:
+              "assigned",
+
+            firebaseUid:
+              createdUser.uid,
+
+            assignedAt,
+          }
+        );
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        throw createRequestError(
+          "The Youth Initiative ID could not be assigned. Please try again.",
+          409,
+          "youth-id-assignment-conflict"
+        );
+      }
+
+      throw error;
+    }
+
+    /*
+      Finalize the pending
+      registration.
 
       BOTH adult and minor flows
-      now use a separate activation
+      use a separate activation
       token.
 
       Remove that token after the
       account has been created.
     */
+
+    const activationCompletedAt =
+      cosmosNow();
 
     const registrationUpdate =
       {
@@ -762,7 +890,7 @@ export async function POST(
           "account_created",
 
         accountCreatedAt:
-          FieldValue.serverTimestamp(),
+          activationCompletedAt,
 
         activationTokenHash:
           null,
@@ -776,11 +904,10 @@ export async function POST(
         activationStartedAt:
           null,
 
-        activationCompletedAt:
-          FieldValue.serverTimestamp(),
+        activationCompletedAt,
 
         updatedAt:
-          FieldValue.serverTimestamp(),
+          activationCompletedAt,
       };
 
     /*
@@ -789,7 +916,8 @@ export async function POST(
     */
 
     if (
-      registration.requiresParentalConsent ===
+      registration
+        .requiresParentalConsent ===
       true
     ) {
       registrationUpdate.consentTokenHash =
@@ -819,43 +947,51 @@ export async function POST(
         null;
     }
 
-    batch.update(
-      registrationReference,
-      registrationUpdate
-    );
-
-    batch.update(
-      youthIdReservation
-        .reservationReference,
-      {
-        status:
-          "assigned",
-
-        firebaseUid:
-          createdUser.uid,
-
-        assignedAt:
-          FieldValue.serverTimestamp(),
+    try {
+      await replaceCosmosDocument(
+        "pendingRegistrations",
+        lockedRegistration,
+        registrationUpdate
+      );
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        throw createRequestError(
+          "This registration changed while the account was being activated. Please try again.",
+          409,
+          "activation-state-conflict"
+        );
       }
-    );
+
+      throw error;
+    }
 
     /*
-      Commit account creation FIRST.
+      At this point all account
+      records required for the
+      successful activation exist.
 
-      Everything required for the
-      student account is complete
-      before any welcome email is
-      attempted.
+      Do not run rollback cleanup
+      after this point.
     */
 
-    await batch.commit();
+    accountCommitted =
+      true;
+
+    activationClaimed =
+      false;
 
     /*
       Welcome email is best-effort.
 
       Email delivery must never undo
       or fail a successfully created
-      Firebase / Firestore account.
+      Firebase / Cosmos account.
     */
 
     try {
@@ -875,7 +1011,8 @@ export async function POST(
             youthId,
 
             requiresParentalConsent:
-              registration.requiresParentalConsent ===
+              registration
+                .requiresParentalConsent ===
               true,
           }
         );
@@ -940,94 +1077,143 @@ export async function POST(
     );
 
     /*
-      If Firebase Auth was
-      created but Firestore
-      failed, remove the Auth
-      user so a broken account
-      is not left behind.
+      The old Firestore implementation
+      used one cross-collection batch.
+
+      Cosmos transactions cannot span
+      these separate containers, so if
+      activation fails before the final
+      registration commit, clean up any
+      records created by this attempt.
     */
 
     if (
-      createdUser?.uid
+      !accountCommitted
     ) {
-      try {
-        await adminAuth.deleteUser(
-          createdUser.uid
-        );
-      } catch (
-        cleanupError
+      /*
+        Remove the Cosmos student
+        document if it was created.
+      */
+
+      if (
+        studentDocument?.id
       ) {
-        console.error(
-          "Failed to clean up Auth user:",
+        try {
+          await deleteCosmosDocument(
+            "students",
+            studentDocument.id
+          );
+        } catch (
           cleanupError
-        );
-      }
-    }
-
-    /*
-      Remove an unused Youth ID
-      reservation after failure.
-    */
-
-    if (
-      youthIdReservation
-        ?.reservationReference
-    ) {
-      try {
-        await youthIdReservation
-          .reservationReference
-          .delete();
-      } catch (
-        cleanupError
-      ) {
-        console.error(
-          "Failed to clean up Youth ID reservation:",
-          cleanupError
-        );
-      }
-    }
-
-    /*
-      Release the activation lock
-      so the user can retry while
-      the activation token remains
-      valid.
-    */
-
-    if (
-      activationClaimed &&
-      registrationReference
-    ) {
-      try {
-        const snapshot =
-          await registrationReference.get();
-
-        if (
-          snapshot.exists &&
-          snapshot.data()
-            .status !==
-            "account_created"
         ) {
-          await registrationReference.update(
-            {
-              activationInProgress:
-                false,
-
-              activationStartedAt:
-                null,
-
-              updatedAt:
-                FieldValue.serverTimestamp(),
-            }
+          console.error(
+            "Failed to clean up student document:",
+            cleanupError
           );
         }
-      } catch (
-        cleanupError
+      }
+
+      /*
+        If Firebase Auth was created
+        but Cosmos activation failed,
+        remove the Firebase user so a
+        broken account is not left
+        behind.
+      */
+
+      if (
+        createdUser?.uid
       ) {
-        console.error(
-          "Failed to release activation lock:",
+        try {
+          await adminAuth.deleteUser(
+            createdUser.uid
+          );
+        } catch (
           cleanupError
-        );
+        ) {
+          console.error(
+            "Failed to clean up Auth user:",
+            cleanupError
+          );
+        }
+      }
+
+      /*
+        Remove the unused Youth ID
+        reservation after failure.
+      */
+
+      if (
+        youthIdReservation
+          ?.reservation
+          ?.id
+      ) {
+        try {
+          await deleteCosmosDocument(
+            "youthIdReservations",
+            youthIdReservation
+              .reservation
+              .id
+          );
+        } catch (
+          cleanupError
+        ) {
+          console.error(
+            "Failed to clean up Youth ID reservation:",
+            cleanupError
+          );
+        }
+      }
+
+      /*
+        Release the activation lock
+        so the user can retry while
+        the activation token remains
+        valid.
+      */
+
+      if (
+        activationClaimed &&
+        registrationId
+      ) {
+        try {
+          const currentRegistration =
+            await readCosmosDocument(
+              "pendingRegistrations",
+              registrationId
+            );
+
+          if (
+            currentRegistration &&
+            currentRegistration.status !==
+              "account_created" &&
+            currentRegistration
+              .activationInProgress ===
+              true
+          ) {
+            await replaceCosmosDocument(
+              "pendingRegistrations",
+              currentRegistration,
+              {
+                activationInProgress:
+                  false,
+
+                activationStartedAt:
+                  null,
+
+                updatedAt:
+                  cosmosNow(),
+              }
+            );
+          }
+        } catch (
+          cleanupError
+        ) {
+          console.error(
+            "Failed to release activation lock:",
+            cleanupError
+          );
+        }
       }
     }
 

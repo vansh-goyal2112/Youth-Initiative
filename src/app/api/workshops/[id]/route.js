@@ -1,11 +1,11 @@
 import {
-  adminDb,
-} from "@/services/firebaseAdmin";
-
-import {
   requireActiveStudent,
   studentAccessResponse,
 } from "@/services/studentAccess";
+
+import {
+  readCosmosDocument,
+} from "@/services/cosmosData";
 
 export const runtime = "nodejs";
 
@@ -40,17 +40,16 @@ export async function GET(
       );
     }
 
-    const workshopSnapshot =
-      await adminDb
-        .collection(
-          "workshops"
-        )
-        .doc(id.trim())
-        .get();
+    const normalizedWorkshopId =
+      id.trim();
 
-    if (
-      !workshopSnapshot.exists
-    ) {
+    const workshop =
+      await readCosmosDocument(
+        "workshops",
+        normalizedWorkshopId
+      );
+
+    if (!workshop) {
       return Response.json(
         {
           success: false,
@@ -63,13 +62,6 @@ export async function GET(
         }
       );
     }
-
-    const workshop = {
-      id:
-        workshopSnapshot.id,
-
-      ...workshopSnapshot.data(),
-    };
 
     if (
       workshop.status !==
@@ -90,7 +82,13 @@ export async function GET(
 
     return Response.json({
       success: true,
-      workshop,
+
+      workshop: {
+        id:
+          workshop.id,
+
+        ...workshop,
+      },
     });
   } catch (error) {
     const accessResponse =

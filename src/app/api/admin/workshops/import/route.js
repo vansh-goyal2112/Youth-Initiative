@@ -1,75 +1,146 @@
 import crypto from "crypto";
 
-import { FieldValue } from "firebase-admin/firestore";
-
-import { adminDb } from "@/services/firebaseAdmin";
 import {
   adminAccessResponse,
   requireActiveAdmin,
 } from "@/services/adminAccess";
 
+import {
+  cosmosNow,
+  createCosmosDocument,
+  isCosmosConflict,
+  isCosmosPreconditionFailed,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
+
 export const runtime = "nodejs";
 
-function createWorkshopId(title, programArea) {
-  const normalizedText = `${programArea}-${title}`
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 80);
+function createWorkshopId(
+  title,
+  programArea
+) {
+  const normalizedText =
+    `${programArea}-${title}`
+      .toLowerCase()
+      .replace(
+        /[^a-z0-9]+/g,
+        "-"
+      )
+      .replace(
+        /^-|-$/g,
+        ""
+      )
+      .slice(
+        0,
+        80
+      );
 
-  const shortHash = crypto
-    .createHash("sha256")
-    .update(`${programArea}-${title}`)
-    .digest("hex")
-    .slice(0, 8);
+  const shortHash =
+    crypto
+      .createHash(
+        "sha256"
+      )
+      .update(
+        `${programArea}-${title}`
+      )
+      .digest(
+        "hex"
+      )
+      .slice(
+        0,
+        8
+      );
 
   return `${normalizedText}-${shortHash}`;
 }
 
-function getCategory(title, programArea, description) {
+function getCategory(
+  title,
+  programArea,
+  description
+) {
   const combinedText =
     `${title} ${programArea} ${description}`.toLowerCase();
 
   if (
-    combinedText.includes("coding") ||
-    combinedText.includes("digital") ||
-    combinedText.includes("robot") ||
-    combinedText.includes("artificial intelligence") ||
-    combinedText.includes("3d printing") ||
-    combinedText.includes("cyber")
+    combinedText.includes(
+      "coding"
+    ) ||
+    combinedText.includes(
+      "digital"
+    ) ||
+    combinedText.includes(
+      "robot"
+    ) ||
+    combinedText.includes(
+      "artificial intelligence"
+    ) ||
+    combinedText.includes(
+      "3d printing"
+    ) ||
+    combinedText.includes(
+      "cyber"
+    )
   ) {
     return "Technology";
   }
 
   if (
-    combinedText.includes("welding") ||
-    combinedText.includes("carpentry") ||
-    combinedText.includes("construction") ||
-    combinedText.includes("trades")
+    combinedText.includes(
+      "welding"
+    ) ||
+    combinedText.includes(
+      "carpentry"
+    ) ||
+    combinedText.includes(
+      "construction"
+    ) ||
+    combinedText.includes(
+      "trades"
+    )
   ) {
     return "Trades";
   }
 
   if (
-    combinedText.includes("business") ||
-    combinedText.includes("leadership") ||
-    combinedText.includes("investment")
+    combinedText.includes(
+      "business"
+    ) ||
+    combinedText.includes(
+      "leadership"
+    ) ||
+    combinedText.includes(
+      "investment"
+    )
   ) {
     return "Business & Leadership";
   }
 
   if (
-    combinedText.includes("culinary") ||
-    combinedText.includes("baking") ||
-    combinedText.includes("hospitality")
+    combinedText.includes(
+      "culinary"
+    ) ||
+    combinedText.includes(
+      "baking"
+    ) ||
+    combinedText.includes(
+      "hospitality"
+    )
   ) {
     return "Culinary & Hospitality";
   }
 
   if (
-    combinedText.includes("design") ||
-    combinedText.includes("creative") ||
-    combinedText.includes("media")
+    combinedText.includes(
+      "design"
+    ) ||
+    combinedText.includes(
+      "creative"
+    ) ||
+    combinedText.includes(
+      "media"
+    )
   ) {
     return "Design & Creativity";
   }
@@ -77,149 +148,333 @@ function getCategory(title, programArea, description) {
   return "General";
 }
 
-export async function POST(request) {
+function buildImportedWorkshop(
+  workshop,
+  adminUid
+) {
+  const workshopId =
+    createWorkshopId(
+      workshop.title,
+      workshop.programArea
+    );
+
+  const learningMode =
+    workshop.programArea
+      .toLowerCase()
+      .includes(
+        "online"
+      )
+      ? "online"
+      : "in-person";
+
+  const timestamp =
+    cosmosNow();
+
+  return {
+    id:
+      workshopId,
+
+    title:
+      workshop.title.trim(),
+
+    programArea:
+      workshop.programArea.trim(),
+
+    category:
+      getCategory(
+        workshop.title,
+        workshop.programArea,
+        workshop.description ||
+          ""
+      ),
+
+    grade:
+      workshop.grade.trim(),
+
+    description:
+      workshop.description
+        ?.trim() ||
+      "",
+
+    informationUrl:
+      workshop.informationUrl
+        ?.trim() ||
+      "",
+
+    registrationUrl:
+      "https://saitdigitalyouth.campbrainregistration.com/",
+
+    learningMode,
+
+    startDate:
+      null,
+
+    endDate:
+      null,
+
+    time:
+      "",
+
+    location:
+      learningMode ===
+      "online"
+        ? "Online"
+        : "SAIT Campus",
+
+    capacity:
+      null,
+
+    xpReward:
+      100,
+
+    status:
+      "active",
+
+    importedFromExcel:
+      true,
+
+    importedBy:
+      adminUid,
+
+    updatedAt:
+      timestamp,
+
+    createdAt:
+      timestamp,
+  };
+}
+
+async function saveImportedWorkshop(
+  workshopData
+) {
+  /*
+    Firestore previously used:
+
+      batch.set(..., { merge: true })
+
+    The equivalent behavior here is:
+
+      - create if missing
+      - merge into the existing
+        Cosmos document if present
+
+    Retry if another write changes
+    the same workshop concurrently.
+  */
+
+  for (
+    let attempt = 0;
+    attempt < 5;
+    attempt += 1
+  ) {
+    const existingWorkshop =
+      await readCosmosDocument(
+        "workshops",
+        workshopData.id
+      );
+
+    if (
+      !existingWorkshop
+    ) {
+      try {
+        await createCosmosDocument(
+          "workshops",
+          workshopData
+        );
+
+        return;
+      } catch (
+        error
+      ) {
+        /*
+          Another request may have
+          created this deterministic
+          workshop ID after our read.
+
+          Retry and merge into it.
+        */
+
+        if (
+          isCosmosConflict(
+            error
+          )
+        ) {
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    try {
+      await replaceCosmosDocument(
+        "workshops",
+        existingWorkshop,
+        workshopData
+      );
+
+      return;
+    } catch (
+      error
+    ) {
+      /*
+        Another request changed
+        this workshop after we read
+        it.
+
+        Re-read and retry.
+      */
+
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        continue;
+      }
+
+      throw error;
+    }
+  }
+
+  throw new Error(
+    `Workshop ${workshopData.id} could not be imported because it was updated concurrently.`
+  );
+}
+
+export async function POST(
+  request
+) {
   try {
     const admin =
-      await requireActiveAdmin(request);
+      await requireActiveAdmin(
+        request
+      );
 
-    const { workshops } =
+    const {
+      workshops,
+    } =
       await request.json();
 
-    if (!Array.isArray(workshops)) {
+    if (
+      !Array.isArray(
+        workshops
+      )
+    ) {
       return Response.json(
         {
-          success: false,
-          message: "Workshop data is invalid.",
+          success:
+            false,
+
+          message:
+            "Workshop data is invalid.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
 
-    const validWorkshops = workshops.filter(
-      (workshop) =>
-        workshop.title &&
-        workshop.programArea &&
-        workshop.grade
-    );
+    const validWorkshops =
+      workshops.filter(
+        (
+          workshop
+        ) =>
+          workshop.title &&
+          workshop.programArea &&
+          workshop.grade
+      );
 
-    if (validWorkshops.length === 0) {
+    if (
+      validWorkshops.length ===
+      0
+    ) {
       return Response.json(
         {
-          success: false,
+          success:
+            false,
+
           message:
             "No valid workshops were found in the Excel file.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
 
-    const batchSize = 400;
-    let importedCount = 0;
+    /*
+      Keep the same grouping size
+      that the Firestore version
+      previously used.
+
+      Cosmos writes are performed
+      individually because the
+      workshops use /id as their
+      partition key, meaning each
+      workshop belongs to a
+      different logical partition.
+    */
+
+    const batchSize =
+      400;
+
+    let importedCount =
+      0;
 
     for (
       let startIndex = 0;
-      startIndex < validWorkshops.length;
+      startIndex <
+      validWorkshops.length;
       startIndex += batchSize
     ) {
-      const batch = adminDb.batch();
-
       const currentWorkshops =
         validWorkshops.slice(
           startIndex,
-          startIndex + batchSize
+          startIndex +
+            batchSize
         );
 
-      currentWorkshops.forEach((workshop) => {
-        const workshopId = createWorkshopId(
-          workshop.title,
-          workshop.programArea
-        );
+      for (
+        const workshop of
+        currentWorkshops
+      ) {
+        const workshopData =
+          buildImportedWorkshop(
+            workshop,
+            admin.uid
+          );
 
-        const workshopReference = adminDb
-          .collection("workshops")
-          .doc(workshopId);
-
-        const learningMode =
-          workshop.programArea
-            .toLowerCase()
-            .includes("online")
-            ? "online"
-            : "in-person";
-
-        batch.set(
-          workshopReference,
-          {
-            title: workshop.title.trim(),
-
-            programArea:
-              workshop.programArea.trim(),
-
-            category: getCategory(
-              workshop.title,
-              workshop.programArea,
-              workshop.description || ""
-            ),
-
-            grade: workshop.grade.trim(),
-
-            description:
-              workshop.description?.trim() || "",
-
-            informationUrl:
-              workshop.informationUrl?.trim() || "",
-
-            registrationUrl:
-              "https://saitdigitalyouth.campbrainregistration.com/",
-
-            learningMode,
-
-            startDate: null,
-            endDate: null,
-            time: "",
-
-            location:
-              learningMode === "online"
-                ? "Online"
-                : "SAIT Campus",
-
-            capacity: null,
-            xpReward: 100,
-            status: "active",
-
-            importedFromExcel: true,
-            importedBy: admin.uid,
-
-            updatedAt:
-              FieldValue.serverTimestamp(),
-
-            createdAt:
-              FieldValue.serverTimestamp(),
-          },
-          {
-            merge: true,
-          }
+        await saveImportedWorkshop(
+          workshopData
         );
 
         importedCount += 1;
-      });
-
-      await batch.commit();
+      }
     }
 
     return Response.json({
-      success: true,
-      message: `${importedCount} workshops imported successfully.`,
+      success:
+        true,
+
+      message:
+        `${importedCount} workshops imported successfully.`,
+
       importedCount,
     });
-  } catch (error) {
+  } catch (
+    error
+  ) {
     const accessResponse =
-      adminAccessResponse(error);
+      adminAccessResponse(
+        error
+      );
 
-    if (accessResponse) {
+    if (
+      accessResponse
+    ) {
       return accessResponse;
     }
 
@@ -230,12 +485,15 @@ export async function POST(request) {
 
     return Response.json(
       {
-        success: false,
+        success:
+          false,
+
         message:
           "The Excel file could not be imported.",
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }

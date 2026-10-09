@@ -1,8 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { doc, updateDoc } from "firebase/firestore";
+import {
+  useState,
+} from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  getToken as getAppCheckToken,
+} from "firebase/app-check";
 
 import {
   Building2,
@@ -12,76 +20,189 @@ import {
   Shuffle,
 } from "lucide-react";
 
-import { db } from "@/services/firebase";
-import { useAuth } from "@/contexts/AuthContext";
+import {
+  appCheck,
+} from "@/services/firebase";
+
+import {
+  useAuth,
+} from "@/contexts/AuthContext";
 
 const preferences = [
   {
     id: "in-person",
-    title: "In Person",
+
+    title:
+      "In Person",
+
     description:
       "Learn on campus through hands-on workshops and activities.",
-    icon: Building2,
+
+    icon:
+      Building2,
   },
   {
     id: "online",
-    title: "Online",
+
+    title:
+      "Online",
+
     description:
       "Join learning experiences from anywhere.",
-    icon: Monitor,
+
+    icon:
+      Monitor,
   },
   {
     id: "both",
-    title: "Both",
+
+    title:
+      "Both",
+
     description:
       "Show me both in-person and online opportunities.",
-    icon: Shuffle,
+
+    icon:
+      Shuffle,
   },
 ];
 
 export default function LearningPreferencePage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const {
     user,
-    student,
-    loading: authLoading,
-  } = useAuth();
 
-  const [selected, setSelected] = useState(
-    student?.learningMode || ""
+    studentProfile:
+      student,
+
+    loading:
+      authLoading,
+  } =
+    useAuth();
+
+  const [
+    selected,
+    setSelected,
+  ] = useState(
+    student?.learningMode ||
+      ""
   );
 
-  const [saving, setSaving] = useState(false);
-  const [errorMessage, setErrorMessage] =
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState(false);
+
+  const [
+    errorMessage,
+    setErrorMessage,
+  ] =
     useState("");
 
   async function savePreference() {
     try {
-      if (!user) {
-        router.replace("/login");
+      if (
+        !user
+      ) {
+        router.replace(
+          "/login"
+        );
+
         return;
       }
 
-      if (!selected) {
+      if (
+        !selected
+      ) {
         setErrorMessage(
           "Please select a learning preference."
         );
+
         return;
       }
 
-      setSaving(true);
-      setErrorMessage("");
-
-      await updateDoc(
-        doc(db, "students", user.uid),
-        {
-          learningMode: selected,
-        }
+      setSaving(
+        true
       );
 
-      router.push("/interests");
-    } catch (error) {
+      setErrorMessage(
+        ""
+      );
+
+      if (
+        !appCheck
+      ) {
+        throw new Error(
+          "App verification is unavailable."
+        );
+      }
+
+      const [
+        idToken,
+        appCheckTokenResult,
+      ] =
+        await Promise.all([
+          user.getIdToken(),
+
+          getAppCheckToken(
+            appCheck,
+            true
+          ),
+        ]);
+
+      const response =
+        await fetch(
+          "/api/student/profile",
+          {
+            method:
+              "PATCH",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${idToken}`,
+
+              "X-Firebase-AppCheck":
+                appCheckTokenResult.token,
+            },
+
+            body:
+              JSON.stringify({
+                learningMode:
+                  selected,
+              }),
+          }
+        );
+
+      const result =
+        await response
+          .json()
+          .catch(
+            () => null
+          );
+
+      if (
+        !response.ok ||
+        result?.success !==
+          true
+      ) {
+        throw new Error(
+          result?.message ||
+          "Your preference could not be saved."
+        );
+      }
+
+      router.push(
+        "/interests"
+      );
+    } catch (
+      error
+    ) {
       console.error(
         "Save learning preference error:",
         error
@@ -91,15 +212,21 @@ export default function LearningPreferencePage() {
         "Your preference could not be saved."
       );
     } finally {
-      setSaving(false);
+      setSaving(
+        false
+      );
     }
   }
 
   function skipPreference() {
-    router.push("/interests");
+    router.push(
+      "/interests"
+    );
   }
 
-  if (authLoading) {
+  if (
+    authLoading
+  ) {
     return (
       <main className="onboarding-status">
         <LoaderCircle
@@ -112,9 +239,7 @@ export default function LearningPreferencePage() {
 
   return (
     <main className="onboarding-page">
-
       <section className="onboarding-card">
-
         <div className="onboarding-progress">
           <div className="active" />
           <div />
@@ -135,70 +260,84 @@ export default function LearningPreferencePage() {
         </p>
 
         <div className="preference-grid">
+          {preferences.map(
+            (
+              preference
+            ) => {
+              const Icon =
+                preference.icon;
 
-          {preferences.map((preference) => {
-            const Icon =
-              preference.icon;
+              const active =
+                selected ===
+                preference.id;
 
-            const active =
-              selected ===
-              preference.id;
-
-            return (
-              <button
-                key={preference.id}
-                type="button"
-                className={`preference-card ${
-                  active
-                    ? "selected"
-                    : ""
-                }`}
-                onClick={() =>
-                  setSelected(
+              return (
+                <button
+                  key={
                     preference.id
-                  )
-                }
-              >
+                  }
+                  type="button"
+                  className={`preference-card ${
+                    active
+                      ? "selected"
+                      : ""
+                  }`}
+                  onClick={() =>
+                    setSelected(
+                      preference.id
+                    )
+                  }
+                >
+                  <div className="preference-icon">
+                    <Icon
+                      size={27}
+                    />
+                  </div>
 
-                <div className="preference-icon">
-                  <Icon size={27} />
-                </div>
+                  <div className="preference-card-copy">
+                    <h2>
+                      {
+                        preference.title
+                      }
+                    </h2>
 
-                <div className="preference-card-copy">
-                  <h2>
-                    {preference.title}
-                  </h2>
+                    <p>
+                      {
+                        preference.description
+                      }
+                    </p>
+                  </div>
 
-                  <p>
-                    {
-                      preference.description
-                    }
-                  </p>
-                </div>
-
-                <div className="preference-check">
-                  {active && (
-                    <Check size={15} />
-                  )}
-                </div>
-
-              </button>
-            );
-          })}
-
+                  <div className="preference-check">
+                    {active && (
+                      <Check
+                        size={15}
+                      />
+                    )}
+                  </div>
+                </button>
+              );
+            }
+          )}
         </div>
 
         {errorMessage && (
           <div className="onboarding-error">
-            {errorMessage}
+            {
+              errorMessage
+            }
           </div>
         )}
 
         <button
           type="button"
           className="onboarding-primary-button"
-          disabled={saving}
-          onClick={savePreference}
+          disabled={
+            saving
+          }
+          onClick={
+            savePreference
+          }
         >
           {saving ? (
             <>
@@ -217,13 +356,13 @@ export default function LearningPreferencePage() {
         <button
           type="button"
           className="onboarding-skip"
-          onClick={skipPreference}
+          onClick={
+            skipPreference
+          }
         >
           Skip for now
         </button>
-
       </section>
-
     </main>
   );
 }

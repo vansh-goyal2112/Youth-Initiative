@@ -1,11 +1,13 @@
 import crypto from "crypto";
 
-import { adminDb } from "@/services/firebaseAdmin";
-
 import {
   appCheckErrorResponse,
   requireAppCheck,
 } from "@/services/appCheckServer";
+
+import {
+  readCosmosDocument,
+} from "@/services/cosmosData";
 
 export const runtime = "nodejs";
 
@@ -49,6 +51,7 @@ function hashesMatch(
 export async function POST(request) {
   try {
     await requireAppCheck(request);
+
     const {
       registrationId,
       token,
@@ -63,6 +66,7 @@ export async function POST(request) {
       return Response.json(
         {
           success: false,
+
           message:
             "The consent link is incomplete.",
         },
@@ -72,17 +76,13 @@ export async function POST(request) {
       );
     }
 
-    const registrationReference =
-      adminDb
-        .collection(
-          "pendingRegistrations"
-        )
-        .doc(registrationId);
+    const registration =
+      await readCosmosDocument(
+        "pendingRegistrations",
+        registrationId
+      );
 
-    const registrationSnapshot =
-      await registrationReference.get();
-
-    if (!registrationSnapshot.exists) {
+    if (!registration) {
       return Response.json(
         {
           success: false,
@@ -95,9 +95,6 @@ export async function POST(request) {
         }
       );
     }
-
-    const registration =
-      registrationSnapshot.data();
 
     if (
       registration.status ===
@@ -179,14 +176,14 @@ export async function POST(request) {
     }
 
     const expiryDate =
-      registration.consentExpiresAt
-        ?.toDate?.() ||
       new Date(
         registration.consentExpiresAt
       );
 
     if (
-      Number.isNaN(expiryDate.getTime()) ||
+      Number.isNaN(
+        expiryDate.getTime()
+      ) ||
       expiryDate.getTime() <
         Date.now()
     ) {
@@ -231,7 +228,7 @@ export async function POST(request) {
     if (appCheckResponse) {
       return appCheckResponse;
     }
-    
+
     console.error(
       "Consent verification error:",
       error

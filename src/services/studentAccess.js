@@ -1,11 +1,14 @@
 import {
   adminAuth,
-  adminDb,
 } from "@/services/firebaseAdmin";
 
 import {
   requireAppCheck,
 } from "@/services/appCheckServer";
+
+import {
+  readCosmosDocument,
+} from "@/services/cosmosData";
 
 export async function requireActiveStudent(
   request,
@@ -29,6 +32,10 @@ export async function requireActiveStudent(
 
   /*
     2. Verify Firebase Authentication
+
+    Firebase Auth remains in place
+    during the Firestore -> Cosmos
+    migration.
   */
 
   const authorization =
@@ -86,15 +93,16 @@ export async function requireActiveStudent(
 
   /*
     3. Verify student profile
+       in Cosmos DB.
   */
 
-  const studentSnapshot =
-    await adminDb
-      .collection("students")
-      .doc(decodedToken.uid)
-      .get();
+  const student =
+    await readCosmosDocument(
+      "students",
+      decodedToken.uid
+    );
 
-  if (!studentSnapshot.exists) {
+  if (!student) {
     const error =
       new Error(
         "Student profile not found."
@@ -104,12 +112,10 @@ export async function requireActiveStudent(
     throw error;
   }
 
-  const student =
-    studentSnapshot.data();
-
   /*
-    Ensure Firestore UID and Firebase UID
-    represent the same account.
+    Ensure Cosmos student UID
+    and Firebase UID represent
+    the same account.
   */
 
   if (

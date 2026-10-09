@@ -1,11 +1,14 @@
 import {
   adminAuth,
-  adminDb,
 } from "@/services/firebaseAdmin";
 
 import {
   requireAppCheck,
 } from "@/services/appCheckServer";
+
+import {
+  readCosmosDocument,
+} from "@/services/cosmosData";
 
 export async function requireActiveAdmin(
   request
@@ -23,6 +26,10 @@ export async function requireActiveAdmin(
   /*
     Layer 2:
     verify Firebase Authentication.
+
+    Firebase Auth remains in place
+    during the Firestore -> Cosmos
+    migration.
   */
 
   const authorization =
@@ -84,21 +91,17 @@ export async function requireActiveAdmin(
   /*
     Layer 3:
     verify administrator authorization
-    from Firestore.
+    from Cosmos DB.
   */
 
-  const adminSnapshot =
-    await adminDb
-      .collection(
-        "admins"
-      )
-      .doc(
-        decodedToken.uid
-      )
-      .get();
+  const adminData =
+    await readCosmosDocument(
+      "admins",
+      decodedToken.uid
+    );
 
   if (
-    !adminSnapshot.exists
+    !adminData
   ) {
     const error =
       new Error(
@@ -109,9 +112,6 @@ export async function requireActiveAdmin(
 
     throw error;
   }
-
-  const adminData =
-    adminSnapshot.data();
 
   if (
     adminData.role !==

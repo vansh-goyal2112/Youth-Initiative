@@ -1,29 +1,23 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-} from "firebase-admin/firestore";
-
-import {
-  Resend,
-} from "resend";
-
-import {
-  adminDb,
-} from "@/services/firebaseAdmin";
+  sendAzureEmail,
+} from "@/services/azureEmailServer";
 
 import {
   appCheckErrorResponse,
   requireAppCheck,
 } from "@/services/appCheckServer";
 
+import {
+  cosmosNow,
+  isCosmosPreconditionFailed,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
+
 export const runtime =
   "nodejs";
-
-const resend =
-  new Resend(
-    process.env.RESEND_API_KEY
-  );
 
 const ACTIVATION_EXPIRY_MINUTES =
   30;
@@ -88,7 +82,6 @@ function getDate(
   }
 
   const date =
-    value?.toDate?.() ||
     new Date(
       value
     );
@@ -164,6 +157,49 @@ function createRequestError(
   return error;
 }
 
+async function sendEmail({
+  to,
+  replyTo,
+  subject,
+  html,
+  text,
+}) {
+  try {
+    const result =
+      await sendAzureEmail({
+        to,
+        replyTo,
+        subject,
+        html,
+        text,
+      });
+
+    return {
+      data: {
+        id:
+          result?.id ||
+          null,
+      },
+
+      error:
+        null,
+    };
+  } catch (
+    error
+  ) {
+    return {
+      data:
+        null,
+
+      error: {
+        message:
+          error?.message ||
+          "Email could not be sent.",
+      },
+    };
+  }
+}
+
 export async function POST(
   request
 ) {
@@ -207,15 +243,6 @@ export async function POST(
       );
     }
 
-    const registrationReference =
-      adminDb
-        .collection(
-          "pendingRegistrations"
-        )
-        .doc(
-          registrationId
-        );
-
     const activationToken =
       crypto
         .randomBytes(
@@ -236,7 +263,7 @@ export async function POST(
           ACTIVATION_EXPIRY_MINUTES *
             60 *
             1000
-      );
+      ).toISOString();
 
     let recipientEmail =
       "";
@@ -259,303 +286,311 @@ export async function POST(
     let resendWindowStartedAt =
       new Date();
 
-    await adminDb.runTransaction(
-      async (
-        transaction
-      ) => {
-        const snapshot =
-          await transaction.get(
-            registrationReference
-          );
+    const registration =
+      await readCosmosDocument(
+        "pendingRegistrations",
+        registrationId
+      );
 
-        if (
-          !snapshot.exists
-        ) {
-          throw createRequestError(
-            "Account setup recovery could not be started.",
-            404,
-            "registration-not-found"
-          );
-        }
+    if (
+      !registration
+    ) {
+      throw createRequestError(
+        "Account setup recovery could not be started.",
+        404,
+        "registration-not-found"
+      );
+    }
 
-        const registration =
-          snapshot.data();
+    if (
+      registration.status ===
+      "account_created"
+    ) {
+      throw createRequestError(
+        "This account has already been created. Please sign in instead.",
+        409,
+        "account-already-created"
+      );
+    }
 
-        if (
-          registration.status ===
-          "account_created"
-        ) {
-          throw createRequestError(
-            "This account has already been created. Please sign in instead.",
-            409,
-            "account-already-created"
-          );
-        }
+    if (
+      registration
+        .activationInProgress ===
+      true
+    ) {
+      throw createRequestError(
+        "This account is currently being activated. Please wait a moment and try again.",
+        409,
+        "activation-in-progress"
+      );
+    }
 
-        if (
-          registration
-            .activationInProgress ===
-          true
-        ) {
-          throw createRequestError(
-            "This account is currently being activated. Please wait a moment and try again.",
-            409,
-            "activation-in-progress"
-          );
-        }
+    if (
+      registration
+        .activationRecoveryInProgress ===
+      true
+    ) {
+      throw createRequestError(
+        "A new account setup email is already being sent. Please wait a moment.",
+        409,
+        "activation-recovery-in-progress"
+      );
+    }
 
-        if (
-          registration
-            .activationRecoveryInProgress ===
-          true
-        ) {
-          throw createRequestError(
-            "A new account setup email is already being sent. Please wait a moment.",
-            409,
-            "activation-recovery-in-progress"
-          );
-        }
+    const requiresParentalConsent =
+      registration
+        .requiresParentalConsent ===
+      true;
 
-        const requiresParentalConsent =
-          registration
-            .requiresParentalConsent ===
-          true;
+    /*
+      ADULT
 
-        /*
-          ADULT
+      Email ownership has already
+      been verified.
 
-          Email ownership has already
-          been verified.
+      Recovery can therefore be
+      sent to the verified student
+      contact email.
+    */
 
-          Recovery can therefore be
-          sent to the verified student
-          contact email.
-        */
+    if (
+      !requiresParentalConsent
+    ) {
+      if (
+        registration.status !==
+          "email_verified" ||
+        registration
+          .emailVerificationStatus !==
+          "verified" ||
+        registration
+          .consentStatus !==
+          "not_required"
+      ) {
+        throw createRequestError(
+          "Email verification must be completed before account setup can be recovered.",
+          403,
+          "email-verification-required"
+        );
+      }
 
-        if (
-          !requiresParentalConsent
-        ) {
-          if (
-            registration.status !==
-              "email_verified" ||
-            registration
-              .emailVerificationStatus !==
-              "verified" ||
-            registration
-              .consentStatus !==
-              "not_required"
-          ) {
-            throw createRequestError(
-              "Email verification must be completed before account setup can be recovered.",
-              403,
-              "email-verification-required"
-            );
+      recipientEmail =
+        typeof registration
+          .email ===
+        "string"
+          ? registration.email
+              .trim()
+              .toLowerCase()
+          : "";
+
+      recipientType =
+        "student";
+    } else {
+      /*
+        MINOR
+
+        Parent or guardian consent
+        has already been approved.
+
+        Recovery is sent to the
+        approved parent email,
+        because the minor's student
+        email was not independently
+        verified.
+      */
+
+      if (
+        registration.status !==
+          "consent_approved" ||
+        registration
+          .consentStatus !==
+          "approved"
+      ) {
+        throw createRequestError(
+          "Parent or guardian consent must be completed before account setup can be recovered.",
+          403,
+          "consent-required"
+        );
+      }
+
+      recipientEmail =
+        typeof registration
+          .parentEmail ===
+        "string"
+          ? registration
+              .parentEmail
+              .trim()
+              .toLowerCase()
+          : "";
+
+      recipientType =
+        "parent";
+    }
+
+    if (
+      !recipientEmail
+    ) {
+      throw createRequestError(
+        "A trusted email address was not available for account setup recovery.",
+        409,
+        "recovery-email-missing"
+      );
+    }
+
+    firstName =
+      registration.firstName ||
+      "Student";
+
+    const now =
+      Date.now();
+
+    const lastSentAt =
+      getDate(
+        registration
+          .lastActivationRecoverySentAt
+      );
+
+    if (
+      lastSentAt
+    ) {
+      const secondsSinceLastSend =
+        Math.floor(
+          (
+            now -
+            lastSentAt.getTime()
+          ) /
+            1000
+        );
+
+      const retryAfterSeconds =
+        Math.max(
+          0,
+          RESEND_COOLDOWN_SECONDS -
+            secondsSinceLastSend
+        );
+
+      if (
+        retryAfterSeconds >
+        0
+      ) {
+        throw createRequestError(
+          `Please wait ${retryAfterSeconds} seconds before requesting another account setup email.`,
+          429,
+          "activation-recovery-cooldown",
+          {
+            retryAfterSeconds,
           }
+        );
+      }
+    }
 
-          recipientEmail =
-            typeof registration
-              .email ===
-            "string"
-              ? registration.email
-                  .trim()
-                  .toLowerCase()
-              : "";
+    const storedWindowStart =
+      getDate(
+        registration
+          .activationRecoveryWindowStartedAt
+      );
 
-          recipientType =
-            "student";
-        } else {
-          /*
-            MINOR
+    let currentResendCount =
+      Number.isFinite(
+        registration
+          .activationRecoveryCount
+      )
+        ? registration
+            .activationRecoveryCount
+        : 0;
 
-            Parent or guardian consent
-            has already been approved.
+    if (
+      !storedWindowStart ||
+      now -
+          storedWindowStart.getTime() >=
+        RESEND_WINDOW_MS
+    ) {
+      resendWindowStartedAt =
+        new Date(
+          now
+        );
 
-            Recovery is sent to the
-            approved parent email,
-            because the minor's student
-            email was not independently
-            verified.
-          */
+      currentResendCount =
+        0;
+    } else {
+      resendWindowStartedAt =
+        storedWindowStart;
+    }
 
-          if (
-            registration.status !==
-              "consent_approved" ||
-            registration
-              .consentStatus !==
-              "approved"
-          ) {
-            throw createRequestError(
-              "Parent or guardian consent must be completed before account setup can be recovered.",
-              403,
-              "consent-required"
-            );
-          }
-
-          recipientEmail =
-            typeof registration
-              .parentEmail ===
-            "string"
-              ? registration
-                  .parentEmail
-                  .trim()
-                  .toLowerCase()
-              : "";
-
-          recipientType =
-            "parent";
-        }
-
-        if (
-          !recipientEmail
-        ) {
-          throw createRequestError(
-            "A trusted email address was not available for account setup recovery.",
-            409,
-            "recovery-email-missing"
-          );
-        }
-
-        firstName =
-          registration.firstName ||
-          "Student";
-
-        const now =
-          Date.now();
-
-        const lastSentAt =
-          getDate(
-            registration
-              .lastActivationRecoverySentAt
-          );
-
-        if (
-          lastSentAt
-        ) {
-          const secondsSinceLastSend =
-            Math.floor(
+    if (
+      currentResendCount >=
+      MAX_RESENDS_PER_WINDOW
+    ) {
+      const retryAfterSeconds =
+        Math.max(
+          1,
+          Math.ceil(
+            (
+              RESEND_WINDOW_MS -
               (
                 now -
-                lastSentAt.getTime()
-              ) /
-                1000
-            );
-
-          const retryAfterSeconds =
-            Math.max(
-              0,
-              RESEND_COOLDOWN_SECONDS -
-                secondsSinceLastSend
-            );
-
-          if (
-            retryAfterSeconds >
-            0
-          ) {
-            throw createRequestError(
-              `Please wait ${retryAfterSeconds} seconds before requesting another account setup email.`,
-              429,
-              "activation-recovery-cooldown",
-              {
-                retryAfterSeconds,
-              }
-            );
-          }
-        }
-
-        const storedWindowStart =
-          getDate(
-            registration
-              .activationRecoveryWindowStartedAt
-          );
-
-        let currentResendCount =
-          Number.isFinite(
-            registration
-              .activationRecoveryCount
-          )
-            ? registration
-                .activationRecoveryCount
-            : 0;
-
-        if (
-          !storedWindowStart ||
-          now -
-              storedWindowStart.getTime() >=
-            RESEND_WINDOW_MS
-        ) {
-          resendWindowStartedAt =
-            new Date(
-              now
-            );
-
-          currentResendCount =
-            0;
-        } else {
-          resendWindowStartedAt =
-            storedWindowStart;
-        }
-
-        if (
-          currentResendCount >=
-          MAX_RESENDS_PER_WINDOW
-        ) {
-          const retryAfterSeconds =
-            Math.max(
-              1,
-              Math.ceil(
-                (
-                  RESEND_WINDOW_MS -
-                  (
-                    now -
-                    resendWindowStartedAt.getTime()
-                  )
-                ) /
-                  1000
+                resendWindowStartedAt.getTime()
               )
-            );
+            ) /
+              1000
+          )
+        );
 
-          throw createRequestError(
-            "Too many account setup emails have been requested. Please try again later.",
-            429,
-            "activation-recovery-limit",
-            {
-              retryAfterSeconds,
-            }
-          );
+      throw createRequestError(
+        "Too many account setup emails have been requested. Please try again later.",
+        429,
+        "activation-recovery-limit",
+        {
+          retryAfterSeconds,
         }
+      );
+    }
 
-        nextResendCount =
-          currentResendCount +
-          1;
+    nextResendCount =
+      currentResendCount +
+      1;
 
-        /*
-          Preserve the previous token
-          temporarily.
+    /*
+      Preserve the previous token
+      temporarily.
 
-          If email delivery fails,
-          restore the previous state.
-        */
+      If email delivery fails,
+      restore the previous state.
+    */
 
-        oldTokenHash =
-          registration
-            .activationTokenHash ||
-          null;
+    oldTokenHash =
+      registration
+        .activationTokenHash ||
+      null;
 
-        oldTokenExpiry =
-          registration
-            .activationExpiresAt ||
-          null;
+    oldTokenExpiry =
+      registration
+        .activationExpiresAt ||
+      null;
 
-        /*
-          Store the new activation
-          token before sending.
+    /*
+      Store the new activation
+      token before sending.
 
-          This immediately invalidates
-          any previous setup link.
-        */
+      This immediately invalidates
+      any previous setup link.
 
-        transaction.update(
-          registrationReference,
+      The Cosmos ETag preserves the
+      concurrency protection that
+      the Firestore transaction
+      previously provided.
+    */
+
+    let lockedRegistration =
+      null;
+
+    try {
+      const recoveryStartedAt =
+        cosmosNow();
+
+      lockedRegistration =
+        await replaceCosmosDocument(
+          "pendingRegistrations",
+          registration,
           {
             activationTokenHash,
 
@@ -565,14 +600,29 @@ export async function POST(
               true,
 
             activationRecoveryStartedAt:
-              FieldValue.serverTimestamp(),
+              recoveryStartedAt,
 
             updatedAt:
-              FieldValue.serverTimestamp(),
+              recoveryStartedAt,
           }
         );
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        throw createRequestError(
+          "A new account setup email is already being sent. Please wait a moment.",
+          409,
+          "activation-recovery-in-progress"
+        );
       }
-    );
+
+      throw error;
+    }
 
     const appUrl =
       process.env
@@ -624,13 +674,8 @@ export async function POST(
           `;
 
     const emailResult =
-      await resend.emails.send(
+      await sendEmail(
         {
-          from:
-            process.env
-              .EMAIL_FROM ||
-            "SAIT Youth Initiative <onboarding@resend.dev>",
-
           to: [
             recipientEmail,
           ],
@@ -775,59 +820,66 @@ export async function POST(
     if (
       emailResult.error
     ) {
-      await adminDb.runTransaction(
-        async (
-          transaction
-        ) => {
-          const snapshot =
-            await transaction.get(
-              registrationReference
-            );
-
-          if (
-            !snapshot.exists
-          ) {
-            return;
-          }
-
-          const registration =
-            snapshot.data();
-
-          if (
-            registration
-              .activationTokenHash !==
-            activationTokenHash
-          ) {
-            return;
-          }
-
-          transaction.update(
-            registrationReference,
-            {
-              activationTokenHash:
-                oldTokenHash,
-
-              activationExpiresAt:
-                oldTokenExpiry,
-
-              activationRecoveryInProgress:
-                false,
-
-              activationRecoveryStartedAt:
-                null,
-
-              lastActivationRecoveryError:
-                emailResult
-                  .error
-                  .message ||
-                "Account setup email could not be sent.",
-
-              updatedAt:
-                FieldValue.serverTimestamp(),
-            }
+      try {
+        const currentRegistration =
+          await readCosmosDocument(
+            "pendingRegistrations",
+            registrationId
           );
+
+        if (
+          currentRegistration &&
+          currentRegistration
+            .activationTokenHash ===
+            activationTokenHash
+        ) {
+          try {
+            await replaceCosmosDocument(
+              "pendingRegistrations",
+              currentRegistration,
+              {
+                activationTokenHash:
+                  oldTokenHash,
+
+                activationExpiresAt:
+                  oldTokenExpiry,
+
+                activationRecoveryInProgress:
+                  false,
+
+                activationRecoveryStartedAt:
+                  null,
+
+                lastActivationRecoveryError:
+                  emailResult
+                    .error
+                    .message ||
+                  "Account setup email could not be sent.",
+
+                updatedAt:
+                  cosmosNow(),
+              }
+            );
+          } catch (
+            restoreError
+          ) {
+            if (
+              !isCosmosPreconditionFailed(
+                restoreError
+              )
+            ) {
+              throw restoreError;
+            }
+          }
         }
-      );
+      } catch (
+        restoreError
+      ) {
+        console.error(
+          "Failed to restore previous activation token:",
+          restoreError
+        );
+      }
 
       return Response.json(
         {
@@ -847,36 +899,79 @@ export async function POST(
       );
     }
 
-    await registrationReference.update(
-      {
-        activationRecoveryInProgress:
-          false,
+    /*
+      Finalize the successful
+      account setup email.
 
-        activationRecoveryStartedAt:
-          null,
+      Re-read the registration
+      before updating so we do not
+      overwrite a newer Cosmos
+      document version.
+    */
 
-        activationRecoveryCount:
-          nextResendCount,
+    const currentRegistration =
+      await readCosmosDocument(
+        "pendingRegistrations",
+        registrationId
+      );
 
-        activationRecoveryWindowStartedAt:
-          resendWindowStartedAt,
+    if (
+      currentRegistration &&
+      currentRegistration
+        .activationTokenHash ===
+        activationTokenHash &&
+      currentRegistration
+        .activationRecoveryInProgress ===
+        true
+    ) {
+      const sentAt =
+        cosmosNow();
 
-        lastActivationRecoverySentAt:
-          FieldValue.serverTimestamp(),
+      try {
+        await replaceCosmosDocument(
+          "pendingRegistrations",
+          currentRegistration,
+          {
+            activationRecoveryInProgress:
+              false,
 
-        lastActivationRecoveryError:
-          null,
+            activationRecoveryStartedAt:
+              null,
 
-        activationRecoveryEmailId:
-          emailResult
-            .data
-            ?.id ||
-          null,
+            activationRecoveryCount:
+              nextResendCount,
 
-        updatedAt:
-          FieldValue.serverTimestamp(),
+            activationRecoveryWindowStartedAt:
+              resendWindowStartedAt.toISOString(),
+
+            lastActivationRecoverySentAt:
+              sentAt,
+
+            lastActivationRecoveryError:
+              null,
+
+            activationRecoveryEmailId:
+              emailResult
+                .data
+                ?.id ||
+              null,
+
+            updatedAt:
+              sentAt,
+          }
+        );
+      } catch (
+        error
+      ) {
+        if (
+          !isCosmosPreconditionFailed(
+            error
+          )
+        ) {
+          throw error;
+        }
       }
-    );
+    }
 
     return Response.json(
       {

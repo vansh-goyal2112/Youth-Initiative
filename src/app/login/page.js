@@ -2,8 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+
+import {
+  useRouter,
+} from "next/navigation";
+
+import {
+  useState,
+} from "react";
+
 import {
   ArrowLeft,
   Eye,
@@ -24,14 +31,14 @@ import {
 } from "firebase/auth";
 
 import {
-  doc,
-  getDoc,
-} from "firebase/firestore";
+  getToken as getAppCheckToken,
+} from "firebase/app-check";
 
 import {
+  appCheck,
   auth,
-  db,
 } from "@/services/firebase";
+
 import * as Yup from "yup";
 
 const loginSchema = Yup.object({
@@ -52,8 +59,11 @@ const loginSchema = Yup.object({
       /^[A-Za-z0-9-]+$/,
       "Youth Initiative ID can only contain letters, numbers and hyphens."
     ),
+
   password: Yup.string()
-    .required("Password is required.")
+    .required(
+      "Password is required."
+    )
     .min(
       10,
       "Password must contain at least 10 characters."
@@ -65,17 +75,20 @@ const loginSchema = Yup.object({
 });
 
 export default function LoginPage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const [
     showPassword,
     setShowPassword,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     loginError,
     setLoginError,
-  ] = useState("");
+  ] =
+    useState("");
 
   const handleLogin = async (
     values,
@@ -83,7 +96,8 @@ export default function LoginPage() {
   ) => {
     const {
       setSubmitting,
-    } = formikHelpers;
+    } =
+      formikHelpers;
 
     try {
       setLoginError("");
@@ -96,6 +110,13 @@ export default function LoginPage() {
       const internalEmail =
         `${cleanedYouthId}@youthinitiative.local`;
 
+      /*
+        Firebase Authentication
+        remains temporarily during
+        the Firestore -> Cosmos
+        migration.
+      */
+
       const userCredential =
         await signInWithEmailAndPassword(
           auth,
@@ -103,24 +124,78 @@ export default function LoginPage() {
           values.password
         );
 
-      const studentSnapshot =
-        await getDoc(
-          doc(
-            db,
-            "students",
-            userCredential.user.uid
-          )
-        );
-
       /*
-        Authentication alone is not enough.
+        Authentication alone is not
+        enough.
 
-        The student record must also exist
-        and be a valid active student account.
+        The matching student profile
+        is now loaded through the
+        protected server API, which
+        reads the student from
+        Cosmos DB.
       */
 
-      if (!studentSnapshot.exists()) {
-        await signOut(auth);
+      if (
+        !appCheck
+      ) {
+        await signOut(
+          auth
+        );
+
+        throw new Error(
+          "app-check-unavailable"
+        );
+      }
+
+      const [
+        idToken,
+        appCheckTokenResult,
+      ] =
+        await Promise.all([
+          userCredential.user
+            .getIdToken(),
+
+          getAppCheckToken(
+            appCheck
+          ),
+        ]);
+
+      const profileResponse =
+        await fetch(
+          "/api/student/profile",
+          {
+            method:
+              "GET",
+
+            headers: {
+              Authorization:
+                `Bearer ${idToken}`,
+
+              "X-Firebase-AppCheck":
+                appCheckTokenResult.token,
+            },
+
+            cache:
+              "no-store",
+          }
+        );
+
+      const profileResult =
+        await profileResponse
+          .json()
+          .catch(
+            () => null
+          );
+
+      if (
+        !profileResponse.ok ||
+        profileResult?.success !==
+          true ||
+        !profileResult?.student
+      ) {
+        await signOut(
+          auth
+        );
 
         throw new Error(
           "invalid-student-record"
@@ -128,7 +203,13 @@ export default function LoginPage() {
       }
 
       const studentData =
-        studentSnapshot.data();
+        profileResult.student;
+
+      /*
+        Preserve the same account
+        consistency checks that the
+        Firestore version used.
+      */
 
       const youthIdMatches =
         typeof studentData.youthId ===
@@ -163,7 +244,9 @@ export default function LoginPage() {
         !studentRoleIsValid ||
         !parentalConsentIsValid
       ) {
-        await signOut(auth);
+        await signOut(
+          auth
+        );
 
         throw new Error(
           "invalid-account-state"
@@ -171,7 +254,8 @@ export default function LoginPage() {
       }
 
       if (
-        !studentData.onboardingCompleted
+        !studentData
+          .onboardingCompleted
       ) {
         router.replace(
           "/learning-preference"
@@ -180,7 +264,9 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/dashboard");
+      router.replace(
+        "/dashboard"
+      );
     } catch (error) {
       console.error(
         "Login error:",
@@ -190,16 +276,20 @@ export default function LoginPage() {
       /*
         Keep this generic.
 
-        Do not tell someone whether the
-        Youth ID, password or account status
-        was the part that failed.
+        Do not tell someone whether
+        the Youth ID, password,
+        account status, or student
+        profile was the part that
+        failed.
       */
 
       setLoginError(
         "Invalid Youth Initiative ID or password."
       );
     } finally {
-      setSubmitting(false);
+      setSubmitting(
+        false
+      );
     }
   };
 
@@ -239,7 +329,9 @@ export default function LoginPage() {
 
           <div className="login-content">
             <div className="auth-heading">
-              <h1>Login</h1>
+              <h1>
+                Login
+              </h1>
 
               <p>
                 Enter your information to access
@@ -249,8 +341,11 @@ export default function LoginPage() {
 
             <Formik
               initialValues={{
-                youthId: "",
-                password: "",
+                youthId:
+                  "",
+
+                password:
+                  "",
               }}
               validationSchema={
                 loginSchema
@@ -474,18 +569,24 @@ export default function LoginPage() {
 
             <div className="login-feature-list">
               <div>
-                <span>01</span>
+                <span>
+                  01
+                </span>
                 Personalized workshop
                 recommendations
               </div>
 
               <div>
-                <span>02</span>
+                <span>
+                  02
+                </span>
                 Track progress, XP and badges
               </div>
 
               <div>
-                <span>03</span>
+                <span>
+                  03
+                </span>
                 Discover future education
                 pathways
               </div>

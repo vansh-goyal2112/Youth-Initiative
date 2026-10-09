@@ -9,10 +9,6 @@ import {
 } from "firebase/auth";
 
 import {
-  getFirestore,
-} from "firebase/firestore";
-
-import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
 } from "firebase/app-check";
@@ -114,18 +110,17 @@ if (
 }
 
 /*
-  Initialize Firebase services after
-  App Check initialization.
+  Firebase Authentication remains
+  temporarily during the migration.
+
+  Firestore has been removed because
+  application data now uses Cosmos DB.
 */
 const auth =
   getAuth(app);
-
-const db =
-  getFirestore(app);
 
 export {
   app,
   appCheck,
   auth,
-  db,
 };

@@ -1,15 +1,18 @@
-import {
-  FieldValue,
-} from "firebase-admin/firestore";
-
-import {
-  adminDb,
-} from "@/services/firebaseAdmin";
+import crypto from "crypto";
 
 import {
   adminAccessResponse,
   requireActiveAdmin,
 } from "@/services/adminAccess";
+
+import {
+  cosmosNow,
+  createCosmosDocument,
+  deleteCosmosDocument,
+  queryCosmosDocuments,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
 
 export const runtime = "nodejs";
 
@@ -144,24 +147,14 @@ export async function GET(
       request
     );
 
-    const workshopSnapshot =
-      await adminDb
-        .collection(
-          "workshops"
-        )
-        .orderBy("title")
-        .get();
-
     const workshops =
-      workshopSnapshot.docs.map(
-        (
-          workshopDocument
-        ) => ({
-          id:
-            workshopDocument.id,
-
-          ...workshopDocument.data(),
-        })
+      await queryCosmosDocuments(
+        "workshops",
+        `
+          SELECT *
+          FROM c
+          ORDER BY c.title
+        `
       );
 
     return Response.json({
@@ -218,6 +211,7 @@ export async function POST(
       return Response.json(
         {
           success: false,
+
           message:
             validationError,
         },
@@ -227,25 +221,31 @@ export async function POST(
       );
     }
 
-    const workshopReference =
-      await adminDb
-        .collection(
-          "workshops"
-        )
-        .add({
-          ...buildWorkshopData(
-            workshopData
-          ),
+    const workshopId =
+      crypto.randomUUID();
 
-          createdBy:
-            admin.uid,
+    const createdAt =
+      cosmosNow();
 
-          createdAt:
-            FieldValue.serverTimestamp(),
+    await createCosmosDocument(
+      "workshops",
+      {
+        id:
+          workshopId,
 
-          updatedAt:
-            FieldValue.serverTimestamp(),
-        });
+        ...buildWorkshopData(
+          workshopData
+        ),
+
+        createdBy:
+          admin.uid,
+
+        createdAt,
+
+        updatedAt:
+          createdAt,
+      }
+    );
 
     return Response.json(
       {
@@ -254,8 +254,7 @@ export async function POST(
         message:
           "Workshop created successfully.",
 
-        workshopId:
-          workshopReference.id,
+        workshopId,
       },
       {
         status: 201,
@@ -302,7 +301,8 @@ export async function PUT(
     const {
       id,
       ...workshopData
-    } = await request.json();
+    } =
+      await request.json();
 
     if (!id) {
       return Response.json(
@@ -327,6 +327,7 @@ export async function PUT(
       return Response.json(
         {
           success: false,
+
           message:
             validationError,
         },
@@ -336,17 +337,13 @@ export async function PUT(
       );
     }
 
-    const reference =
-      adminDb
-        .collection(
-          "workshops"
-        )
-        .doc(id);
+    const existingWorkshop =
+      await readCosmosDocument(
+        "workshops",
+        id
+      );
 
-    const snapshot =
-      await reference.get();
-
-    if (!snapshot.exists) {
+    if (!existingWorkshop) {
       return Response.json(
         {
           success: false,
@@ -360,17 +357,21 @@ export async function PUT(
       );
     }
 
-    await reference.update({
-      ...buildWorkshopData(
-        workshopData
-      ),
+    await replaceCosmosDocument(
+      "workshops",
+      existingWorkshop,
+      {
+        ...buildWorkshopData(
+          workshopData
+        ),
 
-      updatedBy:
-        admin.uid,
+        updatedBy:
+          admin.uid,
 
-      updatedAt:
-        FieldValue.serverTimestamp(),
-    });
+        updatedAt:
+          cosmosNow(),
+      }
+    );
 
     return Response.json({
       success: true,
@@ -417,7 +418,8 @@ export async function DELETE(
 
     const {
       id,
-    } = await request.json();
+    } =
+      await request.json();
 
     if (!id) {
       return Response.json(
@@ -433,17 +435,13 @@ export async function DELETE(
       );
     }
 
-    const reference =
-      adminDb
-        .collection(
-          "workshops"
-        )
-        .doc(id);
+    const existingWorkshop =
+      await readCosmosDocument(
+        "workshops",
+        id
+      );
 
-    const snapshot =
-      await reference.get();
-
-    if (!snapshot.exists) {
+    if (!existingWorkshop) {
       return Response.json(
         {
           success: false,
@@ -457,7 +455,10 @@ export async function DELETE(
       );
     }
 
-    await reference.delete();
+    await deleteCosmosDocument(
+      "workshops",
+      id
+    );
 
     return Response.json({
       success: true,

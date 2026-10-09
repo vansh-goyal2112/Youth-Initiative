@@ -1,17 +1,16 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-} from "firebase-admin/firestore";
-
-import {
-  adminDb,
-} from "@/services/firebaseAdmin";
-
-import {
   appCheckErrorResponse,
   requireAppCheck,
 } from "@/services/appCheckServer";
+
+import {
+  cosmosNow,
+  isCosmosPreconditionFailed,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
 
 export const runtime =
   "nodejs";
@@ -77,7 +76,6 @@ function getDate(
   }
 
   const date =
-    value?.toDate?.() ||
     new Date(
       value
     );
@@ -162,176 +160,183 @@ export async function POST(
       );
     }
 
-    const registrationReference =
-      adminDb
-        .collection(
-          "pendingRegistrations"
+    const normalizedRegistrationId =
+      registrationId.trim();
+
+    const registration =
+      await readCosmosDocument(
+        "pendingRegistrations",
+        normalizedRegistrationId
+      );
+
+    if (
+      !registration
+    ) {
+      throw createRequestError(
+        "The registration could not be found.",
+        404,
+        "registration-not-found"
+      );
+    }
+
+    /*
+      Only an under-18
+      registration that is still
+      waiting for consent can be
+      restarted through this
+      endpoint.
+    */
+
+    if (
+      registration
+        .requiresParentalConsent !==
+        true ||
+      registration.status !==
+        "pending_consent" ||
+      registration.consentStatus !==
+        "pending"
+    ) {
+      throw createRequestError(
+        "This registration can no longer be restarted.",
+        409,
+        "registration-not-pending"
+      );
+    }
+
+    /*
+      The separate resend token
+      identifies the pending
+      registration owned by this
+      browser session.
+
+      It does NOT grant parental
+      consent or account access.
+    */
+
+    const providedTokenHash =
+      hashToken(
+        resendToken.trim()
+      );
+
+    if (
+      !hashesMatch(
+        providedTokenHash,
+        registration
+          .resendTokenHash
+      )
+    ) {
+      throw createRequestError(
+        "This registration restart request is not authorized.",
+        401,
+        "invalid-restart-token"
+      );
+    }
+
+    const resendExpiry =
+      getDate(
+        registration
+          .resendTokenExpiresAt
+      );
+
+    /*
+      Do not restart an active
+      registration unnecessarily.
+
+      While the resend
+      authorization remains valid,
+      the existing consent resend
+      flow should be used.
+    */
+
+    if (
+      resendExpiry &&
+      resendExpiry.getTime() >=
+        Date.now()
+    ) {
+      throw createRequestError(
+        "This registration is still active. Please resend the parental consent email instead.",
+        409,
+        "registration-still-active"
+      );
+    }
+
+    /*
+      Close the stale pending
+      registration.
+
+      We keep the document for
+      audit/history, but remove
+      every token that could still
+      authorize consent or resend
+      operations.
+
+      The registration route does
+      not treat status "expired"
+      as an active duplicate, so
+      the student can begin again.
+    */
+
+    const expiredAt =
+      cosmosNow();
+
+    try {
+      await replaceCosmosDocument(
+        "pendingRegistrations",
+        registration,
+        {
+          status:
+            "expired",
+
+          consentStatus:
+            "expired",
+
+          consentTokenHash:
+            null,
+
+          consentExpiresAt:
+            null,
+
+          resendTokenHash:
+            null,
+
+          resendTokenExpiresAt:
+            null,
+
+          activationTokenHash:
+            null,
+
+          activationExpiresAt:
+            null,
+
+          activationInProgress:
+            false,
+
+          expirationReason:
+            "consent_resend_session_expired",
+
+          expiredAt,
+
+          updatedAt:
+            expiredAt,
+        }
+      );
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
         )
-        .doc(
-          registrationId.trim()
-        );
-
-    await adminDb.runTransaction(
-      async (
-        transaction
-      ) => {
-        const snapshot =
-          await transaction.get(
-            registrationReference
-          );
-
-        if (
-          !snapshot.exists
-        ) {
-          throw createRequestError(
-            "The registration could not be found.",
-            404,
-            "registration-not-found"
-          );
-        }
-
-        const registration =
-          snapshot.data();
-
-        /*
-          Only an under-18
-          registration that is still
-          waiting for consent can be
-          restarted through this
-          endpoint.
-        */
-
-        if (
-          registration
-            .requiresParentalConsent !==
-            true ||
-          registration.status !==
-            "pending_consent" ||
-          registration.consentStatus !==
-            "pending"
-        ) {
-          throw createRequestError(
-            "This registration can no longer be restarted.",
-            409,
-            "registration-not-pending"
-          );
-        }
-
-        /*
-          The separate resend token
-          identifies the pending
-          registration owned by this
-          browser session.
-
-          It does NOT grant parental
-          consent or account access.
-        */
-
-        const providedTokenHash =
-          hashToken(
-            resendToken.trim()
-          );
-
-        if (
-          !hashesMatch(
-            providedTokenHash,
-            registration
-              .resendTokenHash
-          )
-        ) {
-          throw createRequestError(
-            "This registration restart request is not authorized.",
-            401,
-            "invalid-restart-token"
-          );
-        }
-
-        const resendExpiry =
-          getDate(
-            registration
-              .resendTokenExpiresAt
-          );
-
-        /*
-          Do not restart an active
-          registration unnecessarily.
-
-          While the resend
-          authorization remains valid,
-          the existing consent resend
-          flow should be used.
-        */
-
-        if (
-          resendExpiry &&
-          resendExpiry.getTime() >=
-            Date.now()
-        ) {
-          throw createRequestError(
-            "This registration is still active. Please resend the parental consent email instead.",
-            409,
-            "registration-still-active"
-          );
-        }
-
-        /*
-          Close the stale pending
-          registration.
-
-          We keep the document for
-          audit/history, but remove
-          every token that could still
-          authorize consent or resend
-          operations.
-
-          The registration route does
-          not treat status "expired"
-          as an active duplicate, so
-          the student can begin again.
-        */
-
-        transaction.update(
-          registrationReference,
-          {
-            status:
-              "expired",
-
-            consentStatus:
-              "expired",
-
-            consentTokenHash:
-              null,
-
-            consentExpiresAt:
-              null,
-
-            resendTokenHash:
-              null,
-
-            resendTokenExpiresAt:
-              null,
-
-            activationTokenHash:
-              null,
-
-            activationExpiresAt:
-              null,
-
-            activationInProgress:
-              false,
-
-            expirationReason:
-              "consent_resend_session_expired",
-
-            expiredAt:
-              FieldValue.serverTimestamp(),
-
-            updatedAt:
-              FieldValue.serverTimestamp(),
-          }
+      ) {
+        throw createRequestError(
+          "This registration can no longer be restarted.",
+          409,
+          "registration-not-pending"
         );
       }
-    );
+
+      throw error;
+    }
 
     return Response.json(
       {
