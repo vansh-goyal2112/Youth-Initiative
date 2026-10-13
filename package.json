@@ -12,6 +12,9 @@
     "ingest:sait": "node scripts/ingestSait.mjs",
     "demo:recommendations": "node scripts/demoRecommendations.mjs"
   },
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "dependencies": {
     "@azure/communication-email": "^1.1.0",
     "@azure/cosmos": "^4.9.3",
