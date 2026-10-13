@@ -6,7 +6,10 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test tests/*.test.mjs",
+    "scrape:sait-programs": "node scripts/scrapeSaitPrograms.mjs",
+    "ingest:sait": "node scripts/ingestSait.mjs"
   },
   "dependencies": {
     "@azure/communication-email": "^1.1.0",
