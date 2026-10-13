@@ -1,6 +1,7 @@
 import {
-  adminDb,
-} from "@/services/firebaseAdmin";
+  queryCosmosDocuments,
+  readCosmosDocument,
+} from "@/services/cosmosData";
 import {
   getActiveSaitPrograms,
 } from "@/services/saitProgramService";
@@ -19,29 +20,39 @@ export async function GET(request) {
     const { uid: studentId, student } =
       await requireActiveStudent(request);
 
-    const registrationsSnapshot = await adminDb
-      .collection("registrations")
-      .where("studentId", "==", studentId)
-      .where("status", "==", "completed")
-      .get();
+    const registrationDocuments = await queryCosmosDocuments(
+      "registrations",
+      `
+        SELECT *
+        FROM c
+        WHERE c.studentId = @studentId AND c.status = @status
+      `,
+      [
+        {
+          name: "@studentId",
+          value: studentId,
+        },
+        {
+          name: "@status",
+          value: "completed",
+        },
+      ]
+    );
 
     const completedWorkshopResults = await Promise.all(
-      registrationsSnapshot.docs.map((registrationDocument) => {
-        const registration = registrationDocument.data();
+      registrationDocuments.map(async (registration) => {
+        if (!registration.workshopId) {
+          return null;
+        }
 
-        return adminDb
-          .collection("workshops")
-          .doc(registration.workshopId)
-          .get();
+        return readCosmosDocument(
+          "workshops",
+          registration.workshopId
+        );
       })
     );
 
-    const completedWorkshops = completedWorkshopResults
-      .filter((workshopSnapshot) => workshopSnapshot.exists)
-      .map((workshopSnapshot) => ({
-        id: workshopSnapshot.id,
-        ...workshopSnapshot.data(),
-      }));
+    const completedWorkshops = completedWorkshopResults.filter(Boolean);
     const programs = await getActiveSaitPrograms();
     const recommendations = recommendSaitPrograms({
       student,

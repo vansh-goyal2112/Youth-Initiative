@@ -41,9 +41,7 @@ function getFirebaseAdminApp() {
     !clientEmail ||
     !privateKey
   ) {
-    throw new Error(
-      "Firebase Admin environment variables are missing."
-    );
+    return null;
   }
 
   return initializeApp({
@@ -56,18 +54,41 @@ function getFirebaseAdminApp() {
   });
 }
 
-const firebaseAdminApp =
-  getFirebaseAdminApp();
+function requireFirebaseAdminApp() {
+  const app = getFirebaseAdminApp();
 
-const adminAuth =
-  getAuth(
-    firebaseAdminApp
-  );
+  if (!app) {
+    throw new Error(
+      "Firebase Admin environment variables are missing."
+    );
+  }
 
-const adminAppCheck =
-  getAppCheck(
-    firebaseAdminApp
-  );
+  return app;
+}
+
+const adminAuth = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      const app = requireFirebaseAdminApp();
+      const auth = getAuth(app);
+      const value = auth[prop];
+      return typeof value === "function" ? value.bind(auth) : value;
+    },
+  }
+);
+
+const adminAppCheck = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      const app = requireFirebaseAdminApp();
+      const appCheck = getAppCheck(app);
+      const value = appCheck[prop];
+      return typeof value === "function" ? value.bind(appCheck) : value;
+    },
+  }
+);
 
 export {
   adminAppCheck,
