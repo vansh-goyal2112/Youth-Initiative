@@ -1,36 +1,14 @@
 import {
-  adminAuth,
-  adminDb,
-} from "@/services/firebaseAdmin";
-
-import {
   requireActiveStudent,
   studentAccessResponse,
 } from "@/services/studentAccess";
 
+import {
+  queryCosmosDocuments,
+  readCosmosDocument,
+} from "@/services/cosmosData";
+
 export const runtime = "nodejs";
-
-async function getStudentId(request) {
-  const authorization =
-    request.headers.get("authorization");
-
-  if (
-    !authorization ||
-    !authorization.startsWith("Bearer ")
-  ) {
-    throw new Error("UNAUTHORIZED");
-  }
-
-  const token = authorization.replace(
-    "Bearer ",
-    ""
-  );
-
-  const decodedToken =
-    await adminAuth.verifyIdToken(token);
-
-  return decodedToken.uid;
-}
 
 function getLevelInformation(totalXp) {
   const levels = [
@@ -209,16 +187,22 @@ export async function GET(request) {
         request
       );
 
-    const studentSnapshot =
-      await adminDb
-        .collection("students")
-        .doc(studentId)
-        .get();
+    /*
+      Load student profile
+      from Cosmos DB.
+    */
 
-    if (!studentSnapshot.exists) {
+    const student =
+      await readCosmosDocument(
+        "students",
+        studentId
+      );
+
+    if (!student) {
       return Response.json(
         {
           success: false,
+
           message:
             "Student profile not found.",
         },
@@ -228,49 +212,71 @@ export async function GET(request) {
       );
     }
 
-    const student =
-      studentSnapshot.data();
+    /*
+      Load all completed
+      registrations for the
+      student.
+    */
 
-    const registrationsSnapshot =
-      await adminDb
-        .collection("registrations")
-        .where(
-          "studentId",
-          "==",
-          studentId
-        )
-        .where(
-          "status",
-          "==",
-          "completed"
-        )
-        .get();
+    const completedRegistrations =
+      await queryCosmosDocuments(
+        "registrations",
+        `
+          SELECT *
+          FROM c
+          WHERE c.studentId = @studentId
+            AND c.status = @status
+        `,
+        [
+          {
+            name:
+              "@studentId",
 
-    const completedWorkshops = [];
+            value:
+              studentId,
+          },
+          {
+            name:
+              "@status",
+
+            value:
+              "completed",
+          },
+        ]
+      );
+
+    const completedWorkshops =
+      [];
+
+    /*
+      Load the workshop connected
+      to each completed registration.
+    */
 
     for (
-      const registrationDocument
-      of registrationsSnapshot.docs
+      const registration of
+      completedRegistrations
     ) {
-      const registration =
-        registrationDocument.data();
+      if (
+        !registration.workshopId
+      ) {
+        continue;
+      }
 
-      const workshopSnapshot =
-        await adminDb
-          .collection("workshops")
-          .doc(
-            registration.workshopId
-          )
-          .get();
+      const workshop =
+        await readCosmosDocument(
+          "workshops",
+          registration.workshopId
+        );
 
       if (
-        workshopSnapshot.exists
+        workshop
       ) {
         completedWorkshops.push({
           id:
-            workshopSnapshot.id,
+            workshop.id,
 
-          ...workshopSnapshot.data(),
+          ...workshop,
         });
       }
     }
@@ -358,31 +364,43 @@ export async function GET(request) {
         technologyCount,
       });
 
-    const badgesSnapshot =
-      await adminDb
-        .collection(
-          "studentBadges"
-        )
-        .where(
-          "studentId",
-          "==",
-          studentId
-        )
-        .get();
+    /*
+      Load earned badge records.
+    */
+
+    const badgeDocuments =
+      await queryCosmosDocuments(
+        "studentBadges",
+        `
+          SELECT *
+          FROM c
+          WHERE c.studentId = @studentId
+        `,
+        [
+          {
+            name:
+              "@studentId",
+
+            value:
+              studentId,
+          },
+        ]
+      );
 
     const badges =
-      badgesSnapshot.docs.map(
-        (badgeDocument) => ({
+      badgeDocuments.map(
+        (badge) => ({
           id:
-            badgeDocument.id,
+            badge.id,
 
-          ...badgeDocument.data(),
+          ...badge,
         })
       );
 
     const totalXp =
-      Number(student.totalXp) ||
-      0;
+      Number(
+        student.totalXp
+      ) || 0;
 
     const levelInformation =
       getLevelInformation(

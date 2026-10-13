@@ -1,30 +1,26 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-  Timestamp,
-} from "firebase-admin/firestore";
-
-import {
-  Resend,
-} from "resend";
-
-import {
-  adminDb,
-} from "@/services/firebaseAdmin";
+  sendAzureEmail,
+} from "@/services/azureEmailServer";
 
 import {
   appCheckErrorResponse,
   requireAppCheck,
 } from "@/services/appCheckServer";
 
+import {
+  cosmosNow,
+  createCosmosDocument,
+  isCosmosConflict,
+  isCosmosPreconditionFailed,
+  queryCosmosDocuments,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
+
 export const runtime =
   "nodejs";
-
-const resend =
-  new Resend(
-    process.env.RESEND_API_KEY
-  );
 
 const REQUEST_COOLDOWN_SECONDS =
   60;
@@ -110,7 +106,6 @@ function getDate(
   }
 
   const date =
-    value?.toDate?.() ||
     new Date(
       value
     );
@@ -157,178 +152,221 @@ async function checkRateLimit(
       email
     );
 
-  const rateReference =
-    adminDb
-      .collection(
-        "youthIdRecoveryRateLimits"
-      )
-      .doc(
+  /*
+    Cosmos optimistic concurrency
+    replaces the Firestore
+    transaction.
+
+    Retry if another request changes
+    the same hashed-email rate-limit
+    document at the same time.
+  */
+
+  for (
+    let attempt = 0;
+    attempt < 5;
+    attempt += 1
+  ) {
+    const now =
+      new Date();
+
+    const nowIso =
+      now.toISOString();
+
+    const rateLimit =
+      await readCosmosDocument(
+        "youthIdRecoveryRateLimits",
         rateLimitId
       );
 
-  let allowed =
-    false;
+    /*
+      First request for this email.
+    */
 
-  await adminDb.runTransaction(
-    async (
-      transaction
-    ) => {
-      const snapshot =
-        await transaction.get(
-          rateReference
-        );
-
-      const now =
-        new Date();
-
-      if (
-        !snapshot.exists
-      ) {
-        transaction.set(
-          rateReference,
+    if (
+      !rateLimit
+    ) {
+      try {
+        await createCosmosDocument(
+          "youthIdRecoveryRateLimits",
           {
+            id:
+              rateLimitId,
+
             requestCount:
               1,
 
             windowStartedAt:
-              Timestamp.fromDate(
-                now
-              ),
+              nowIso,
 
             lastRequestedAt:
-              Timestamp.fromDate(
-                now
-              ),
+              nowIso,
 
             updatedAt:
-              FieldValue.serverTimestamp(),
+              nowIso,
           }
         );
 
-        allowed =
-          true;
-
-        return;
-      }
-
-      const data =
-        snapshot.data();
-
-      const lastRequestedAt =
-        getDate(
-          data.lastRequestedAt
-        );
-
-      const windowStartedAt =
-        getDate(
-          data.windowStartedAt
-        );
-
-      if (
-        lastRequestedAt
+        return true;
+      } catch (
+        error
       ) {
-        const secondsSinceLastRequest =
-          (
-            now.getTime() -
-            lastRequestedAt.getTime()
-          ) /
-          1000;
+        /*
+          Another request may have
+          created the record after
+          our read.
+
+          Retry using the newly
+          created document.
+        */
 
         if (
-          secondsSinceLastRequest <
-          REQUEST_COOLDOWN_SECONDS
+          isCosmosConflict(
+            error
+          )
         ) {
-          allowed =
-            false;
-
-          return;
+          continue;
         }
-      }
 
-      const hourInMilliseconds =
-        60 *
-        60 *
+        throw error;
+      }
+    }
+
+    const lastRequestedAt =
+      getDate(
+        rateLimit
+          .lastRequestedAt
+      );
+
+    const windowStartedAt =
+      getDate(
+        rateLimit
+          .windowStartedAt
+      );
+
+    if (
+      lastRequestedAt
+    ) {
+      const secondsSinceLastRequest =
+        (
+          now.getTime() -
+          lastRequestedAt.getTime()
+        ) /
         1000;
 
-      const currentWindowExpired =
-        !windowStartedAt ||
-        now.getTime() -
-            windowStartedAt.getTime() >=
-          hourInMilliseconds;
-
       if (
-        currentWindowExpired
+        secondsSinceLastRequest <
+        REQUEST_COOLDOWN_SECONDS
       ) {
-        transaction.set(
-          rateReference,
+        return false;
+      }
+    }
+
+    const hourInMilliseconds =
+      60 *
+      60 *
+      1000;
+
+    const currentWindowExpired =
+      !windowStartedAt ||
+      now.getTime() -
+          windowStartedAt.getTime() >=
+        hourInMilliseconds;
+
+    if (
+      currentWindowExpired
+    ) {
+      try {
+        await replaceCosmosDocument(
+          "youthIdRecoveryRateLimits",
+          rateLimit,
           {
             requestCount:
               1,
 
             windowStartedAt:
-              Timestamp.fromDate(
-                now
-              ),
+              nowIso,
 
             lastRequestedAt:
-              Timestamp.fromDate(
-                now
-              ),
+              nowIso,
 
             updatedAt:
-              FieldValue.serverTimestamp(),
-          },
-          {
-            merge:
-              true,
+              nowIso,
           }
         );
 
-        allowed =
-          true;
-
-        return;
-      }
-
-      const currentCount =
-        Number(
-          data.requestCount ||
-            0
-        );
-
-      if (
-        currentCount >=
-        MAX_REQUESTS_PER_HOUR
+        return true;
+      } catch (
+        error
       ) {
-        allowed =
-          false;
+        if (
+          isCosmosPreconditionFailed(
+            error
+          )
+        ) {
+          continue;
+        }
 
-        return;
+        throw error;
       }
+    }
 
-      transaction.update(
-        rateReference,
+    const currentCount =
+      Number(
+        rateLimit
+          .requestCount ||
+        0
+      );
+
+    if (
+      currentCount >=
+      MAX_REQUESTS_PER_HOUR
+    ) {
+      return false;
+    }
+
+    try {
+      await replaceCosmosDocument(
+        "youthIdRecoveryRateLimits",
+        rateLimit,
         {
           requestCount:
             currentCount +
             1,
 
           lastRequestedAt:
-            Timestamp.fromDate(
-              now
-            ),
+            nowIso,
 
           updatedAt:
-            FieldValue.serverTimestamp(),
+            nowIso,
         }
       );
 
-      allowed =
-        true;
-    }
-  );
+      return true;
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        continue;
+      }
 
-  return allowed;
+      throw error;
+    }
+  }
+
+  /*
+    If repeated concurrency
+    conflicts prevent a safe
+    rate-limit update, deny the
+    request rather than bypass
+    the limit.
+  */
+
+  return false;
 }
 
 function accountIsEligible(
@@ -421,49 +459,54 @@ export async function POST(
     */
 
     const [
-      contactEmailSnapshot,
-      parentEmailSnapshot,
+      contactEmailStudents,
+      parentEmailStudents,
     ] =
       await Promise.all([
-        adminDb
-          .collection(
-            "students"
-          )
-          .where(
-            "contactEmail",
-            "==",
-            cleanedEmail
-          )
-          .limit(
-            10
-          )
-          .get(),
+        queryCosmosDocuments(
+          "students",
+          `
+            SELECT TOP 10 *
+            FROM c
+            WHERE c.contactEmail = @email
+          `,
+          [
+            {
+              name:
+                "@email",
 
-        adminDb
-          .collection(
-            "students"
-          )
-          .where(
-            "parentEmail",
-            "==",
-            cleanedEmail
-          )
-          .limit(
-            10
-          )
-          .get(),
+              value:
+                cleanedEmail,
+            },
+          ]
+        ),
+
+        queryCosmosDocuments(
+          "students",
+          `
+            SELECT TOP 10 *
+            FROM c
+            WHERE c.parentEmail = @email
+          `,
+          [
+            {
+              name:
+                "@email",
+
+              value:
+                cleanedEmail,
+            },
+          ]
+        ),
       ]);
 
     const eligibleAccounts =
       new Map();
 
     for (
-      const studentDocument of
-      contactEmailSnapshot.docs
+      const student of
+      contactEmailStudents
     ) {
-      const student =
-        studentDocument.data();
-
       if (
         !accountIsEligible(
           student
@@ -488,7 +531,7 @@ export async function POST(
       }
 
       eligibleAccounts.set(
-        studentDocument.id,
+        student.id,
         {
           firstName:
             student.firstName ||
@@ -501,12 +544,9 @@ export async function POST(
     }
 
     for (
-      const studentDocument of
-      parentEmailSnapshot.docs
+      const student of
+      parentEmailStudents
     ) {
-      const student =
-        studentDocument.data();
-
       if (
         !accountIsEligible(
           student
@@ -535,7 +575,7 @@ export async function POST(
       }
 
       eligibleAccounts.set(
-        studentDocument.id,
+        student.id,
         {
           firstName:
             student.firstName ||
@@ -619,136 +659,128 @@ export async function POST(
         .NEXT_PUBLIC_APP_URL ||
       "http://localhost:3000";
 
-    let emailResult;
-
     try {
-      emailResult =
-        await resend.emails.send(
-          {
-            from:
-              process.env
-                .EMAIL_FROM ||
-              "SAIT Youth Initiative <onboarding@resend.dev>",
+      await sendAzureEmail(
+        {
+          to: [
+            cleanedEmail,
+          ],
 
-            to: [
-              cleanedEmail,
-            ],
+          replyTo:
+            process.env
+              .EMAIL_REPLY_TO ||
+            "youth.programs@sait.ca",
 
-            replyTo:
-              process.env
-                .EMAIL_REPLY_TO ||
-              "youth.programs@sait.ca",
+          subject:
+            "Your Youth Initiative ID",
 
-            subject:
-              "Your Youth Initiative ID",
+          html: `
+            <!doctype html>
 
-            html: `
-              <!doctype html>
-
-              <html lang="en">
-                <body
+            <html lang="en">
+              <body
+                style="
+                  margin:0;
+                  padding:30px;
+                  background:#f4f5f7;
+                  font-family:Arial,Helvetica,sans-serif;
+                  color:#222;
+                "
+              >
+                <div
                   style="
-                    margin:0;
-                    padding:30px;
-                    background:#f4f5f7;
-                    font-family:Arial,Helvetica,sans-serif;
-                    color:#222;
+                    max-width:620px;
+                    margin:auto;
+                    background:#ffffff;
+                    border-radius:14px;
+                    padding:32px;
+                    border-top:4px solid #e2232a;
                   "
                 >
                   <div
                     style="
-                      max-width:620px;
-                      margin:auto;
-                      background:#ffffff;
-                      border-radius:14px;
-                      padding:32px;
-                      border-top:4px solid #e2232a;
+                      color:#e2232a;
+                      font-size:34px;
+                      font-weight:900;
                     "
                   >
-                    <div
-                      style="
-                        color:#e2232a;
-                        font-size:34px;
-                        font-weight:900;
-                      "
-                    >
-                      SAIT
-                    </div>
-
-                    <p
-                      style="
-                        margin-top:4px;
-                        color:#555;
-                        font-weight:700;
-                      "
-                    >
-                      Youth Initiative
-                    </p>
-
-                    <h1>
-                      Your Youth Initiative ID
-                    </h1>
-
-                    <p>
-                      A request was made to
-                      recover the Youth
-                      Initiative ID associated
-                      with this email address.
-                    </p>
-
-                    ${accountRows}
-
-                    <p>
-                      Use your Youth Initiative
-                      ID and password to sign in.
-                    </p>
-
-                    <a
-                      href="${appUrl}/login"
-                      style="
-                        display:inline-block;
-                        margin-top:12px;
-                        padding:14px 24px;
-                        background:#e2232a;
-                        color:#ffffff;
-                        text-decoration:none;
-                        border-radius:8px;
-                        font-weight:700;
-                      "
-                    >
-                      Sign In
-                    </a>
-
-                    <p
-                      style="
-                        margin-top:28px;
-                        color:#777;
-                        font-size:13px;
-                        line-height:1.6;
-                      "
-                    >
-                      If you did not request
-                      this message, no action
-                      is required.
-                    </p>
-
-                    <p
-                      style="
-                        color:#777;
-                        font-size:13px;
-                        line-height:1.6;
-                      "
-                    >
-                      For assistance, reply to
-                      this email or contact
-                      youth.programs@sait.ca.
-                    </p>
+                    SAIT
                   </div>
-                </body>
-              </html>
-            `,
-          }
-        );
+
+                  <p
+                    style="
+                      margin-top:4px;
+                      color:#555;
+                      font-weight:700;
+                    "
+                  >
+                    Youth Initiative
+                  </p>
+
+                  <h1>
+                    Your Youth Initiative ID
+                  </h1>
+
+                  <p>
+                    A request was made to
+                    recover the Youth
+                    Initiative ID associated
+                    with this email address.
+                  </p>
+
+                  ${accountRows}
+
+                  <p>
+                    Use your Youth Initiative
+                    ID and password to sign in.
+                  </p>
+
+                  <a
+                    href="${appUrl}/login"
+                    style="
+                      display:inline-block;
+                      margin-top:12px;
+                      padding:14px 24px;
+                      background:#e2232a;
+                      color:#ffffff;
+                      text-decoration:none;
+                      border-radius:8px;
+                      font-weight:700;
+                    "
+                  >
+                    Sign In
+                  </a>
+
+                  <p
+                    style="
+                      margin-top:28px;
+                      color:#777;
+                      font-size:13px;
+                      line-height:1.6;
+                    "
+                  >
+                    If you did not request
+                    this message, no action
+                    is required.
+                  </p>
+
+                  <p
+                    style="
+                      color:#777;
+                      font-size:13px;
+                      line-height:1.6;
+                    "
+                  >
+                    For assistance, reply to
+                    this email or contact
+                    youth.programs@sait.ca.
+                  </p>
+                </div>
+              </body>
+            </html>
+          `,
+        }
+      );
     } catch (
       emailError
     ) {
@@ -758,15 +790,6 @@ export async function POST(
       );
 
       return genericResponse();
-    }
-
-    if (
-      emailResult.error
-    ) {
-      console.error(
-        "Youth ID recovery email was not sent:",
-        emailResult.error
-      );
     }
 
     return genericResponse();

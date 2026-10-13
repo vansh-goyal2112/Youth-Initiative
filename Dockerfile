@@ -38,7 +38,8 @@ COPY . .
 #
 
 RUN --mount=type=secret,id=env_local,target=/app/.env.local \
-    npm run build
+    --mount=type=secret,id=firebase_key_b64 \
+    FIREBASE_ADMIN_PRIVATE_KEY="$(base64 -d /run/secrets/firebase_key_b64)" npm run build
 
 
 # ==========================================

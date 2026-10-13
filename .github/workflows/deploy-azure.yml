@@ -178,9 +178,11 @@ jobs:
       - name: Build Docker image
         env:
           DOCKER_BUILDKIT: 1
+          FIREBASE_ADMIN_PRIVATE_KEY_B64: ${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY_B64 }}
         run: |
           docker build \
             --secret id=env_local,src=.env.local \
+            --secret id=firebase_key_b64,env=FIREBASE_ADMIN_PRIVATE_KEY_B64 \
             -t "$ACR_SERVER/$IMAGE_NAME:${GITHUB_SHA}" \
             -t "$ACR_SERVER/$IMAGE_NAME:latest" \
             .
@@ -191,11 +193,28 @@ jobs:
           docker push "$ACR_SERVER/$IMAGE_NAME:latest"
 
       - name: Deploy to Azure Container Apps
+        env:
+          AZURE_COMMUNICATION_EMAIL_CONNECTION_STRING: ${{ secrets.AZURE_COMMUNICATION_EMAIL_CONNECTION_STRING }}
+          AZURE_EMAIL_SENDER_ADDRESS: ${{ secrets.AZURE_EMAIL_SENDER_ADDRESS }}
         run: |
+          set -euo pipefail
+          if [[ -z "$AZURE_COMMUNICATION_EMAIL_CONNECTION_STRING" || -z "$AZURE_EMAIL_SENDER_ADDRESS" ]]; then
+            echo "Missing Azure Communication Services GitHub secrets"
+            exit 1
+          fi
+          az containerapp secret set \
+            --name "$AZURE_CONTAINER_APP" \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --secrets "acs-email=$AZURE_COMMUNICATION_EMAIL_CONNECTION_STRING" \
+            --output none
           az containerapp update \
             --name "$AZURE_CONTAINER_APP" \
             --resource-group "$AZURE_RESOURCE_GROUP" \
-            --image "$ACR_SERVER/$IMAGE_NAME:${GITHUB_SHA}"
+            --image "$ACR_SERVER/$IMAGE_NAME:${GITHUB_SHA}" \
+            --set-env-vars \
+              "AZURE_COMMUNICATION_EMAIL_CONNECTION_STRING=secretref:acs-email" \
+              "AZURE_EMAIL_SENDER_ADDRESS=$AZURE_EMAIL_SENDER_ADDRESS" \
+            --output none
 
       - name: Remove temporary environment file
         if: always()

@@ -1,53 +1,90 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-  Timestamp,
-} from "firebase-admin/firestore";
-
-import { Resend } from "resend";
-
-import { adminDb } from "@/services/firebaseAdmin";
+  sendAzureEmail,
+} from "@/services/azureEmailServer";
 
 import {
   appCheckErrorResponse,
   requireAppCheck,
 } from "@/services/appCheckServer";
 
-export const runtime = "nodejs";
+import {
+  cosmosNow,
+  createCosmosDocument,
+  isCosmosConflict,
+  isCosmosPreconditionFailed,
+  queryCosmosDocuments,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
 
-const resend = new Resend(
-  process.env.RESEND_API_KEY
-);
+export const runtime =
+  "nodejs";
 
-const TOKEN_EXPIRY_MINUTES = 30;
-const REQUEST_COOLDOWN_SECONDS = 60;
-const MAX_REQUESTS_PER_HOUR = 5;
+const TOKEN_EXPIRY_MINUTES =
+  30;
 
-function hashToken(token) {
+const REQUEST_COOLDOWN_SECONDS =
+  60;
+
+const MAX_REQUESTS_PER_HOUR =
+  5;
+
+function hashToken(
+  token
+) {
   return crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+    .createHash(
+      "sha256"
+    )
+    .update(
+      token
+    )
+    .digest(
+      "hex"
+    );
 }
 
-function escapeHtml(value) {
-  return String(value || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function escapeHtml(
+  value
+) {
+  return String(
+    value || ""
+  )
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
 }
 
-function getDate(value) {
+function getDate(
+  value
+) {
   if (!value) {
     return null;
   }
 
   const date =
-    value?.toDate?.() ||
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -60,9 +97,12 @@ function getDate(value) {
   return date;
 }
 
-function calculateCurrentAge(dateOfBirth) {
+function calculateCurrentAge(
+  dateOfBirth
+) {
   if (
-    typeof dateOfBirth !== "string"
+    typeof dateOfBirth !==
+      "string"
   ) {
     return null;
   }
@@ -77,13 +117,19 @@ function calculateCurrentAge(dateOfBirth) {
   }
 
   const year =
-    Number(match[1]);
+    Number(
+      match[1]
+    );
 
   const month =
-    Number(match[2]);
+    Number(
+      match[2]
+    );
 
   const day =
-    Number(match[3]);
+    Number(
+      match[3]
+    );
 
   const birthDate =
     new Date(
@@ -95,15 +141,18 @@ function calculateCurrentAge(dateOfBirth) {
     );
 
   if (
-    birthDate.getUTCFullYear() !== year ||
+    birthDate.getUTCFullYear() !==
+      year ||
     birthDate.getUTCMonth() !==
       month - 1 ||
-    birthDate.getUTCDate() !== day
+    birthDate.getUTCDate() !==
+      day
   ) {
     return null;
   }
 
-  const today = new Date();
+  const today =
+    new Date();
 
   let age =
     today.getUTCFullYear() -
@@ -116,9 +165,11 @@ function calculateCurrentAge(dateOfBirth) {
     birthDate.getUTCMonth();
 
   if (
-    currentMonth < birthMonth ||
+    currentMonth <
+      birthMonth ||
     (
-      currentMonth === birthMonth &&
+      currentMonth ===
+        birthMonth &&
       today.getUTCDate() <
         birthDate.getUTCDate()
     )
@@ -132,13 +183,15 @@ function calculateCurrentAge(dateOfBirth) {
 function genericResponse() {
   return Response.json(
     {
-      success: true,
+      success:
+        true,
 
       message:
         "If the Youth Initiative ID is valid and eligible for recovery, a secure email will be sent shortly.",
     },
     {
-      status: 200,
+      status:
+        200,
     }
   );
 }
@@ -146,157 +199,226 @@ function genericResponse() {
 async function checkRateLimit(
   studentId
 ) {
-  const rateReference =
-    adminDb
-      .collection(
-        "passwordResetRateLimits"
-      )
-      .doc(studentId);
+  /*
+    Cosmos optimistic concurrency
+    replaces the Firestore
+    transaction previously used
+    for password-reset rate limits.
 
-  let allowed = false;
+    Retry a few times if another
+    request updates the same rate
+    limit record simultaneously.
+  */
 
-  await adminDb.runTransaction(
-    async (transaction) => {
-      const snapshot =
-        await transaction.get(
-          rateReference
-        );
+  for (
+    let attempt = 0;
+    attempt < 5;
+    attempt += 1
+  ) {
+    const now =
+      new Date();
 
-      const now = new Date();
+    const nowIso =
+      now.toISOString();
 
-      if (!snapshot.exists) {
-        transaction.set(
-          rateReference,
+    const rateLimit =
+      await readCosmosDocument(
+        "passwordResetRateLimits",
+        studentId
+      );
+
+    /*
+      First request for this
+      student.
+    */
+
+    if (
+      !rateLimit
+    ) {
+      try {
+        await createCosmosDocument(
+          "passwordResetRateLimits",
           {
-            requestCount: 1,
+            id:
+              studentId,
+
+            requestCount:
+              1,
 
             windowStartedAt:
-              Timestamp.fromDate(
-                now
-              ),
+              nowIso,
 
             lastRequestedAt:
-              Timestamp.fromDate(
-                now
-              ),
+              nowIso,
 
             updatedAt:
-              FieldValue.serverTimestamp(),
+              nowIso,
           }
         );
 
-        allowed = true;
+        return true;
+      } catch (
+        error
+      ) {
+        /*
+          Another request may have
+          created the document after
+          our read.
 
-        return;
-      }
-
-      const data =
-        snapshot.data();
-
-      const lastRequestedAt =
-        getDate(
-          data.lastRequestedAt
-        );
-
-      const windowStartedAt =
-        getDate(
-          data.windowStartedAt
-        );
-
-      if (lastRequestedAt) {
-        const secondsSinceLastRequest =
-          (
-            now.getTime() -
-            lastRequestedAt.getTime()
-          ) /
-          1000;
+          Re-read it and apply the
+          normal cooldown logic.
+        */
 
         if (
-          secondsSinceLastRequest <
-          REQUEST_COOLDOWN_SECONDS
+          isCosmosConflict(
+            error
+          )
         ) {
-          allowed = false;
-
-          return;
+          continue;
         }
+
+        throw error;
       }
+    }
 
-      const hourInMilliseconds =
-        60 * 60 * 1000;
+    const lastRequestedAt =
+      getDate(
+        rateLimit
+          .lastRequestedAt
+      );
 
-      const currentWindowExpired =
-        !windowStartedAt ||
-        now.getTime() -
+    const windowStartedAt =
+      getDate(
+        rateLimit
+          .windowStartedAt
+      );
+
+    if (
+      lastRequestedAt
+    ) {
+      const secondsSinceLastRequest =
+        (
+          now.getTime() -
+          lastRequestedAt.getTime()
+        ) /
+        1000;
+
+      if (
+        secondsSinceLastRequest <
+        REQUEST_COOLDOWN_SECONDS
+      ) {
+        return false;
+      }
+    }
+
+    const hourInMilliseconds =
+      60 * 60 * 1000;
+
+    const currentWindowExpired =
+      !windowStartedAt ||
+      now.getTime() -
           windowStartedAt.getTime() >=
-          hourInMilliseconds;
+        hourInMilliseconds;
 
-      if (currentWindowExpired) {
-        transaction.set(
-          rateReference,
+    if (
+      currentWindowExpired
+    ) {
+      try {
+        await replaceCosmosDocument(
+          "passwordResetRateLimits",
+          rateLimit,
           {
-            requestCount: 1,
+            requestCount:
+              1,
 
             windowStartedAt:
-              Timestamp.fromDate(
-                now
-              ),
+              nowIso,
 
             lastRequestedAt:
-              Timestamp.fromDate(
-                now
-              ),
+              nowIso,
 
             updatedAt:
-              FieldValue.serverTimestamp(),
-          },
-          {
-            merge: true,
+              nowIso,
           }
         );
 
-        allowed = true;
-
-        return;
-      }
-
-      const currentCount =
-        Number(
-          data.requestCount || 0
-        );
-
-      if (
-        currentCount >=
-        MAX_REQUESTS_PER_HOUR
+        return true;
+      } catch (
+        error
       ) {
-        allowed = false;
+        if (
+          isCosmosPreconditionFailed(
+            error
+          )
+        ) {
+          continue;
+        }
 
-        return;
+        throw error;
       }
+    }
 
-      transaction.update(
-        rateReference,
+    const currentCount =
+      Number(
+        rateLimit
+          .requestCount ||
+        0
+      );
+
+    if (
+      currentCount >=
+      MAX_REQUESTS_PER_HOUR
+    ) {
+      return false;
+    }
+
+    try {
+      await replaceCosmosDocument(
+        "passwordResetRateLimits",
+        rateLimit,
         {
           requestCount:
-            currentCount + 1,
+            currentCount +
+            1,
 
           lastRequestedAt:
-            Timestamp.fromDate(
-              now
-            ),
+            nowIso,
 
           updatedAt:
-            FieldValue.serverTimestamp(),
+            nowIso,
         }
       );
 
-      allowed = true;
-    }
-  );
+      return true;
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        continue;
+      }
 
-  return allowed;
+      throw error;
+    }
+  }
+
+  /*
+    If repeated concurrent
+    updates prevent us from
+    safely claiming the request,
+    deny it rather than bypass
+    the rate limit.
+  */
+
+  return false;
 }
 
-export async function POST(request) {
+export async function POST(
+  request
+) {
   try {
     await requireAppCheck(
       request
@@ -304,30 +426,37 @@ export async function POST(request) {
 
     const {
       youthId,
-    } = await request.json();
+    } =
+      await request.json();
 
     const cleanedYouthId =
-      typeof youthId === "string"
+      typeof youthId ===
+        "string"
         ? youthId
             .trim()
             .toUpperCase()
         : "";
 
     /*
-      Missing input is a validation problem,
-      so it can safely return 400.
+      Missing input is a validation
+      problem, so it can safely
+      return 400.
     */
 
-    if (!cleanedYouthId) {
+    if (
+      !cleanedYouthId
+    ) {
       return Response.json(
         {
-          success: false,
+          success:
+            false,
 
           message:
             "Youth Initiative ID is required.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
@@ -335,51 +464,63 @@ export async function POST(request) {
     /*
       Find account.
 
-      From this point onward we use the
-      same public response whether the
-      account exists or not.
+      From this point onward we use
+      the same public response whether
+      the account exists or not.
     */
 
-    const studentQuery =
-      await adminDb
-        .collection("students")
-        .where(
-          "youthId",
-          "==",
-          cleanedYouthId
-        )
-        .limit(1)
-        .get();
+    const students =
+      await queryCosmosDocuments(
+        "students",
+        `
+          SELECT TOP 1 *
+          FROM c
+          WHERE c.youthId = @youthId
+        `,
+        [
+          {
+            name:
+              "@youthId",
 
-    if (studentQuery.empty) {
+            value:
+              cleanedYouthId,
+          },
+        ]
+      );
+
+    if (
+      students.length ===
+      0
+    ) {
       return genericResponse();
     }
 
-    const studentDocument =
-      studentQuery.docs[0];
-
     const student =
-      studentDocument.data();
+      students[0];
 
     /*
-      Only active student accounts are
-      eligible for password recovery.
+      Only active student accounts
+      are eligible for password
+      recovery.
     */
 
     if (
-      student.role !== "student" ||
-      student.accountStatus !== "active"
+      student.role !==
+        "student" ||
+      student.accountStatus !==
+        "active"
     ) {
       return genericResponse();
     }
 
     /*
-      Work out whether the student is
-      currently under 18.
+      Work out whether the student
+      is currently under 18.
 
-      We calculate from DOB so someone
-      who registered at 17 but is now 18
-      can use adult recovery.
+      We calculate from DOB so
+      someone who registered at 17
+      but is now 18 can use adult
+      recovery.
     */
 
     const currentAge =
@@ -388,8 +529,10 @@ export async function POST(request) {
       );
 
     const requiresGuardianApproval =
-      currentAge !== null
-        ? currentAge < 18
+      currentAge !==
+      null
+        ? currentAge <
+          18
         : student
             .requiresParentalConsent ===
           true;
@@ -407,59 +550,69 @@ export async function POST(request) {
         ? student.parentEmail
         : student.contactEmail;
 
-    if (!recoveryEmail) {
+    if (
+      !recoveryEmail
+    ) {
       /*
         Don't reveal that the account
-        exists but has no recovery email.
+        exists but has no recovery
+        email.
       */
 
       return genericResponse();
     }
 
     /*
-      Prevent password-reset email spam.
+      Prevent password-reset email
+      spam.
     */
 
     const allowed =
       await checkRateLimit(
-        studentDocument.id
+        student.id
       );
 
-    if (!allowed) {
+    if (
+      !allowed
+    ) {
       return genericResponse();
     }
 
     /*
-      Generate a cryptographically secure
-      one-time token.
+      Generate a cryptographically
+      secure one-time token.
 
-      Only its SHA-256 hash is stored.
+      Only its SHA-256 hash is
+      stored.
     */
 
     const rawToken =
       crypto
-        .randomBytes(32)
-        .toString("hex");
+        .randomBytes(
+          32
+        )
+        .toString(
+          "hex"
+        );
 
     const tokenHash =
-      hashToken(rawToken);
-
-    const expiresAt =
-      Timestamp.fromDate(
-        new Date(
-          Date.now() +
-            TOKEN_EXPIRY_MINUTES *
-              60 *
-              1000
-        )
+      hashToken(
+        rawToken
       );
 
-    const resetReference =
-      adminDb
-        .collection(
-          "passwordResetRequests"
-        )
-        .doc();
+    const expiresAt =
+      new Date(
+        Date.now() +
+          TOKEN_EXPIRY_MINUTES *
+            60 *
+            1000
+      ).toISOString();
+
+    const resetRequestId =
+      crypto.randomUUID();
+
+    const createdAt =
+      cosmosNow();
 
     /*
       Minor:
@@ -470,65 +623,75 @@ export async function POST(request) {
         password reset.
     */
 
-    await resetReference.set({
-      studentId:
-        studentDocument.id,
+    let resetRequest =
+      await createCosmosDocument(
+        "passwordResetRequests",
+        {
+          id:
+            resetRequestId,
 
-      youthId:
-        student.youthId,
+          studentId:
+            student.id,
 
-      recoveryMode:
-        requiresGuardianApproval
-          ? "guardian"
-          : "student",
+          youthId:
+            student.youthId,
 
-      requiresGuardianApproval,
+          recoveryMode:
+            requiresGuardianApproval
+              ? "guardian"
+              : "student",
 
-      guardianVerified:
-        false,
+          requiresGuardianApproval,
 
-      verificationTokenHash:
-        requiresGuardianApproval
-          ? tokenHash
-          : null,
+          guardianVerified:
+            false,
 
-      resetTokenHash:
-        requiresGuardianApproval
-          ? null
-          : tokenHash,
+          verificationTokenHash:
+            requiresGuardianApproval
+              ? tokenHash
+              : null,
 
-      status:
-        requiresGuardianApproval
-          ? "pending_guardian_verification"
-          : "ready_for_reset",
+          resetTokenHash:
+            requiresGuardianApproval
+              ? null
+              : tokenHash,
 
-      verificationExpiresAt:
-        requiresGuardianApproval
-          ? expiresAt
-          : null,
+          status:
+            requiresGuardianApproval
+              ? "pending_guardian_verification"
+              : "ready_for_reset",
 
-      resetExpiresAt:
-        requiresGuardianApproval
-          ? null
-          : expiresAt,
+          verificationExpiresAt:
+            requiresGuardianApproval
+              ? expiresAt
+              : null,
 
-      usedAt: null,
+          resetExpiresAt:
+            requiresGuardianApproval
+              ? null
+              : expiresAt,
 
-      verificationUsedAt: null,
+          usedAt:
+            null,
 
-      createdAt:
-        FieldValue.serverTimestamp(),
+          verificationUsedAt:
+            null,
 
-      updatedAt:
-        FieldValue.serverTimestamp(),
-    });
+          createdAt,
+
+          updatedAt:
+            createdAt,
+        }
+      );
 
     const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env
+        .NEXT_PUBLIC_APP_URL ||
       "http://localhost:3000";
 
     /*
-      Minor goes to guardian verification.
+      Minor goes to guardian
+      verification.
 
       Adult goes directly to create
       a new password.
@@ -536,10 +699,10 @@ export async function POST(request) {
 
     const recoveryUrl =
       requiresGuardianApproval
-        ? `${appUrl}/parental-verification/${resetReference.id}?token=${encodeURIComponent(
+        ? `${appUrl}/parental-verification/${resetRequestId}?token=${encodeURIComponent(
             rawToken
           )}`
-        : `${appUrl}/reset-password/${resetReference.id}?token=${encodeURIComponent(
+        : `${appUrl}/reset-password/${resetRequestId}?token=${encodeURIComponent(
             rawToken
           )}`;
 
@@ -586,136 +749,162 @@ export async function POST(request) {
     let emailResult;
 
     try {
-      emailResult =
-        await resend.emails.send({
-          from:
-            process.env.EMAIL_FROM ||
-            "SAIT Youth Initiative <onboarding@resend.dev>",
+      const azureEmailResult =
+        await sendAzureEmail(
+          {
+            to: [
+              recoveryEmail,
+            ],
 
-          to: [
-            recoveryEmail,
-          ],
+            subject,
 
-          subject,
+            html: `
+              <!doctype html>
 
-          html: `
-            <!doctype html>
-
-            <html lang="en">
-              <body
-                style="
-                  margin:0;
-                  padding:30px;
-                  background:#f4f5f7;
-                  font-family:Arial,Helvetica,sans-serif;
-                  color:#222;
-                "
-              >
-                <div
+              <html lang="en">
+                <body
                   style="
-                    max-width:620px;
-                    margin:auto;
-                    background:#ffffff;
-                    border-radius:14px;
-                    padding:32px;
-                    border-top:4px solid #e2232a;
+                    margin:0;
+                    padding:30px;
+                    background:#f4f5f7;
+                    font-family:Arial,Helvetica,sans-serif;
+                    color:#222;
                   "
                 >
                   <div
                     style="
-                      color:#e2232a;
-                      font-size:34px;
-                      font-weight:900;
+                      max-width:620px;
+                      margin:auto;
+                      background:#ffffff;
+                      border-radius:14px;
+                      padding:32px;
+                      border-top:4px solid #e2232a;
                     "
                   >
-                    SAIT
+                    <div
+                      style="
+                        color:#e2232a;
+                        font-size:34px;
+                        font-weight:900;
+                      "
+                    >
+                      SAIT
+                    </div>
+
+                    <p
+                      style="
+                        margin-top:4px;
+                        color:#555;
+                        font-weight:700;
+                      "
+                    >
+                      Youth Initiative
+                    </p>
+
+                    <h1>
+                      ${heading}
+                    </h1>
+
+                    <p
+                      style="
+                        line-height:1.7;
+                      "
+                    >
+                      ${explanation}
+                    </p>
+
+                    <a
+                      href="${recoveryUrl}"
+                      style="
+                        display:inline-block;
+                        margin-top:12px;
+                        padding:14px 24px;
+                        background:#e2232a;
+                        color:white;
+                        text-decoration:none;
+                        border-radius:8px;
+                        font-weight:700;
+                      "
+                    >
+                      ${buttonText}
+                    </a>
+
+                    <p
+                      style="
+                        margin-top:24px;
+                        color:#777;
+                        font-size:13px;
+                      "
+                    >
+                      This secure link expires
+                      in 30 minutes and can only
+                      be used for this password
+                      recovery request.
+                    </p>
+
+                    <p
+                      style="
+                        color:#777;
+                        font-size:13px;
+                      "
+                    >
+                      If you did not request
+                      this password reset,
+                      you can ignore this email.
+                    </p>
                   </div>
+                </body>
+              </html>
+            `,
+          }
+        );
 
-                  <p
-                    style="
-                      margin-top:4px;
-                      color:#555;
-                      font-weight:700;
-                    "
-                  >
-                    Youth Initiative
-                  </p>
+      emailResult = {
+        data: {
+          id:
+            azureEmailResult
+              ?.id ||
+            null,
+        },
 
-                  <h1>
-                    ${heading}
-                  </h1>
-
-                  <p
-                    style="
-                      line-height:1.7;
-                    "
-                  >
-                    ${explanation}
-                  </p>
-
-                  <a
-                    href="${recoveryUrl}"
-                    style="
-                      display:inline-block;
-                      margin-top:12px;
-                      padding:14px 24px;
-                      background:#e2232a;
-                      color:white;
-                      text-decoration:none;
-                      border-radius:8px;
-                      font-weight:700;
-                    "
-                  >
-                    ${buttonText}
-                  </a>
-
-                  <p
-                    style="
-                      margin-top:24px;
-                      color:#777;
-                      font-size:13px;
-                    "
-                  >
-                    This secure link expires
-                    in 30 minutes and can only
-                    be used for this password
-                    recovery request.
-                  </p>
-
-                  <p
-                    style="
-                      color:#777;
-                      font-size:13px;
-                    "
-                  >
-                    If you did not request
-                    this password reset,
-                    you can ignore this email.
-                  </p>
-                </div>
-              </body>
-            </html>
-          `,
-        });
-    } catch (emailError) {
+        error:
+          null,
+      };
+    } catch (
+      emailError
+    ) {
       console.error(
         "Password recovery email delivery failed:",
         emailError?.message
       );
 
-      await resetReference.update({
-        status:
-          "delivery_failed",
+      try {
+        resetRequest =
+          await replaceCosmosDocument(
+            "passwordResetRequests",
+            resetRequest,
+            {
+              status:
+                "delivery_failed",
 
-        verificationTokenHash:
-          null,
+              verificationTokenHash:
+                null,
 
-        resetTokenHash:
-          null,
+              resetTokenHash:
+                null,
 
-        updatedAt:
-          FieldValue.serverTimestamp(),
-      });
+              updatedAt:
+                cosmosNow(),
+            }
+          );
+      } catch (
+        updateError
+      ) {
+        console.error(
+          "Failed to update password reset delivery state:",
+          updateError
+        );
+      }
 
       /*
         Still return generic response.
@@ -726,61 +915,88 @@ export async function POST(request) {
       return genericResponse();
     }
 
-    if (emailResult?.error) {
+    if (
+      emailResult?.error
+    ) {
       console.error(
         "Password recovery email delivery failed:",
         emailResult.error.message
       );
 
-      await resetReference.update({
-        status:
-          "delivery_failed",
+      try {
+        resetRequest =
+          await replaceCosmosDocument(
+            "passwordResetRequests",
+            resetRequest,
+            {
+              status:
+                "delivery_failed",
 
-        verificationTokenHash:
-          null,
+              verificationTokenHash:
+                null,
 
-        resetTokenHash:
-          null,
+              resetTokenHash:
+                null,
 
-        updatedAt:
-          FieldValue.serverTimestamp(),
-      });
+              updatedAt:
+                cosmosNow(),
+            }
+          );
+      } catch (
+        updateError
+      ) {
+        console.error(
+          "Failed to update password reset delivery state:",
+          updateError
+        );
+      }
 
       return genericResponse();
     }
 
-    await resetReference.update({
-      emailStatus:
-        "sent",
+    const emailSentAt =
+      cosmosNow();
 
-      emailId:
-        emailResult.data?.id ||
-        null,
+    await replaceCosmosDocument(
+      "passwordResetRequests",
+      resetRequest,
+      {
+        emailStatus:
+          "sent",
 
-      emailSentAt:
-        FieldValue.serverTimestamp(),
+        emailId:
+          emailResult.data?.id ||
+          null,
 
-      updatedAt:
-        FieldValue.serverTimestamp(),
-    });
+        emailSentAt,
+
+        updatedAt:
+          emailSentAt,
+      }
+    );
 
     /*
       IMPORTANT:
       Do not return requestId.
 
-      Returning different information for
-      existing/non-existing accounts would
-      defeat our enumeration protection.
+      Returning different information
+      for existing/non-existing
+      accounts would defeat our
+      enumeration protection.
     */
 
     return genericResponse();
-  } catch (error) {
+  } catch (
+    error
+  ) {
     const appCheckResponse =
       appCheckErrorResponse(
         error
       );
 
-    if (appCheckResponse) {
+    if (
+      appCheckResponse
+    ) {
       return appCheckResponse;
     }
 
@@ -790,8 +1006,9 @@ export async function POST(request) {
     );
 
     /*
-      For a valid-shaped request we still
-      avoid exposing internal account state.
+      For a valid-shaped request we
+      still avoid exposing internal
+      account state.
     */
 
     return genericResponse();

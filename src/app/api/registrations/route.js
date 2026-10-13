@@ -1,88 +1,85 @@
-import { FieldValue } from "firebase-admin/firestore";
-
-import {
-  adminAuth,
-  adminDb,
-} from "@/services/firebaseAdmin";
+import crypto from "crypto";
 
 import {
   requireActiveStudent,
   studentAccessResponse,
 } from "@/services/studentAccess";
 
+import {
+  cosmosNow,
+  createCosmosDocument,
+  queryCosmosDocuments,
+  readCosmosDocument,
+} from "@/services/cosmosData";
+
 export const runtime = "nodejs";
-
-async function getAuthenticatedStudent(request) {
-  const authorizationHeader =
-    request.headers.get("authorization");
-
-  if (
-    !authorizationHeader ||
-    !authorizationHeader.startsWith("Bearer ")
-  ) {
-    throw new Error("UNAUTHORIZED");
-  }
-
-  const idToken = authorizationHeader.replace(
-    "Bearer ",
-    ""
-  );
-
-  const decodedToken =
-    await adminAuth.verifyIdToken(idToken);
-
-  const studentSnapshot = await adminDb
-    .collection("students")
-    .doc(decodedToken.uid)
-    .get();
-
-  if (!studentSnapshot.exists) {
-    throw new Error("STUDENT_NOT_FOUND");
-  }
-
-  return {
-    uid: decodedToken.uid,
-    student: studentSnapshot.data(),
-  };
-}
 
 export async function GET(request) {
   try {
-    const { uid } =
-      await requireActiveStudent(request);
+    const {
+      uid,
+    } =
+      await requireActiveStudent(
+        request
+      );
 
-    const registrationsSnapshot = await adminDb
-      .collection("registrations")
-      .where("studentId", "==", uid)
-      .get();
+    const registrationDocuments =
+      await queryCosmosDocuments(
+        "registrations",
+        `
+          SELECT *
+          FROM c
+          WHERE c.studentId = @studentId
+        `,
+        [
+          {
+            name:
+              "@studentId",
 
-    const registrations = await Promise.all(
-      registrationsSnapshot.docs.map(
-        async (registrationDocument) => {
-          const registration =
-            registrationDocument.data();
+            value:
+              uid,
+          },
+        ]
+      );
 
-          const workshopSnapshot = await adminDb
-            .collection("workshops")
-            .doc(registration.workshopId)
-            .get();
+    const registrations =
+      await Promise.all(
+        registrationDocuments.map(
+          async (
+            registration
+          ) => {
+            const workshop =
+              registration.workshopId
+                ? await readCosmosDocument(
+                    "workshops",
+                    registration.workshopId
+                  )
+                : null;
 
-          return {
-            id: registrationDocument.id,
-            ...registration,
-            workshop: workshopSnapshot.exists
-              ? {
-                  id: workshopSnapshot.id,
-                  ...workshopSnapshot.data(),
-                }
-              : null,
-          };
-        }
-      )
-    );
+            return {
+              id:
+                registration.id,
+
+              ...registration,
+
+              workshop:
+                workshop
+                  ? {
+                      id:
+                        workshop.id,
+
+                      ...workshop,
+                    }
+                  : null,
+            };
+          }
+        )
+      );
 
     return Response.json({
-      success: true,
+      success:
+        true,
+
       registrations,
     });
   } catch (error) {
@@ -94,21 +91,26 @@ export async function GET(request) {
     if (accessResponse) {
       return accessResponse;
     }
+
     console.error(
       "Get registrations error:",
       error
     );
 
     const status =
-      error.message === "UNAUTHORIZED"
+      error.message ===
+      "UNAUTHORIZED"
         ? 401
-        : error.message === "STUDENT_NOT_FOUND"
+        : error.message ===
+            "STUDENT_NOT_FOUND"
           ? 404
           : 500;
 
     return Response.json(
       {
-        success: false,
+        success:
+          false,
+
         message:
           status === 401
             ? "You must be logged in."
@@ -123,117 +125,182 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const { uid } =
-      await requireActiveStudent(request);
+    const {
+      uid,
+    } =
+      await requireActiveStudent(
+        request
+      );
 
-    const { workshopId } =
+    const {
+      workshopId,
+    } =
       await request.json();
 
     if (!workshopId) {
       return Response.json(
         {
-          success: false,
-          message: "Workshop ID is required.",
+          success:
+            false,
+
+          message:
+            "Workshop ID is required.",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
 
-    const workshopReference = adminDb
-      .collection("workshops")
-      .doc(workshopId);
-
-    const workshopSnapshot =
-      await workshopReference.get();
+    const workshop =
+      await readCosmosDocument(
+        "workshops",
+        workshopId
+      );
 
     if (
-      !workshopSnapshot.exists ||
-      workshopSnapshot.data().status !== "active"
+      !workshop ||
+      workshop.status !==
+        "active"
     ) {
       return Response.json(
         {
-          success: false,
+          success:
+            false,
+
           message:
             "This workshop is unavailable.",
         },
         {
-          status: 404,
+          status:
+            404,
         }
       );
     }
 
-    const existingRegistrationSnapshot =
-      await adminDb
-        .collection("registrations")
-        .where("studentId", "==", uid)
-        .where("workshopId", "==", workshopId)
-        .limit(1)
-        .get();
+    const existingRegistrations =
+      await queryCosmosDocuments(
+        "registrations",
+        `
+          SELECT TOP 1 *
+          FROM c
+          WHERE c.studentId = @studentId
+            AND c.workshopId = @workshopId
+        `,
+        [
+          {
+            name:
+              "@studentId",
+
+            value:
+              uid,
+          },
+          {
+            name:
+              "@workshopId",
+
+            value:
+              workshopId,
+          },
+        ]
+      );
 
     if (
-      !existingRegistrationSnapshot.empty
+      existingRegistrations.length >
+      0
     ) {
       const existingRegistration =
-        existingRegistrationSnapshot.docs[0];
+        existingRegistrations[0];
 
       return Response.json(
         {
-          success: true,
-          alreadyRegistered: true,
+          success:
+            true,
+
+          alreadyRegistered:
+            true,
+
           registrationId:
             existingRegistration.id,
+
           message:
             "This workshop is already in your registered workshops.",
         },
         {
-          status: 200,
+          status:
+            200,
         }
       );
     }
 
-    const registrationReference =
-      adminDb
-        .collection("registrations")
-        .doc();
+    const registrationId =
+      crypto.randomUUID();
 
-    await registrationReference.set({
-      studentId: uid,
-      workshopId,
+    const registeredAt =
+      cosmosNow();
 
-      status: "upcoming",
-      externalRegistrationConfirmed: true,
+    await createCosmosDocument(
+      "registrations",
+      {
+        id:
+          registrationId,
 
-      attendanceStatus: "pending",
-      attendanceSessionId: null,
-      attendedAt: null,
-      completedAt: null,
+        studentId:
+          uid,
 
-      registrationXpAwarded: false,
-      completionXpAwarded: false,
+        workshopId,
 
-      registeredAt:
-        FieldValue.serverTimestamp(),
+        status:
+          "upcoming",
 
-      createdAt:
-        FieldValue.serverTimestamp(),
+        externalRegistrationConfirmed:
+          true,
 
-      updatedAt:
-        FieldValue.serverTimestamp(),
-    });
+        attendanceStatus:
+          "pending",
+
+        attendanceSessionId:
+          null,
+
+        attendedAt:
+          null,
+
+        completedAt:
+          null,
+
+        registrationXpAwarded:
+          false,
+
+        completionXpAwarded:
+          false,
+
+        registeredAt,
+
+        createdAt:
+          registeredAt,
+
+        updatedAt:
+          registeredAt,
+      }
+    );
 
     return Response.json(
       {
-        success: true,
-        alreadyRegistered: false,
-        registrationId:
-          registrationReference.id,
+        success:
+          true,
+
+        alreadyRegistered:
+          false,
+
+        registrationId,
+
         message:
           "Workshop added to your upcoming workshops.",
       },
       {
-        status: 201,
+        status:
+          201,
       }
     );
   } catch (error) {
@@ -252,15 +319,19 @@ export async function POST(request) {
     );
 
     const status =
-      error.message === "UNAUTHORIZED"
+      error.message ===
+      "UNAUTHORIZED"
         ? 401
-        : error.message === "STUDENT_NOT_FOUND"
+        : error.message ===
+            "STUDENT_NOT_FOUND"
           ? 404
           : 500;
 
     return Response.json(
       {
-        success: false,
+        success:
+          false,
+
         message:
           status === 401
             ? "Please log in before registering."

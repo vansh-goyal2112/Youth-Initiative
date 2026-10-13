@@ -29,6 +29,8 @@ import {
   Trophy,
   UserRound,
   Zap,
+  GraduationCap,
+  ExternalLink,
 } from "lucide-react";
 
 import {
@@ -63,6 +65,11 @@ export default function DashboardPage() {
   const [
     workshops,
     setWorkshops,
+  ] = useState([]);
+
+  const [
+    pathwayRecommendations,
+    setPathwayRecommendations,
   ] = useState([]);
 
   const [
@@ -172,6 +179,20 @@ export default function DashboardPage() {
           workshopResult.workshops ||
             []
         );
+
+        try {
+          const pathwayResponse = await studentFetch(
+            "/api/pathways/recommendations"
+          );
+          if (pathwayResponse.ok) {
+            const pathwayResult = await pathwayResponse.json();
+            if (!cancelled && pathwayResult?.recommendations) {
+              setPathwayRecommendations(pathwayResult.recommendations);
+            }
+          }
+        } catch {
+          // Gracefully omit post-secondary recommendations if not ready
+        }
       } catch (error) {
         console.error(
           "Dashboard loading error:",
@@ -990,6 +1011,63 @@ export default function DashboardPage() {
             )}
           </div>
         </section>
+
+        {/* FUTURE SAIT PATHWAYS */}
+        {pathwayRecommendations.length > 0 && (
+          <section className="dashboard-section">
+            <div className="dashboard-section-heading">
+              <div>
+                <span>FUTURE PATHWAYS</span>
+                <h2>Recommended SAIT Programs</h2>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+              {pathwayRecommendations.slice(0, 3).map((rec) => (
+                <div
+                  key={rec.program.id}
+                  className="bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <Sparkles size={12} />
+                        {rec.score}% MATCH
+                      </span>
+                      <GraduationCap size={18} className="text-slate-400" />
+                    </div>
+
+                    <h3 className="text-base font-bold text-slate-800 line-clamp-2 mb-2">
+                      {rec.program.title}
+                    </h3>
+
+                    <div className="space-y-1.5 mb-4">
+                      {rec.reasons?.map((reason, idx) => (
+                        <p
+                          key={idx}
+                          className="text-xs text-slate-600 flex items-start gap-1.5"
+                        >
+                          <span className="text-emerald-500 font-bold mt-0.5">•</span>
+                          <span>{reason}</span>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+
+                  <a
+                    href={rec.program.informationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                  >
+                    <span>View SAIT Program</span>
+                    <ExternalLink size={14} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* CTA */}
 

@@ -9,9 +9,8 @@ import {
 } from "next/navigation";
 
 import {
-  doc,
-  updateDoc,
-} from "firebase/firestore";
+  getToken as getAppCheckToken,
+} from "firebase/app-check";
 
 import {
   ArrowLeft,
@@ -20,7 +19,7 @@ import {
 } from "lucide-react";
 
 import {
-  db,
+  appCheck,
 } from "@/services/firebase";
 
 import {
@@ -45,9 +44,10 @@ export default function EditProfilePage() {
 
   const {
     user,
-    student,
+    studentProfile,
     loading,
-  } = useAuth();
+  } =
+    useAuth();
 
   if (loading) {
     return (
@@ -59,7 +59,7 @@ export default function EditProfilePage() {
 
   if (
     !user ||
-    !student
+    !studentProfile
   ) {
     return (
       <main className="profile-state">
@@ -71,7 +71,9 @@ export default function EditProfilePage() {
   return (
     <EditProfileForm
       user={user}
-      student={student}
+      student={
+        studentProfile
+      }
       router={router}
     />
   );
@@ -104,12 +106,14 @@ function EditProfileForm({
   const [
     saving,
     setSaving,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     errorMessage,
     setErrorMessage,
-  ] = useState("");
+  ] =
+    useState("");
 
   function toggleInterest(
     interest
@@ -123,12 +127,14 @@ function EditProfileForm({
         ) {
           return current.filter(
             (item) =>
-              item !== interest
+              item !==
+              interest
           );
         }
 
         if (
-          current.length >= 5
+          current.length >=
+          5
         ) {
           return current;
         }
@@ -148,19 +154,75 @@ function EditProfileForm({
 
     try {
       setSaving(true);
-      setErrorMessage("");
 
-      await updateDoc(
-        doc(
-          db,
-          "students",
-          user.uid
-        ),
-        {
-          learningMode,
-          interests,
-        }
+      setErrorMessage(
+        ""
       );
+
+      if (
+        !appCheck
+      ) {
+        throw new Error(
+          "App verification is unavailable."
+        );
+      }
+
+      const [
+        idToken,
+        appCheckTokenResult,
+      ] =
+        await Promise.all([
+          user.getIdToken(),
+
+          getAppCheckToken(
+            appCheck,
+            true
+          ),
+        ]);
+
+      const response =
+        await fetch(
+          "/api/student/profile",
+          {
+            method:
+              "PATCH",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${idToken}`,
+
+              "X-Firebase-AppCheck":
+                appCheckTokenResult.token,
+            },
+
+            body:
+              JSON.stringify({
+                learningMode,
+                interests,
+              }),
+          }
+        );
+
+      const result =
+        await response
+          .json()
+          .catch(
+            () => null
+          );
+
+      if (
+        !response.ok ||
+        result?.success !==
+          true
+      ) {
+        throw new Error(
+          result?.message ||
+          "Your profile could not be updated."
+        );
+      }
 
       router.push(
         "/profile"
@@ -175,7 +237,9 @@ function EditProfileForm({
         "Your profile could not be updated."
       );
     } finally {
-      setSaving(false);
+      setSaving(
+        false
+      );
     }
   }
 
@@ -285,7 +349,9 @@ function EditProfileForm({
 
             <div className="edit-interest-grid">
               {availableInterests.map(
-                (interest) => {
+                (
+                  interest
+                ) => {
                   const selected =
                     interests.includes(
                       interest

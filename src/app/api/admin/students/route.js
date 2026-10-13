@@ -1,16 +1,18 @@
 import {
-  FieldValue,
-} from "firebase-admin/firestore";
-
-import {
   adminAuth,
-  adminDb,
 } from "@/services/firebaseAdmin";
 
 import {
   adminAccessResponse,
   requireActiveAdmin,
 } from "@/services/adminAccess";
+
+import {
+  cosmosNow,
+  queryCosmosDocuments,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
 
 export const runtime = "nodejs";
 
@@ -48,9 +50,12 @@ function apiError(
   status
 ) {
   const error =
-    new Error(message);
+    new Error(
+      message
+    );
 
-  error.status = status;
+  error.status =
+    status;
 
   return error;
 }
@@ -69,8 +74,11 @@ function customErrorResponse(
   ) {
     return Response.json(
       {
-        success: false,
-        message: error.message,
+        success:
+          false,
+
+        message:
+          error.message,
       },
       {
         status:
@@ -253,6 +261,7 @@ function validateStudentUpdate(
 
   return {
     firstName,
+
     lastName,
 
     contactEmail,
@@ -269,20 +278,14 @@ function validateStudentUpdate(
 async function getStudentAndAuthUser(
   studentId
 ) {
-  const studentReference =
-    adminDb
-      .collection(
-        "students"
-      )
-      .doc(
-        studentId
-      );
-
-  const studentSnapshot =
-    await studentReference.get();
+  const student =
+    await readCosmosDocument(
+      "students",
+      studentId
+    );
 
   if (
-    !studentSnapshot.exists
+    !student
   ) {
     throw apiError(
       "Student not found.",
@@ -290,11 +293,8 @@ async function getStudentAndAuthUser(
     );
   }
 
-  const student =
-    studentSnapshot.data();
-
   /*
-    A document in this collection must
+    A document in this container must
     represent a student account.
   */
 
@@ -334,7 +334,9 @@ async function getStudentAndAuthUser(
       await adminAuth.getUser(
         studentId
       );
-  } catch (error) {
+  } catch (
+    error
+  ) {
     if (
       error?.code ===
       "auth/user-not-found"
@@ -349,8 +351,6 @@ async function getStudentAndAuthUser(
   }
 
   return {
-    studentReference,
-    studentSnapshot,
     student,
     authUser,
   };
@@ -371,21 +371,25 @@ export async function GET(
       request
     );
 
-    const snapshot =
-      await adminDb
-        .collection(
-          "students"
-        )
-        .get();
+    const studentDocuments =
+      await queryCosmosDocuments(
+        "students",
+        `
+          SELECT *
+          FROM c
+        `
+      );
 
     const students =
-      snapshot.docs
+      studentDocuments
         .map(
-          (document) => ({
+          (
+            student
+          ) => ({
             id:
-              document.id,
+              student.id,
 
-            ...document.data(),
+            ...student,
           })
         )
         .sort(
@@ -407,16 +411,22 @@ export async function GET(
         );
 
     return Response.json({
-      success: true,
+      success:
+        true,
+
       students,
     });
-  } catch (error) {
+  } catch (
+    error
+  ) {
     const accessResponse =
       adminAccessResponse(
         error
       );
 
-    if (accessResponse) {
+    if (
+      accessResponse
+    ) {
       return accessResponse;
     }
 
@@ -427,13 +437,15 @@ export async function GET(
 
     return Response.json(
       {
-        success: false,
+        success:
+          false,
 
         message:
           "Students could not be loaded.",
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }
@@ -488,7 +500,7 @@ export async function PUT(
       );
 
     const {
-      studentReference,
+      student,
       authUser,
     } =
       await getStudentAndAuthUser(
@@ -498,7 +510,7 @@ export async function PUT(
     /*
       Keep Firebase Authentication's
       disabled state synchronized with
-      Firestore accountStatus.
+      Cosmos accountStatus.
     */
 
     const desiredDisabledState =
@@ -552,57 +564,63 @@ export async function PUT(
         /*
           The Auth account is already
           disabled, so continue writing
-          the inactive state to Firestore.
+          the inactive state to Cosmos.
         */
       }
     }
 
     try {
-      await studentReference.update({
-        firstName:
-          validatedData
-            .firstName,
+      const updatedAt =
+        cosmosNow();
 
-        lastName:
-          validatedData
-            .lastName,
+      await replaceCosmosDocument(
+        "students",
+        student,
+        {
+          firstName:
+            validatedData
+              .firstName,
 
-        fullName:
-          `${validatedData.firstName} ${validatedData.lastName}`,
+          lastName:
+            validatedData
+              .lastName,
 
-        contactEmail:
-          validatedData
-            .contactEmail,
+          fullName:
+            `${validatedData.firstName} ${validatedData.lastName}`,
 
-        learningMode:
-          validatedData
-            .learningMode,
+          contactEmail:
+            validatedData
+              .contactEmail,
 
-        interests:
-          validatedData
-            .interests,
+          learningMode:
+            validatedData
+              .learningMode,
 
-        accountStatus:
-          validatedData
-            .accountStatus,
+          interests:
+            validatedData
+              .interests,
 
-        updatedBy:
-          admin.uid,
+          accountStatus:
+            validatedData
+              .accountStatus,
 
-        updatedAt:
-          FieldValue.serverTimestamp(),
+          updatedBy:
+            admin.uid,
 
-        accountStatusUpdatedAt:
-          FieldValue.serverTimestamp(),
-      });
+          updatedAt,
+
+          accountStatusUpdatedAt:
+            updatedAt,
+        }
+      );
     } catch (
-      firestoreError
+      cosmosError
     ) {
       /*
-        Firebase Auth and Firestore cannot
+        Firebase Auth and Cosmos DB cannot
         participate in one atomic transaction.
 
-        If Firestore fails after we changed
+        If Cosmos fails after we changed
         Firebase's disabled state, attempt to
         restore the previous Auth state.
       */
@@ -630,11 +648,12 @@ export async function PUT(
         }
       }
 
-      throw firestoreError;
+      throw cosmosError;
     }
 
     return Response.json({
-      success: true,
+      success:
+        true,
 
       message:
         validatedData
@@ -643,13 +662,17 @@ export async function PUT(
           ? "Student updated and account deactivated successfully."
           : "Student updated successfully.",
     });
-  } catch (error) {
+  } catch (
+    error
+  ) {
     const accessResponse =
       adminAccessResponse(
         error
       );
 
-    if (accessResponse) {
+    if (
+      accessResponse
+    ) {
       return accessResponse;
     }
 
@@ -658,7 +681,9 @@ export async function PUT(
         error
       );
 
-    if (customResponse) {
+    if (
+      customResponse
+    ) {
       return customResponse;
     }
 
@@ -669,13 +694,15 @@ export async function PUT(
 
     return Response.json(
       {
-        success: false,
+        success:
+          false,
 
         message:
           "Student could not be updated.",
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }
@@ -730,7 +757,7 @@ export async function DELETE(
     }
 
     const {
-      studentReference,
+      student,
       authUser,
     } =
       await getStudentAndAuthUser(
@@ -742,7 +769,7 @@ export async function DELETE(
 
     /*
       Disable Firebase Authentication
-      before changing Firestore.
+      before changing Cosmos DB.
 
       This fails closed:
       the user cannot continue signing in
@@ -755,7 +782,8 @@ export async function DELETE(
       await adminAuth.updateUser(
         targetStudentId,
         {
-          disabled: true,
+          disabled:
+            true,
         }
       );
 
@@ -785,21 +813,27 @@ export async function DELETE(
     }
 
     try {
-      await studentReference.update({
-        accountStatus:
-          "inactive",
+      const deactivatedAt =
+        cosmosNow();
 
-        deactivatedBy:
-          admin.uid,
+      await replaceCosmosDocument(
+        "students",
+        student,
+        {
+          accountStatus:
+            "inactive",
 
-        deactivatedAt:
-          FieldValue.serverTimestamp(),
+          deactivatedBy:
+            admin.uid,
 
-        updatedAt:
-          FieldValue.serverTimestamp(),
-      });
+          deactivatedAt,
+
+          updatedAt:
+            deactivatedAt,
+        }
+      );
     } catch (
-      firestoreError
+      cosmosError
     ) {
       /*
         Attempt rollback only when this
@@ -831,22 +865,27 @@ export async function DELETE(
         }
       }
 
-      throw firestoreError;
+      throw cosmosError;
     }
 
     return Response.json({
-      success: true,
+      success:
+        true,
 
       message:
         "Student account deactivated successfully.",
     });
-  } catch (error) {
+  } catch (
+    error
+  ) {
     const accessResponse =
       adminAccessResponse(
         error
       );
 
-    if (accessResponse) {
+    if (
+      accessResponse
+    ) {
       return accessResponse;
     }
 
@@ -855,7 +894,9 @@ export async function DELETE(
         error
       );
 
-    if (customResponse) {
+    if (
+      customResponse
+    ) {
       return customResponse;
     }
 
@@ -866,13 +907,15 @@ export async function DELETE(
 
     return Response.json(
       {
-        success: false,
+        success:
+          false,
 
         message:
           "Student could not be deactivated.",
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }

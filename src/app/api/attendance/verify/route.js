@@ -1,13 +1,4 @@
 import {
-  FieldValue,
-} from "firebase-admin/firestore";
-
-import {
-  adminAuth,
-  adminDb,
-} from "@/services/firebaseAdmin";
-
-import {
   processWorkshopCompletion,
 } from "@/services/gamificationAdmin";
 
@@ -16,37 +7,15 @@ import {
   studentAccessResponse,
 } from "@/services/studentAccess";
 
+import {
+  cosmosNow,
+  isCosmosPreconditionFailed,
+  queryCosmosDocuments,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
+
 export const runtime = "nodejs";
-
-async function getStudent(request) {
-  const authorization =
-    request.headers.get(
-      "authorization"
-    );
-
-  if (
-    !authorization?.startsWith(
-      "Bearer "
-    )
-  ) {
-    throw new Error(
-      "UNAUTHORIZED"
-    );
-  }
-
-  const token =
-    authorization.replace(
-      "Bearer ",
-      ""
-    );
-
-  const decodedToken =
-    await adminAuth.verifyIdToken(
-      token
-    );
-
-  return decodedToken.uid;
-}
 
 export async function POST(request) {
   try {
@@ -73,6 +42,7 @@ export async function POST(request) {
       return Response.json(
         {
           success: false,
+
           message:
             "Invalid attendance QR code.",
         },
@@ -82,22 +52,22 @@ export async function POST(request) {
       );
     }
 
-    const sessionReference =
-      adminDb
-        .collection(
-          "attendanceSessions"
-        )
-        .doc(
-          attendanceSessionId
-        );
+    /*
+      Read the attendance session
+      from Cosmos DB.
+    */
 
-    const sessionSnapshot =
-      await sessionReference.get();
+    const session =
+      await readCosmosDocument(
+        "attendanceSessions",
+        attendanceSessionId
+      );
 
-    if (!sessionSnapshot.exists) {
+    if (!session) {
       return Response.json(
         {
           success: false,
+
           message:
             "Attendance session not found.",
         },
@@ -107,13 +77,11 @@ export async function POST(request) {
       );
     }
 
-    const session =
-      sessionSnapshot.data();
-
     if (!session.active) {
       return Response.json(
         {
           success: false,
+
           message:
             "This attendance QR is no longer active.",
         },
@@ -123,10 +91,14 @@ export async function POST(request) {
       );
     }
 
-    if (session.code !== code) {
+    if (
+      session.code !==
+      code
+    ) {
       return Response.json(
         {
           success: false,
+
           message:
             "Invalid attendance code.",
         },
@@ -137,15 +109,21 @@ export async function POST(request) {
     }
 
     const expiryDate =
-      session.expiresAt.toDate();
+      new Date(
+        session.expiresAt
+      );
 
     if (
+      Number.isNaN(
+        expiryDate.getTime()
+      ) ||
       expiryDate.getTime() <
-      Date.now()
+        Date.now()
     ) {
       return Response.json(
         {
           success: false,
+
           message:
             "This attendance QR has expired.",
         },
@@ -155,30 +133,49 @@ export async function POST(request) {
       );
     }
 
-    const registrationSnapshot =
-      await adminDb
-        .collection(
-          "registrations"
-        )
-        .where(
-          "studentId",
-          "==",
-          studentId
-        )
-        .where(
-          "workshopId",
-          "==",
-          session.workshopId
-        )
-        .limit(1)
-        .get();
+    /*
+      Find this student's workshop
+      registration.
+
+      Firestore previously queried
+      by studentId + workshopId.
+    */
+
+    const registrations =
+      await queryCosmosDocuments(
+        "registrations",
+        `
+          SELECT TOP 1 *
+          FROM c
+          WHERE c.studentId = @studentId
+            AND c.workshopId = @workshopId
+        `,
+        [
+          {
+            name:
+              "@studentId",
+
+            value:
+              studentId,
+          },
+          {
+            name:
+              "@workshopId",
+
+            value:
+              session.workshopId,
+          },
+        ]
+      );
 
     if (
-      registrationSnapshot.empty
+      registrations.length ===
+      0
     ) {
       return Response.json(
         {
           success: false,
+
           message:
             "You are not registered for this workshop.",
         },
@@ -188,11 +185,8 @@ export async function POST(request) {
       );
     }
 
-    const registrationDocument =
-      registrationSnapshot.docs[0];
-
     const registration =
-      registrationDocument.data();
+      registrations[0];
 
     if (
       registration.status ===
@@ -201,6 +195,7 @@ export async function POST(request) {
       return Response.json(
         {
           success: false,
+
           message:
             "Attendance has already been recorded.",
         },
@@ -210,18 +205,21 @@ export async function POST(request) {
       );
     }
 
-    const workshopSnapshot =
-      await adminDb
-        .collection("workshops")
-        .doc(
-          session.workshopId
-        )
-        .get();
+    /*
+      Load workshop information.
+    */
 
-    if (!workshopSnapshot.exists) {
+    const workshop =
+      await readCosmosDocument(
+        "workshops",
+        session.workshopId
+      );
+
+    if (!workshop) {
       return Response.json(
         {
           success: false,
+
           message:
             "Workshop could not be found.",
         },
@@ -231,32 +229,73 @@ export async function POST(request) {
       );
     }
 
-    const workshop =
-      workshopSnapshot.data();
+    /*
+      Mark registration completed.
 
-    await registrationDocument
-      .ref
-      .update({
-        status:
-          "completed",
+      The Cosmos ETag prevents two
+      simultaneous attendance scans
+      from updating the same
+      registration version.
+    */
 
-        attendanceStatus:
-          "verified",
+    const completedAt =
+      cosmosNow();
 
-        attendanceSessionId,
+    try {
+      await replaceCosmosDocument(
+        "registrations",
+        registration,
+        {
+          status:
+            "completed",
 
-        attendedAt:
-          FieldValue.serverTimestamp(),
+          attendanceStatus:
+            "verified",
 
-        completedAt:
-          FieldValue.serverTimestamp(),
+          attendanceSessionId,
 
-        completionXpAwarded:
-          true,
+          attendedAt:
+            completedAt,
 
-        updatedAt:
-          FieldValue.serverTimestamp(),
-      });
+          completedAt,
+
+          completionXpAwarded:
+            true,
+
+          updatedAt:
+            completedAt,
+        }
+      );
+    } catch (error) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        return Response.json(
+          {
+            success: false,
+
+            message:
+              "Attendance has already been recorded.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      throw error;
+    }
+
+    /*
+      Gamification is still handled
+      by the existing service.
+
+      We will migrate that service
+      separately so its existing
+      reward logic is preserved.
+    */
 
     const reward =
       await processWorkshopCompletion({
@@ -296,7 +335,7 @@ export async function POST(request) {
     if (accessResponse) {
       return accessResponse;
     }
-    
+
     console.error(
       "Attendance verification error:",
       error
@@ -305,18 +344,12 @@ export async function POST(request) {
     return Response.json(
       {
         success: false,
+
         message:
-          error.message ===
-          "UNAUTHORIZED"
-            ? "Please log in first."
-            : "Attendance could not be verified.",
+          "Attendance could not be verified.",
       },
       {
-        status:
-          error.message ===
-          "UNAUTHORIZED"
-            ? 401
-            : 500,
+        status: 500,
       }
     );
   }

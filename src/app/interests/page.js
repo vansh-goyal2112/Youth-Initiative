@@ -9,9 +9,8 @@ import {
 } from "next/navigation";
 
 import {
-  doc,
-  updateDoc,
-} from "firebase/firestore";
+  getToken as getAppCheckToken,
+} from "firebase/app-check";
 
 import {
   Bot,
@@ -28,7 +27,7 @@ import {
 } from "lucide-react";
 
 import {
-  db,
+  appCheck,
 } from "@/services/firebase";
 
 import {
@@ -91,7 +90,8 @@ export default function InterestsPage() {
     user,
     studentProfile: student,
     loading: authLoading,
-  } = useAuth();
+  } =
+    useAuth();
 
   if (authLoading) {
     return (
@@ -186,24 +186,83 @@ function InterestsForm({
     );
   }
 
+  async function saveInterests(
+    interests
+  ) {
+    if (!appCheck) {
+      throw new Error(
+        "App verification is unavailable."
+      );
+    }
+
+    const [
+      idToken,
+      appCheckTokenResult,
+    ] =
+      await Promise.all([
+        user.getIdToken(),
+
+        getAppCheckToken(
+          appCheck,
+          true
+        ),
+      ]);
+
+    const response =
+      await fetch(
+        "/api/student/profile",
+        {
+          method:
+            "PATCH",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+
+            Authorization:
+              `Bearer ${idToken}`,
+
+            "X-Firebase-AppCheck":
+              appCheckTokenResult.token,
+          },
+
+          body:
+            JSON.stringify({
+              interests,
+
+              onboardingCompleted:
+                true,
+            }),
+        }
+      );
+
+    const result =
+      await response
+        .json()
+        .catch(
+          () => null
+        );
+
+    if (
+      !response.ok ||
+      result?.success !==
+        true
+    ) {
+      throw new Error(
+        result?.message ||
+        "Onboarding could not be completed."
+      );
+    }
+  }
+
   async function completeOnboarding() {
     try {
       setSaving(true);
+
       setErrorMessage("");
 
-      await updateDoc(
-        doc(
-          db,
-          "students",
-          user.uid
-        ),
-        {
-          interests:
-            selectedInterests,
-
-          onboardingCompleted:
-            true,
-        }
+      await saveInterests(
+        selectedInterests
       );
 
       router.replace(
@@ -219,27 +278,20 @@ function InterestsForm({
         "Your interests could not be saved."
       );
     } finally {
-      setSaving(false);
+      setSaving(
+        false
+      );
     }
   }
 
   async function skipInterests() {
     try {
       setSaving(true);
+
       setErrorMessage("");
 
-      await updateDoc(
-        doc(
-          db,
-          "students",
-          user.uid
-        ),
-        {
-          interests: [],
-
-          onboardingCompleted:
-            true,
-        }
+      await saveInterests(
+        []
       );
 
       router.replace(
@@ -255,7 +307,9 @@ function InterestsForm({
         "Onboarding could not be completed."
       );
     } finally {
-      setSaving(false);
+      setSaving(
+        false
+      );
     }
   }
 

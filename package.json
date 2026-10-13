@@ -6,9 +6,17 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --test tests/*.test.mjs",
+    "scrape:sait-programs": "node scripts/scrapeSaitPrograms.mjs",
+    "ingest:sait": "node scripts/ingestSait.mjs",
+    "demo:recommendations": "node scripts/demoRecommendations.mjs"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   },
   "dependencies": {
+    "@azure/communication-email": "^1.1.0",
     "@azure/cosmos": "^4.9.3",
     "@azure/identity": "^4.13.1",
     "canvas-confetti": "^1.9.4",
@@ -23,7 +31,6 @@
     "qrcode": "^1.5.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "resend": "^6.18.1",
     "swiper": "^14.0.7",
     "xlsx": "^0.18.5",
     "yup": "^1.7.1"

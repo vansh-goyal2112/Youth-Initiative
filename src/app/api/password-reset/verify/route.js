@@ -1,24 +1,25 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-  Timestamp,
-} from "firebase-admin/firestore";
-
-import {
   appCheckErrorResponse,
   requireAppCheck,
 } from "@/services/appCheckServer";
 
 import {
-  adminDb,
-} from "@/services/firebaseAdmin";
+  cosmosNow,
+  isCosmosPreconditionFailed,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
 
 export const runtime = "nodejs";
 
-const RESET_TOKEN_EXPIRY_MINUTES = 30;
+const RESET_TOKEN_EXPIRY_MINUTES =
+  30;
 
-function hashToken(token) {
+function hashToken(
+  token
+) {
   return crypto
     .createHash("sha256")
     .update(token)
@@ -61,14 +62,17 @@ function hashesMatch(
   );
 }
 
-function getDate(value) {
+function getDate(
+  value
+) {
   if (!value) {
     return null;
   }
 
   const date =
-    value?.toDate?.() ||
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -87,7 +91,9 @@ function verificationError(
 ) {
   return Response.json(
     {
-      success: false,
+      success:
+        false,
+
       message,
     },
     {
@@ -96,19 +102,24 @@ function verificationError(
   );
 }
 
-export async function POST(request) {
+export async function POST(
+  request
+) {
   try {
     const {
       requestId,
       token,
       approve,
-    } = await request.json();
+    } =
+      await request.json();
 
     /*
-      Checking the link uses a normal token.
+      Checking the link uses a
+      normal App Check token.
 
-      Actually approving the reset consumes
-      a limited-use App Check token.
+      Actually approving the
+      reset consumes a limited-use
+      App Check token.
     */
 
     await requireAppCheck(
@@ -120,9 +131,11 @@ export async function POST(request) {
     );
 
     if (
-      typeof requestId !== "string" ||
+      typeof requestId !==
+        "string" ||
       !requestId.trim() ||
-      typeof token !== "string" ||
+      typeof token !==
+        "string" ||
       !token.trim()
     ) {
       return verificationError(
@@ -131,12 +144,11 @@ export async function POST(request) {
       );
     }
 
-    const resetReference =
-      adminDb
-        .collection(
-          "passwordResetRequests"
-        )
-        .doc(requestId);
+    const normalizedRequestId =
+      requestId.trim();
+
+    const normalizedToken =
+      token.trim();
 
     /*
       ------------------------------------------------
@@ -149,32 +161,38 @@ export async function POST(request) {
       ------------------------------------------------
     */
 
-    if (approve !== true) {
-      const resetSnapshot =
-        await resetReference.get();
+    if (
+      approve !== true
+    ) {
+      const reset =
+        await readCosmosDocument(
+          "passwordResetRequests",
+          normalizedRequestId
+        );
 
-      if (!resetSnapshot.exists) {
+      if (
+        !reset
+      ) {
         return verificationError(
           "This password reset link is unavailable.",
           404
         );
       }
 
-      const reset =
-        resetSnapshot.data();
-
       /*
-        This route is only for guardian
-        verification.
+        This route is only for
+        guardian verification.
 
-        Adults bypass this page and receive
-        their reset token directly by email.
+        Adults bypass this page
+        and receive their reset
+        token directly by email.
       */
 
       if (
         reset.recoveryMode !==
           "guardian" ||
-        reset.requiresGuardianApproval !==
+        reset
+          .requiresGuardianApproval !==
           true
       ) {
         return verificationError(
@@ -217,7 +235,8 @@ export async function POST(request) {
 
       const expiry =
         getDate(
-          reset.verificationExpiresAt
+          reset
+            .verificationExpiresAt
         );
 
       if (
@@ -232,12 +251,15 @@ export async function POST(request) {
       }
 
       const providedHash =
-        hashToken(token);
+        hashToken(
+          normalizedToken
+        );
 
       if (
         !hashesMatch(
           providedHash,
-          reset.verificationTokenHash
+          reset
+            .verificationTokenHash
         )
       ) {
         return verificationError(
@@ -246,24 +268,30 @@ export async function POST(request) {
         );
       }
 
-      return Response.json({
-        success: true,
-        verified: false,
-        readyForApproval: true,
-      });
+      return Response.json(
+        {
+          success:
+            true,
+
+          verified:
+            false,
+
+          readyForApproval:
+            true,
+        }
+      );
     }
 
     /*
       ------------------------------------------------
       PARENT APPROVES
 
-      Important security change:
+      The guardian verification
+      token is NOT reused as the
+      password-reset token.
 
-      We DO NOT use the guardian verification
-      token as the password-reset token.
-
-      Once the guardian approves, we create a
-      completely new one-time token.
+      A completely new one-time
+      reset token is generated.
       ------------------------------------------------
     */
 
@@ -273,159 +301,198 @@ export async function POST(request) {
         .toString("hex");
 
     const resetTokenHash =
-      hashToken(resetToken);
-
-    const resetTokenExpiresAt =
-      Timestamp.fromDate(
-        new Date(
-          Date.now() +
-            RESET_TOKEN_EXPIRY_MINUTES *
-              60 *
-              1000
-        )
+      hashToken(
+        resetToken
       );
 
-    let youthId = null;
+    const resetTokenExpiresAt =
+      new Date(
+        Date.now() +
+          RESET_TOKEN_EXPIRY_MINUTES *
+            60 *
+            1000
+      ).toISOString();
 
-    await adminDb.runTransaction(
-      async (transaction) => {
-        const resetSnapshot =
-          await transaction.get(
-            resetReference
-          );
+    const reset =
+      await readCosmosDocument(
+        "passwordResetRequests",
+        normalizedRequestId
+      );
 
-        if (
-          !resetSnapshot.exists
-        ) {
-          throw new Error(
-            "RESET_NOT_FOUND"
-          );
-        }
+    if (
+      !reset
+    ) {
+      throw new Error(
+        "RESET_NOT_FOUND"
+      );
+    }
 
-        const reset =
-          resetSnapshot.data();
+    if (
+      reset.recoveryMode !==
+        "guardian" ||
+      reset
+        .requiresGuardianApproval !==
+        true
+    ) {
+      throw new Error(
+        "INVALID_RECOVERY_MODE"
+      );
+    }
 
-        if (
-          reset.recoveryMode !==
-            "guardian" ||
-          reset.requiresGuardianApproval !==
-            true
-        ) {
-          throw new Error(
-            "INVALID_RECOVERY_MODE"
-          );
-        }
+    if (
+      reset.status ===
+        "ready_for_reset" ||
+      reset.guardianVerified ===
+        true
+    ) {
+      throw new Error(
+        "ALREADY_VERIFIED"
+      );
+    }
 
-        if (
-          reset.status ===
-            "ready_for_reset" ||
-          reset.guardianVerified ===
-            true
-        ) {
-          throw new Error(
-            "ALREADY_VERIFIED"
-          );
-        }
+    if (
+      reset.status ===
+      "completed"
+    ) {
+      throw new Error(
+        "RESET_COMPLETED"
+      );
+    }
 
-        if (
-          reset.status ===
-          "completed"
-        ) {
-          throw new Error(
-            "RESET_COMPLETED"
-          );
-        }
+    if (
+      reset.status !==
+      "pending_guardian_verification"
+    ) {
+      throw new Error(
+        "RESET_UNAVAILABLE"
+      );
+    }
 
-        if (
-          reset.status !==
-          "pending_guardian_verification"
-        ) {
-          throw new Error(
-            "RESET_UNAVAILABLE"
-          );
-        }
+    const expiry =
+      getDate(
+        reset
+          .verificationExpiresAt
+      );
 
-        const expiry =
-          getDate(
-            reset.verificationExpiresAt
-          );
+    if (
+      !expiry ||
+      expiry.getTime() <
+        Date.now()
+    ) {
+      throw new Error(
+        "VERIFICATION_EXPIRED"
+      );
+    }
 
-        if (
-          !expiry ||
-          expiry.getTime() <
-            Date.now()
-        ) {
-          throw new Error(
-            "VERIFICATION_EXPIRED"
-          );
-        }
+    const providedHash =
+      hashToken(
+        normalizedToken
+      );
 
-        const providedHash =
-          hashToken(token);
+    if (
+      !hashesMatch(
+        providedHash,
+        reset
+          .verificationTokenHash
+      )
+    ) {
+      throw new Error(
+        "INVALID_TOKEN"
+      );
+    }
 
-        if (
-          !hashesMatch(
-            providedHash,
-            reset.verificationTokenHash
-          )
-        ) {
-          throw new Error(
-            "INVALID_TOKEN"
-          );
-        }
-
-        youthId =
-          reset.youthId || null;
-
-        transaction.update(
-          resetReference,
-          {
-            guardianVerified: true,
-
-            status:
-              "ready_for_reset",
-
-            verificationTokenHash:
-              null,
-
-            verificationUsedAt:
-              FieldValue.serverTimestamp(),
-
-            resetTokenHash,
-
-            resetExpiresAt:
-              resetTokenExpiresAt,
-
-            updatedAt:
-              FieldValue.serverTimestamp(),
-          }
-        );
-      }
-    );
+    const youthId =
+      reset.youthId ||
+      null;
 
     /*
-      The plaintext reset token is returned
-      only once.
+      Consume the guardian token
+      and create the separate
+      password-reset authorization.
 
-      Firestore stores only its hash.
+      ETag protection replaces the
+      Firestore transaction.
+
+      If another request approves
+      the same link first, Cosmos
+      rejects this stale update.
     */
 
-    return Response.json({
-      success: true,
+    const verificationUsedAt =
+      cosmosNow();
 
-      verified: true,
+    try {
+      await replaceCosmosDocument(
+        "passwordResetRequests",
+        reset,
+        {
+          guardianVerified:
+            true,
 
-      youthId,
+          status:
+            "ready_for_reset",
 
-      resetToken,
-    });
-  } catch (error) {
+          verificationTokenHash:
+            null,
+
+          verificationUsedAt,
+
+          resetTokenHash,
+
+          resetExpiresAt:
+            resetTokenExpiresAt,
+
+          updatedAt:
+            verificationUsedAt,
+        }
+      );
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        throw new Error(
+          "ALREADY_VERIFIED"
+        );
+      }
+
+      throw error;
+    }
+
+    /*
+      The plaintext reset token is
+      returned only once.
+
+      Cosmos stores only its hash.
+    */
+
+    return Response.json(
+      {
+        success:
+          true,
+
+        verified:
+          true,
+
+        youthId,
+
+        resetToken,
+      }
+    );
+  } catch (
+    error
+  ) {
     const appCheckResponse =
       appCheckErrorResponse(
         error
       );
 
-    if (appCheckResponse) {
+    if (
+      appCheckResponse
+    ) {
       return appCheckResponse;
     }
 
@@ -509,13 +576,15 @@ export async function POST(request) {
 
     return Response.json(
       {
-        success: false,
+        success:
+          false,
 
         message:
           "Verification could not be completed.",
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }

@@ -1,17 +1,16 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-} from "firebase-admin/firestore";
-
-import {
-  adminDb,
-} from "@/services/firebaseAdmin";
-
-import {
   appCheckErrorResponse,
   requireAppCheck,
 } from "@/services/appCheckServer";
+
+import {
+  cosmosNow,
+  isCosmosPreconditionFailed,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
 
 export const runtime =
   "nodejs";
@@ -19,11 +18,19 @@ export const runtime =
 const ACTIVATION_EXPIRY_MINUTES =
   30;
 
-function hashToken(token) {
+function hashToken(
+  token
+) {
   return crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+    .createHash(
+      "sha256"
+    )
+    .update(
+      token
+    )
+    .digest(
+      "hex"
+    );
 }
 
 function hashesMatch(
@@ -71,15 +78,10 @@ function getExpiryDate(
     return null;
   }
 
-  if (
-    typeof value.toDate ===
-    "function"
-  ) {
-    return value.toDate();
-  }
-
   const parsed =
-    new Date(value);
+    new Date(
+      value
+    );
 
   return Number.isNaN(
     parsed.getTime()
@@ -94,7 +96,9 @@ function createRequestError(
   code
 ) {
   const error =
-    new Error(message);
+    new Error(
+      message
+    );
 
   error.status =
     status;
@@ -118,10 +122,12 @@ export async function POST(
       protection is also applied
       at the App Check layer.
     */
+
     await requireAppCheck(
       request,
       {
-        consume: true,
+        consume:
+          true,
       }
     );
 
@@ -141,7 +147,9 @@ export async function POST(
       typeof requestBody
         ?.token ===
       "string"
-        ? requestBody.token.trim()
+        ? requestBody
+            .token
+            .trim()
         : "";
 
     if (
@@ -149,11 +157,13 @@ export async function POST(
       !token ||
       registrationId.length >
         200 ||
-      token.length > 200
+      token.length >
+        200
     ) {
       return Response.json(
         {
-          success: false,
+          success:
+            false,
 
           message:
             "The email verification link is invalid.",
@@ -162,19 +172,107 @@ export async function POST(
             "invalid-verification-link",
         },
         {
-          status: 400,
+          status:
+            400,
         }
       );
     }
 
-    const registrationReference =
-      adminDb
-        .collection(
-          "pendingRegistrations"
-        )
-        .doc(
-          registrationId
-        );
+    const registration =
+      await readCosmosDocument(
+        "pendingRegistrations",
+        registrationId
+      );
+
+    if (
+      !registration
+    ) {
+      throw createRequestError(
+        "The email verification link is invalid or has expired.",
+        404,
+        "registration-not-found"
+      );
+    }
+
+    /*
+      This endpoint is ONLY
+      for adult registrations.
+    */
+
+    if (
+      registration
+        .requiresParentalConsent ===
+      true
+    ) {
+      throw createRequestError(
+        "This registration requires parent or guardian consent.",
+        409,
+        "parental-consent-required"
+      );
+    }
+
+    /*
+      The adult must still be
+      waiting for email
+      verification.
+
+      Once verified, the same
+      link cannot be reused.
+    */
+
+    if (
+      registration.status !==
+        "pending_email_verification" ||
+      registration
+        .emailVerificationStatus !==
+        "pending"
+    ) {
+      throw createRequestError(
+        "This email verification link has already been used or is no longer valid.",
+        409,
+        "verification-not-pending"
+      );
+    }
+
+    const storedTokenHash =
+      registration
+        .emailVerificationTokenHash;
+
+    const verificationExpiry =
+      getExpiryDate(
+        registration
+          .emailVerificationExpiresAt
+      );
+
+    const providedTokenHash =
+      hashToken(
+        token
+      );
+
+    if (
+      !hashesMatch(
+        providedTokenHash,
+        storedTokenHash
+      )
+    ) {
+      throw createRequestError(
+        "The email verification link is invalid.",
+        401,
+        "invalid-verification-token"
+      );
+    }
+
+    if (
+      !verificationExpiry ||
+      verificationExpiry.getTime() <
+        Date.now()
+    ) {
+      throw createRequestError(
+        "The email verification link has expired.",
+        410,
+        "verification-token-expired"
+      );
+    }
 
     /*
       Generate a completely new
@@ -184,10 +282,15 @@ export async function POST(
       itself is NEVER used to create
       the account.
     */
+
     const activationToken =
       crypto
-        .randomBytes(32)
-        .toString("hex");
+        .randomBytes(
+          32
+        )
+        .toString(
+          "hex"
+        );
 
     const activationTokenHash =
       hashToken(
@@ -200,149 +303,67 @@ export async function POST(
           ACTIVATION_EXPIRY_MINUTES *
             60 *
             1000
+      ).toISOString();
+
+    const verifiedAt =
+      cosmosNow();
+
+    /*
+      Replace the Cosmos document
+      using its ETag.
+
+      If another request consumed
+      the verification link first,
+      Cosmos returns 412 and this
+      request cannot overwrite the
+      newer document.
+    */
+
+    try {
+      await replaceCosmosDocument(
+        "pendingRegistrations",
+        registration,
+        {
+          emailVerificationStatus:
+            "verified",
+
+          emailVerifiedAt:
+            verifiedAt,
+
+          emailVerificationTokenHash:
+            null,
+
+          emailVerificationExpiresAt:
+            null,
+
+          status:
+            "email_verified",
+
+          activationTokenHash,
+
+          activationExpiresAt,
+
+          updatedAt:
+            verifiedAt,
+        }
       );
-
-    let firstName = "";
-
-    await adminDb.runTransaction(
-      async (
-        transaction
-      ) => {
-        const snapshot =
-          await transaction.get(
-            registrationReference
-          );
-
-        if (
-          !snapshot.exists
-        ) {
-          throw createRequestError(
-            "The email verification link is invalid or has expired.",
-            404,
-            "registration-not-found"
-          );
-        }
-
-        const registration =
-          snapshot.data();
-
-        /*
-          This endpoint is ONLY
-          for adult registrations.
-        */
-        if (
-          registration
-            .requiresParentalConsent ===
-          true
-        ) {
-          throw createRequestError(
-            "This registration requires parent or guardian consent.",
-            409,
-            "parental-consent-required"
-          );
-        }
-
-        /*
-          The adult must still be
-          waiting for email
-          verification.
-
-          Once verified, the same
-          link cannot be reused.
-        */
-        if (
-          registration.status !==
-            "pending_email_verification" ||
-          registration
-            .emailVerificationStatus !==
-            "pending"
-        ) {
-          throw createRequestError(
-            "This email verification link has already been used or is no longer valid.",
-            409,
-            "verification-not-pending"
-          );
-        }
-
-        const storedTokenHash =
-          registration
-            .emailVerificationTokenHash;
-
-        const verificationExpiry =
-          getExpiryDate(
-            registration
-              .emailVerificationExpiresAt
-          );
-
-        const providedTokenHash =
-          hashToken(
-            token
-          );
-
-        if (
-          !hashesMatch(
-            providedTokenHash,
-            storedTokenHash
-          )
-        ) {
-          throw createRequestError(
-            "The email verification link is invalid.",
-            401,
-            "invalid-verification-token"
-          );
-        }
-
-        if (
-          !verificationExpiry ||
-          verificationExpiry.getTime() <
-            Date.now()
-        ) {
-          throw createRequestError(
-            "The email verification link has expired.",
-            410,
-            "verification-token-expired"
-          );
-        }
-
-        firstName =
-          registration.firstName ||
-          "";
-
-        /*
-          Consume the verification
-          token and create a separate
-          short-lived activation token.
-
-          Only the HASH is stored.
-        */
-        transaction.update(
-          registrationReference,
-          {
-            emailVerificationStatus:
-              "verified",
-
-            emailVerifiedAt:
-              FieldValue.serverTimestamp(),
-
-            emailVerificationTokenHash:
-              null,
-
-            emailVerificationExpiresAt:
-              null,
-
-            status:
-              "email_verified",
-
-            activationTokenHash,
-
-            activationExpiresAt,
-
-            updatedAt:
-              FieldValue.serverTimestamp(),
-          }
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        throw createRequestError(
+          "This email verification link has already been used or is no longer valid.",
+          409,
+          "verification-not-pending"
         );
       }
-    );
+
+      throw error;
+    }
 
     /*
       Return the plaintext activation
@@ -352,16 +373,20 @@ export async function POST(
       pass this to the existing
       set-password page.
     */
+
     return Response.json(
       {
-        success: true,
+        success:
+          true,
 
         message:
           "Your email address has been verified.",
 
         registrationId,
 
-        firstName,
+        firstName:
+          registration.firstName ||
+          "",
 
         nextStep:
           "set_password",
@@ -369,10 +394,13 @@ export async function POST(
         activationToken,
       },
       {
-        status: 200,
+        status:
+          200,
       }
     );
-  } catch (error) {
+  } catch (
+    error
+  ) {
     const appCheckResponse =
       appCheckErrorResponse(
         error
@@ -394,7 +422,8 @@ export async function POST(
     ) {
       return Response.json(
         {
-          success: false,
+          success:
+            false,
 
           message:
             error.message,
@@ -412,7 +441,8 @@ export async function POST(
 
     return Response.json(
       {
-        success: false,
+        success:
+          false,
 
         message:
           "Your email address could not be verified. Please try again.",
@@ -421,7 +451,8 @@ export async function POST(
           "email-verification-failed",
       },
       {
-        status: 500,
+        status:
+          500,
       }
     );
   }

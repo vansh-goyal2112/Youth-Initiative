@@ -9,10 +9,6 @@ import {
 } from "firebase/auth";
 
 import {
-  getFirestore,
-} from "firebase/firestore";
-
-import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
 } from "firebase/app-check";
@@ -20,7 +16,8 @@ import {
 const firebaseConfig = {
   apiKey:
     process.env
-      .NEXT_PUBLIC_FIREBASE_API_KEY,
+      .NEXT_PUBLIC_FIREBASE_API_KEY ||
+    "AIzaSyDummyKeyForBuildPhaseOnly",
 
   authDomain:
     process.env
@@ -28,7 +25,8 @@ const firebaseConfig = {
 
   projectId:
     process.env
-      .NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      .NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    "youth-initiative-build",
 
   storageBucket:
     process.env
@@ -114,18 +112,17 @@ if (
 }
 
 /*
-  Initialize Firebase services after
-  App Check initialization.
+  Firebase Authentication remains
+  temporarily during the migration.
+
+  Firestore has been removed because
+  application data now uses Cosmos DB.
 */
 const auth =
   getAuth(app);
-
-const db =
-  getFirestore(app);
 
 export {
   app,
   appCheck,
   auth,
-  db,
 };

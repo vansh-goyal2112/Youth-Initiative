@@ -9,15 +9,14 @@ import {
 } from "firebase-admin/auth";
 
 import {
-  getFirestore,
-} from "firebase-admin/firestore";
-
-import {
   getAppCheck,
 } from "firebase-admin/app-check";
 
 function getFirebaseAdminApp() {
-  if (getApps().length > 0) {
+  if (
+    getApps().length >
+    0
+  ) {
     return getApps()[0];
   }
 
@@ -42,40 +41,56 @@ function getFirebaseAdminApp() {
     !clientEmail ||
     !privateKey
   ) {
+    return null;
+  }
+
+  return initializeApp({
+    credential:
+      cert({
+        projectId,
+        clientEmail,
+        privateKey,
+      }),
+  });
+}
+
+function requireFirebaseAdminApp() {
+  const app = getFirebaseAdminApp();
+
+  if (!app) {
     throw new Error(
       "Firebase Admin environment variables are missing."
     );
   }
 
-  return initializeApp({
-    credential: cert({
-      projectId,
-      clientEmail,
-      privateKey,
-    }),
-  });
+  return app;
 }
 
-const firebaseAdminApp =
-  getFirebaseAdminApp();
+const adminAuth = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      const app = requireFirebaseAdminApp();
+      const auth = getAuth(app);
+      const value = auth[prop];
+      return typeof value === "function" ? value.bind(auth) : value;
+    },
+  }
+);
 
-const adminDb =
-  getFirestore(
-    firebaseAdminApp
-  );
-
-const adminAuth =
-  getAuth(
-    firebaseAdminApp
-  );
-
-const adminAppCheck =
-  getAppCheck(
-    firebaseAdminApp
-  );
+const adminAppCheck = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      const app = requireFirebaseAdminApp();
+      const appCheck = getAppCheck(app);
+      const value = appCheck[prop];
+      return typeof value === "function" ? value.bind(appCheck) : value;
+    },
+  }
+);
 
 export {
   adminAppCheck,
   adminAuth,
-  adminDb,
 };

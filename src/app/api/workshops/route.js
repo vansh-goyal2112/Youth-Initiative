@@ -1,11 +1,11 @@
 import {
-  adminDb,
-} from "@/services/firebaseAdmin";
-
-import {
   requireActiveStudent,
   studentAccessResponse,
 } from "@/services/studentAccess";
+
+import {
+  queryCosmosDocuments,
+} from "@/services/cosmosData";
 
 export const runtime = "nodejs";
 
@@ -15,28 +15,35 @@ export async function GET(request) {
       request
     );
 
-    const workshopsSnapshot =
-      await adminDb
-        .collection(
-          "workshops"
-        )
-        .where(
-          "status",
-          "==",
-          "active"
-        )
-        .get();
+    const workshopDocuments =
+      await queryCosmosDocuments(
+        "workshops",
+        `
+          SELECT *
+          FROM c
+          WHERE c.status = @status
+        `,
+        [
+          {
+            name:
+              "@status",
+
+            value:
+              "active",
+          },
+        ]
+      );
 
     const workshops =
-      workshopsSnapshot.docs
+      workshopDocuments
         .map(
           (
-            workshopDocument
+            workshop
           ) => ({
             id:
-              workshopDocument.id,
+              workshop.id,
 
-            ...workshopDocument.data(),
+            ...workshop,
           })
         )
         .sort(

@@ -1,12 +1,7 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-} from "firebase-admin/firestore";
-
-import {
   adminAuth,
-  adminDb,
 } from "@/services/firebaseAdmin";
 
 import {
@@ -18,13 +13,29 @@ import {
   sendPasswordChangedEmail,
 } from "@/services/accountEmailServer";
 
-export const runtime = "nodejs";
+import {
+  cosmosNow,
+  isCosmosPreconditionFailed,
+  readCosmosDocument,
+  replaceCosmosDocument,
+} from "@/services/cosmosData";
 
-function hashToken(token) {
+export const runtime =
+  "nodejs";
+
+function hashToken(
+  token
+) {
   return crypto
-    .createHash("sha256")
-    .update(token)
-    .digest("hex");
+    .createHash(
+      "sha256"
+    )
+    .update(
+      token
+    )
+    .digest(
+      "hex"
+    );
 }
 
 function hashesMatch(
@@ -65,14 +76,17 @@ function hashesMatch(
   );
 }
 
-function getDate(value) {
+function getDate(
+  value
+) {
   if (!value) {
     return null;
   }
 
   const date =
-    value?.toDate?.() ||
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -85,7 +99,9 @@ function getDate(value) {
   return date;
 }
 
-function validatePassword(password) {
+function validatePassword(
+  password
+) {
   if (
     typeof password !==
       "string" ||
@@ -94,19 +110,34 @@ function validatePassword(password) {
     return "Password must contain at least 10 characters.";
   }
 
-  if (password.length > 64) {
+  if (
+    password.length >
+    64
+  ) {
     return "Password cannot exceed 64 characters.";
   }
 
-  if (!/[A-Z]/.test(password)) {
+  if (
+    !/[A-Z]/.test(
+      password
+    )
+  ) {
     return "Password must contain an uppercase letter.";
   }
 
-  if (!/[a-z]/.test(password)) {
+  if (
+    !/[a-z]/.test(
+      password
+    )
+  ) {
     return "Password must contain a lowercase letter.";
   }
 
-  if (!/[0-9]/.test(password)) {
+  if (
+    !/[0-9]/.test(
+      password
+    )
+  ) {
     return "Password must contain a number.";
   }
 
@@ -127,7 +158,9 @@ function errorResponse(
 ) {
   return Response.json(
     {
-      success: false,
+      success:
+        false,
+
       message,
     },
     {
@@ -136,34 +169,59 @@ function errorResponse(
   );
 }
 
-export async function POST(request) {
-  let resetReference = null;
-  let operationId = null;
-  let studentId = null;
+export async function POST(
+  request
+) {
+  let operationId =
+    null;
+
+  let studentId =
+    null;
+
+  let requestId =
+    "";
 
   try {
     await requireAppCheck(
       request,
       {
-        consume: true,
+        consume:
+          true,
       }
     );
 
-    const {
-      requestId,
-      token,
-      password,
-      confirmPassword,
-    } =
+    const requestBody =
       await request.json();
 
+    requestId =
+      typeof requestBody
+        ?.requestId ===
+      "string"
+        ? requestBody
+            .requestId
+            .trim()
+        : "";
+
+    const token =
+      typeof requestBody
+        ?.token ===
+      "string"
+        ? requestBody
+            .token
+            .trim()
+        : "";
+
+    const password =
+      requestBody
+        ?.password;
+
+    const confirmPassword =
+      requestBody
+        ?.confirmPassword;
+
     if (
-      typeof requestId !==
-        "string" ||
-      !requestId.trim() ||
-      typeof token !==
-        "string" ||
-      !token.trim()
+      !requestId ||
+      !token
     ) {
       return errorResponse(
         "Password reset information is missing.",
@@ -207,261 +265,247 @@ export async function POST(request) {
       );
     }
 
-    resetReference =
-      adminDb
-        .collection(
-          "passwordResetRequests"
-        )
-        .doc(
-          requestId.trim()
-        );
-
     operationId =
       crypto.randomUUID();
 
     /*
-      SECURITY TRANSACTION
-
-      The token is permanently
-      consumed BEFORE Firebase
-      changes the password.
-
-      If anything fails afterward,
-      this token can never be used
-      again.
+      Read and validate the
+      password reset request.
     */
 
-    await adminDb.runTransaction(
-      async (
-        transaction
-      ) => {
-        const resetSnapshot =
-          await transaction.get(
-            resetReference
-          );
+    const reset =
+      await readCosmosDocument(
+        "passwordResetRequests",
+        requestId
+      );
 
-        if (
-          !resetSnapshot.exists
-        ) {
-          throw new Error(
-            "RESET_NOT_FOUND"
-          );
-        }
+    if (
+      !reset
+    ) {
+      throw new Error(
+        "RESET_NOT_FOUND"
+      );
+    }
 
-        const reset =
-          resetSnapshot.data();
+    if (
+      reset.status ===
+      "completed"
+    ) {
+      throw new Error(
+        "RESET_ALREADY_USED"
+      );
+    }
 
-        if (
-          reset.status ===
-          "completed"
-        ) {
-          throw new Error(
-            "RESET_ALREADY_USED"
-          );
-        }
+    /*
+      processing means another
+      request already consumed
+      this token.
 
-        /*
-          processing means another
-          request already consumed
-          this token.
+      failed also remains closed.
+    */
 
-          Never reopen it.
-        */
+    if (
+      reset.status ===
+        "processing" ||
+      reset.status ===
+        "failed"
+    ) {
+      throw new Error(
+        "RESET_ALREADY_USED"
+      );
+    }
 
-        if (
-          reset.status ===
-            "processing" ||
-          reset.status ===
-            "failed"
-        ) {
-          throw new Error(
-            "RESET_ALREADY_USED"
-          );
-        }
+    if (
+      reset.status !==
+      "ready_for_reset"
+    ) {
+      throw new Error(
+        "RESET_NOT_READY"
+      );
+    }
 
-        if (
-          reset.status !==
-          "ready_for_reset"
-        ) {
-          throw new Error(
-            "RESET_NOT_READY"
-          );
-        }
+    /*
+      Validate recovery mode.
+    */
 
-        /*
-          Validate recovery mode.
-        */
+    if (
+      reset.recoveryMode ===
+      "guardian"
+    ) {
+      if (
+        reset
+          .requiresGuardianApproval !==
+          true ||
+        reset.guardianVerified !==
+          true
+      ) {
+        throw new Error(
+          "GUARDIAN_APPROVAL_REQUIRED"
+        );
+      }
+    } else if (
+      reset.recoveryMode ===
+      "student"
+    ) {
+      if (
+        reset
+          .requiresGuardianApproval ===
+        true
+      ) {
+        throw new Error(
+          "INVALID_RECOVERY_MODE"
+        );
+      }
+    } else {
+      throw new Error(
+        "INVALID_RECOVERY_MODE"
+      );
+    }
 
-        if (
-          reset.recoveryMode ===
-          "guardian"
-        ) {
-          if (
-            reset
-              .requiresGuardianApproval !==
-              true ||
-            reset.guardianVerified !==
-              true
-          ) {
-            throw new Error(
-              "GUARDIAN_APPROVAL_REQUIRED"
-            );
-          }
-        } else if (
-          reset.recoveryMode ===
-          "student"
-        ) {
-          if (
-            reset
-              .requiresGuardianApproval ===
-            true
-          ) {
-            throw new Error(
-              "INVALID_RECOVERY_MODE"
-            );
-          }
-        } else {
-          throw new Error(
-            "INVALID_RECOVERY_MODE"
-          );
-        }
+    /*
+      Check expiry.
+    */
 
-        /*
-          Check expiry.
-        */
+    const resetExpiry =
+      getDate(
+        reset.resetExpiresAt
+      );
 
-        const resetExpiry =
-          getDate(
-            reset.resetExpiresAt
-          );
+    if (
+      !resetExpiry ||
+      resetExpiry.getTime() <
+        Date.now()
+    ) {
+      throw new Error(
+        "RESET_EXPIRED"
+      );
+    }
 
-        if (
-          !resetExpiry ||
-          resetExpiry.getTime() <
-            Date.now()
-        ) {
-          throw new Error(
-            "RESET_EXPIRED"
-          );
-        }
+    /*
+      Check reset token.
+    */
 
-        /*
-          Check reset token.
-        */
+    const providedTokenHash =
+      hashToken(
+        token
+      );
 
-        const providedTokenHash =
-          hashToken(
-            token
-          );
+    if (
+      !hashesMatch(
+        providedTokenHash,
+        reset.resetTokenHash
+      )
+    ) {
+      throw new Error(
+        "INVALID_RESET_TOKEN"
+      );
+    }
 
-        if (
-          !hashesMatch(
-            providedTokenHash,
-            reset.resetTokenHash
-          )
-        ) {
-          throw new Error(
-            "INVALID_RESET_TOKEN"
-          );
-        }
+    if (
+      typeof reset.studentId !==
+        "string" ||
+      !reset.studentId
+    ) {
+      throw new Error(
+        "INVALID_STUDENT"
+      );
+    }
 
-        if (
-          typeof reset.studentId !==
-            "string" ||
-          !reset.studentId
-        ) {
-          throw new Error(
-            "INVALID_STUDENT"
-          );
-        }
+    studentId =
+      reset.studentId;
 
-        studentId =
-          reset.studentId;
+    /*
+      Verify the student in Cosmos
+      before consuming the token.
+    */
 
-        const studentReference =
-          adminDb
-            .collection(
-              "students"
-            )
-            .doc(
-              studentId
-            );
+    const student =
+      await readCosmosDocument(
+        "students",
+        studentId
+      );
 
-        const studentSnapshot =
-          await transaction.get(
-            studentReference
-          );
+    if (
+      !student
+    ) {
+      throw new Error(
+        "INVALID_STUDENT"
+      );
+    }
 
-        if (
-          !studentSnapshot.exists
-        ) {
-          throw new Error(
-            "INVALID_STUDENT"
-          );
-        }
+    /*
+      Only active student
+      accounts can reset
+      passwords.
+    */
 
-        const student =
-          studentSnapshot.data();
+    if (
+      student.role !==
+        "student" ||
+      student.accountStatus !==
+        "active"
+    ) {
+      throw new Error(
+        "ACCOUNT_INACTIVE"
+      );
+    }
 
-        /*
-          Only active student
-          accounts can reset
-          passwords.
-        */
+    /*
+      Verify Firebase UID
+      consistency.
+    */
 
-        if (
-          student.role !==
-            "student" ||
-          student.accountStatus !==
-            "active"
-        ) {
-          throw new Error(
-            "ACCOUNT_INACTIVE"
-          );
-        }
+    if (
+      typeof student.firebaseUid ===
+        "string" &&
+      student.firebaseUid !==
+        studentId
+    ) {
+      throw new Error(
+        "ACCOUNT_MISMATCH"
+      );
+    }
 
-        /*
-          Verify Firebase UID
-          consistency.
-        */
+    /*
+      Verify Youth ID
+      consistency.
+    */
 
-        if (
-          typeof student.firebaseUid ===
-            "string" &&
-          student.firebaseUid !==
-            studentId
-        ) {
-          throw new Error(
-            "ACCOUNT_MISMATCH"
-          );
-        }
+    if (
+      reset.youthId &&
+      student.youthId &&
+      reset.youthId !==
+        student.youthId
+    ) {
+      throw new Error(
+        "ACCOUNT_MISMATCH"
+      );
+    }
 
-        /*
-          Verify Youth ID
-          consistency.
-        */
+    /*
+      CONSUME TOKEN NOW.
 
-        if (
-          reset.youthId &&
-          student.youthId &&
-          reset.youthId !==
-            student.youthId
-        ) {
-          throw new Error(
-            "ACCOUNT_MISMATCH"
-          );
-        }
+      From this point forward
+      this authorization can
+      never be reused.
 
-        /*
-          CONSUME TOKEN NOW.
+      Cosmos ETag protection makes
+      sure two simultaneous requests
+      cannot both consume the same
+      reset request.
+    */
 
-          From this point forward
-          this authorization can
-          never be reused.
-        */
+    let processingReset =
+      null;
 
-        transaction.update(
-          resetReference,
+    try {
+      const tokenConsumedAt =
+        cosmosNow();
+
+      processingReset =
+        await replaceCosmosDocument(
+          "passwordResetRequests",
+          reset,
           {
             status:
               "processing",
@@ -472,25 +516,41 @@ export async function POST(request) {
             resetExpiresAt:
               null,
 
-            tokenConsumedAt:
-              FieldValue.serverTimestamp(),
+            tokenConsumedAt,
 
             processingOperationId:
               operationId,
 
             updatedAt:
-              FieldValue.serverTimestamp(),
+              tokenConsumedAt,
           }
         );
+    } catch (
+      error
+    ) {
+      if (
+        isCosmosPreconditionFailed(
+          error
+        )
+      ) {
+        throw new Error(
+          "RESET_ALREADY_USED"
+        );
       }
-    );
+
+      throw error;
+    }
 
     /*
       Change password through
       Firebase Auth.
 
+      Firebase Auth remains
+      temporarily during the
+      database migration.
+
       Password is NEVER written
-      to Firestore.
+      to Cosmos DB.
     */
 
     try {
@@ -534,27 +594,58 @@ export async function POST(request) {
       */
 
       try {
-        await resetReference.update(
-          {
-            status:
-              "failed",
+        const currentReset =
+          await readCosmosDocument(
+            "passwordResetRequests",
+            requestId
+          );
 
-            failureStage:
-              "firebase_auth",
+        if (
+          currentReset &&
+          currentReset.status ===
+            "processing" &&
+          currentReset
+            .processingOperationId ===
+            operationId
+        ) {
+          const failedAt =
+            cosmosNow();
 
-            failedAt:
-              FieldValue.serverTimestamp(),
+          try {
+            await replaceCosmosDocument(
+              "passwordResetRequests",
+              currentReset,
+              {
+                status:
+                  "failed",
 
-            updatedAt:
-              FieldValue.serverTimestamp(),
+                failureStage:
+                  "firebase_auth",
+
+                failedAt,
+
+                updatedAt:
+                  failedAt,
+              }
+            );
+          } catch (
+            updateError
+          ) {
+            if (
+              !isCosmosPreconditionFailed(
+                updateError
+              )
+            ) {
+              throw updateError;
+            }
           }
-        );
+        }
       } catch (
-        firestoreError
+        cosmosError
       ) {
         console.error(
           "Could not record password reset failure:",
-          firestoreError?.message
+          cosmosError?.message
         );
       }
 
@@ -565,7 +656,7 @@ export async function POST(request) {
     }
 
     /*
-      Finalize Firestore record.
+      Finalize Cosmos record.
 
       The password has already
       changed and the token has
@@ -573,55 +664,80 @@ export async function POST(request) {
     */
 
     try {
-      await adminDb.runTransaction(
-        async (
-          transaction
-        ) => {
-          const resetSnapshot =
-            await transaction.get(
-              resetReference
-            );
+      const currentReset =
+        await readCosmosDocument(
+          "passwordResetRequests",
+          requestId
+        );
 
-          if (
-            !resetSnapshot.exists
-          ) {
-            throw new Error(
-              "FINALIZATION_FAILED"
-            );
+      if (
+        !currentReset
+      ) {
+        throw new Error(
+          "FINALIZATION_FAILED"
+        );
+      }
+
+      if (
+        currentReset.status !==
+          "processing" ||
+        currentReset
+          .processingOperationId !==
+          operationId
+      ) {
+        throw new Error(
+          "FINALIZATION_FAILED"
+        );
+      }
+
+      const completedAt =
+        cosmosNow();
+
+      try {
+        await replaceCosmosDocument(
+          "passwordResetRequests",
+          currentReset,
+          {
+            status:
+              "completed",
+
+            usedAt:
+              completedAt,
+
+            /*
+              The Firestore version
+              deleted this field.
+
+              Null has the same
+              functional result for
+              this completed record,
+              while keeping the
+              generic Cosmos helper
+              unchanged.
+            */
+
+            processingOperationId:
+              null,
+
+            updatedAt:
+              completedAt,
           }
-
-          const reset =
-            resetSnapshot.data();
-
-          if (
-            reset.status !==
-              "processing" ||
-            reset.processingOperationId !==
-              operationId
-          ) {
-            throw new Error(
-              "FINALIZATION_FAILED"
-            );
-          }
-
-          transaction.update(
-            resetReference,
-            {
-              status:
-                "completed",
-
-              usedAt:
-                FieldValue.serverTimestamp(),
-
-              processingOperationId:
-                FieldValue.delete(),
-
-              updatedAt:
-                FieldValue.serverTimestamp(),
-            }
+        );
+      } catch (
+        error
+      ) {
+        if (
+          isCosmosPreconditionFailed(
+            error
+          )
+        ) {
+          throw new Error(
+            "FINALIZATION_FAILED"
           );
         }
-      );
+
+        throw error;
+      }
     } catch (
       finalizationError
     ) {
@@ -655,46 +771,39 @@ export async function POST(request) {
 
     try {
       const [
-        studentSnapshot,
-        resetSnapshot,
+        currentStudent,
+        currentReset,
       ] =
         await Promise.all([
-          adminDb
-            .collection(
-              "students"
-            )
-            .doc(
-              studentId
-            )
-            .get(),
+          readCosmosDocument(
+            "students",
+            studentId
+          ),
 
-          resetReference.get(),
+          readCosmosDocument(
+            "passwordResetRequests",
+            requestId
+          ),
         ]);
 
       if (
-        studentSnapshot.exists &&
-        resetSnapshot.exists
+        currentStudent &&
+        currentReset
       ) {
-        const student =
-          studentSnapshot.data();
-
-        const reset =
-          resetSnapshot.data();
-
         const notificationResult =
           await sendPasswordChangedEmail(
             {
               firstName:
-                student.firstName,
+                currentStudent.firstName,
 
               email:
-                student.contactEmail,
+                currentStudent.contactEmail,
 
               parentEmail:
-                student.parentEmail,
+                currentStudent.parentEmail,
 
               recoveryMode:
-                reset.recoveryMode,
+                currentReset.recoveryMode,
             }
           );
 

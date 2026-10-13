@@ -1,18 +1,15 @@
 import crypto from "crypto";
 
 import {
-  FieldValue,
-  Timestamp,
-} from "firebase-admin/firestore";
-
-import {
-  adminDb,
-} from "@/services/firebaseAdmin";
-
-import {
   adminAccessResponse,
   requireActiveAdmin,
 } from "@/services/adminAccess";
+
+import {
+  cosmosNow,
+  createCosmosDocument,
+  readCosmosDocument,
+} from "@/services/cosmosData";
 
 export const runtime = "nodejs";
 
@@ -55,6 +52,9 @@ export async function POST(
       );
     }
 
+    const normalizedWorkshopId =
+      workshopId.trim();
+
     const duration =
       Number(
         durationMinutes
@@ -78,18 +78,14 @@ export async function POST(
       );
     }
 
-    const workshopSnapshot =
-      await adminDb
-        .collection(
-          "workshops"
-        )
-        .doc(
-          workshopId.trim()
-        )
-        .get();
+    const workshop =
+      await readCosmosDocument(
+        "workshops",
+        normalizedWorkshopId
+      );
 
     if (
-      !workshopSnapshot.exists
+      !workshop
     ) {
       return Response.json(
         {
@@ -110,56 +106,54 @@ export async function POST(
         .toString("hex");
 
     const expiresAt =
-      Timestamp.fromDate(
-        new Date(
-          Date.now() +
-            duration *
-              60 *
-              1000
-        )
-      );
+      new Date(
+        Date.now() +
+          duration *
+            60 *
+            1000
+      ).toISOString();
 
-    const attendanceReference =
-      adminDb
-        .collection(
-          "attendanceSessions"
-        )
-        .doc();
+    const attendanceSessionId =
+      crypto.randomUUID();
 
-    await attendanceReference.set({
-      workshopId:
-        workshopId.trim(),
+    const createdAt =
+      cosmosNow();
 
-      code:
-        attendanceCode,
+    await createCosmosDocument(
+      "attendanceSessions",
+      {
+        id:
+          attendanceSessionId,
 
-      active: true,
+        workshopId:
+          normalizedWorkshopId,
 
-      expiresAt,
+        code:
+          attendanceCode,
 
-      createdBy:
-        admin.uid,
+        active:
+          true,
 
-      createdAt:
-        FieldValue.serverTimestamp(),
-    });
+        expiresAt,
+
+        createdBy:
+          admin.uid,
+
+        createdAt,
+      }
+    );
 
     return Response.json({
       success: true,
 
-      attendanceSessionId:
-        attendanceReference.id,
+      attendanceSessionId,
 
       code:
         attendanceCode,
 
-      workshop:
-        workshopSnapshot.data(),
+      workshop,
 
-      expiresAt:
-        expiresAt
-          .toDate()
-          .toISOString(),
+      expiresAt,
     });
   } catch (error) {
     const accessResponse =
