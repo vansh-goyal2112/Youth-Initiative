@@ -16,7 +16,8 @@ import {
 const firebaseConfig = {
   apiKey:
     process.env
-      .NEXT_PUBLIC_FIREBASE_API_KEY,
+      .NEXT_PUBLIC_FIREBASE_API_KEY ||
+    "AIzaSyDummyKeyForBuildPhaseOnly",
 
   authDomain:
     process.env
@@ -24,7 +25,8 @@ const firebaseConfig = {
 
   projectId:
     process.env
-      .NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+      .NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    "youth-initiative-build",
 
   storageBucket:
     process.env
