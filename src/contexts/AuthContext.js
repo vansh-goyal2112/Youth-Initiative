@@ -17,13 +17,12 @@ import {
 } from "firebase/auth";
 
 import {
-  doc,
-  getDoc,
-} from "firebase/firestore";
+  getToken as getAppCheckToken,
+} from "firebase/app-check";
 
 import {
+  appCheck,
   auth,
-  db,
 } from "@/services/firebase";
 
 const AuthContext =
@@ -123,36 +122,68 @@ export function AuthProvider({
 
             /*
               Firebase authentication
-              alone is not enough to
-              consider a student
-              authenticated inside
-              the application.
+              remains temporarily.
 
-              The matching Firestore
-              student profile must
-              also be valid.
+              Student profile data is
+              now loaded from Cosmos DB
+              through the protected
+              server API.
             */
 
-            const studentReference =
-              doc(
-                db,
-                "students",
-                firebaseUser.uid
+            if (
+              !appCheck
+            ) {
+              throw new Error(
+                "App verification is not available."
+              );
+            }
+
+            const [
+              idToken,
+              appCheckTokenResult,
+            ] =
+              await Promise.all([
+                firebaseUser
+                  .getIdToken(),
+
+                getAppCheckToken(
+                  appCheck
+                ),
+              ]);
+
+            const profileResponse =
+              await fetch(
+                "/api/student/profile",
+                {
+                  method:
+                    "GET",
+
+                  headers: {
+                    Authorization:
+                      `Bearer ${idToken}`,
+
+                    "X-Firebase-AppCheck":
+                      appCheckTokenResult.token,
+                  },
+
+                  cache:
+                    "no-store",
+                }
               );
 
-            const studentSnapshot =
-              await getDoc(
-                studentReference
-              );
+            const profileResult =
+              await profileResponse
+                .json()
+                .catch(
+                  () => null
+                );
 
             /*
-              The auth state may have
-              changed while Firestore
-              was loading.
+              The authentication state
+              may have changed while the
+              profile request was running.
 
-              Do not apply stale
-              profile data to a newer
-              authentication session.
+              Do not apply stale data.
             */
 
             if (
@@ -165,7 +196,10 @@ export function AuthProvider({
             }
 
             if (
-              !studentSnapshot.exists()
+              !profileResponse.ok ||
+              profileResult?.success !==
+                true ||
+              !profileResult?.student
             ) {
               setUser(
                 null
@@ -183,7 +217,7 @@ export function AuthProvider({
             }
 
             const studentData =
-              studentSnapshot.data();
+              profileResult.student;
 
             const youthId =
               typeof studentData
@@ -239,11 +273,9 @@ export function AuthProvider({
                 "approved";
 
             /*
-              Restored student
-              sessions must pass the
-              same important checks
-              used during normal
-              student login.
+              Restored student sessions
+              must pass the same important
+              checks used during login.
             */
 
             if (
@@ -275,7 +307,8 @@ export function AuthProvider({
             setStudentProfile(
               {
                 id:
-                  studentSnapshot.id,
+                  studentData.id ||
+                  firebaseUser.uid,
 
                 ...studentData,
               }
@@ -303,12 +336,10 @@ export function AuthProvider({
             );
 
             /*
-              Only student routes
-              should fail closed.
+              Student routes fail closed.
 
-              Admin routes already
-              returned above and are
-              handled by AdminGuard.
+              Admin routes already returned
+              above and are handled separately.
             */
 
             try {
@@ -355,7 +386,11 @@ export function AuthProvider({
 
   const value = {
     user,
+
     studentProfile,
+    
+    student: studentProfile,
+
     loading,
 
     isAuthenticated:
