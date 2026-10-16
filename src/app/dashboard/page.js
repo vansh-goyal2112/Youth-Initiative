@@ -3,6 +3,7 @@
 import Link from "next/link";
 import UpcomingAdventures from "@/components/gamification/UpcomingAdventures";
 import SkillQuestHub from "@/components/gamification/SkillQuestHub";
+import DiscoverySpinner from "@/components/gamification/DiscoverySpinner";
 import dashboardSkin from "@/components/gamification/dashboardQuest.module.css";
 import { daysUntilWorkshop } from "@/utils/upcomingWorkshops.mjs";
 import Image from "next/image";
@@ -628,6 +629,11 @@ export default function DashboardPage() {
         />
 
         <UpcomingAdventures
+          workshops={workshops}
+          registrations={registrations}
+        />
+
+        <DiscoverySpinner
           workshops={workshops}
           registrations={registrations}
         />
