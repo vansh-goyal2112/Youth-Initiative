@@ -233,3 +233,84 @@ mapping, missing-value fallbacks, dates and progress sourcing.
 **Status:** Compilation/lint/unit tests verify the implementation,
 but end-to-end live Firebase/Cosmos and visual-device tests require
 an authenticated test account and cannot be claimed without them.
+
+
+## Registration resume and expired-link recovery (October 16)
+
+**Problem:** A student whose pending registration was already stored in Cosmos
+could not submit the registration form again using the same email. The current
+duplicate check only reported an error. The existing resend endpoints depended
+on the original browser's `registrationId` or (for guardian consent)
+`resendToken`, which may be gone after a few days or a device change.
+
+**Solution:** Added a public, Firebase App Check-protected
+`POST /api/register/recover` endpoint plus
+`/resume-registration` page linked from both Register and Login.
+The user enters their **original student signup email**. The API responds
+generically whether or not a matching pending registration exists; it never
+returns the registration's state, ID, contact addresses or tokens.
+
+| Pending stage | Recovery destination | Next step |
+| --- | --- | --- |
+| Adult: email verification pending | Original student contact email | New email verification link |
+| Adult: email verified, account not activated | Original verified student email | New password/account setup link |
+| Minor: guardian consent pending | Original guardian contact email | New guardian consent link |
+| Minor: guardian approved, account not activated | Original approved guardian email | New password/account setup link |
+| Completed account / no active pending record | No recovery link | User may log in or use existing account recovery |
+
+All new tokens are 32 random bytes, stored in Cosmos as SHA-256 hashes,
+rotated using the current document ETag, and expire after 30 minutes.
+Only the original trusted email receives the link. The original parent
+email cannot be changed by entering a different email in recovery.
+Resend/approval state is not bypassed: minors must still receive guardian
+consent, and adults must still verify email ownership.
+
+Recovery requests are rate-limited per pending record (60-second cooldown
+and up to five accepted requests within 24 hours). This is an additional
+defense alongside App Check, not a substitute for infrastructure-level
+abuse protection; production may also benefit from rate-limiting by IP
+at the edge.
+
+The duplicate registration query also recognizes `email_verified` as
+a pending state. Existing status `expired` does not block a fresh
+registration, while an expired verification or consent **token** alone
+does not expire or destroy the registration; recovery rotates the token.
+
+### Registration recovery QA before merge
+
+- [ ] Adult abandons before verifying email, waits beyond 30 minutes:
+      same email on Register -> Resume Registration -> receives new
+      verification link -> completes password setup.
+- [ ] Adult verifies email but does not finish password setup; wait
+      beyond activation expiry, then resume -> activation sent to
+      original verified email.
+- [ ] Minor abandons guardian consent and loses browser session; resume
+      using the student's signup email -> original guardian receives
+      new consent link, and approval/activation still works.
+- [ ] Minor already has approved guardian consent but did not activate;
+      resume -> account setup sent to approved guardian email without
+      asking for redundant consent.
+- [ ] Unrecognized email and fully activated account return exactly
+      the same generic recovery response; neither identifies account
+      state nor sends data to the requester.
+- [ ] Old consent/verification/setup tokens stop working after a newly
+      issued token replaces them.
+- [ ] 60-second cooldown and 5/day controls prevent repeated mail
+      while leaving the API's outward response generic.
+- [ ] Two simultaneous recovery requests do not overwrite newer tokens.
+- [ ] Email failure, invalid App Check token and unavailable Cosmos
+      are handled without exposing an account's existence.
+- [ ] Active account with the same contact email cannot be replaced
+      or reactivated through the pending recovery endpoint.
+- [ ] Verify the correct production `NEXT_PUBLIC_APP_URL`, Azure
+      Communication Services sender address, verified domain, and
+      parent/guardian reply-to settings.
+- [ ] Test mobile/PWA, keyboard access, screen readers, expired links
+      and internationalized email normalization.
+
+Automated unit tests: `tests/registrationRecovery.test.mjs`.
+
+**Limitation:** Recovery cannot change an existing guardian's email;
+that would require a separately verified guardian-change flow. A person
+who no longer controls their original trusted contact must contact
+the SAIT Youth Initiative team for manual support.
