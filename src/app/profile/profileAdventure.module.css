@@ -146,6 +146,7 @@
 @keyframes passportTwinkle{0%,100%{transform:scale(.93) rotate(-6deg);opacity:.36;}50%{transform:scale(1.07) rotate(7deg);opacity:.7;}}
 @keyframes avatarWiggle{0%,100%{transform:rotate(-5deg);}50%{transform:rotate(9deg);}}
 @media(max-width:1020px){
+  .profilePage{padding-bottom:max(110px,calc(82px + env(safe-area-inset-bottom)));}
   .heroInner,.content,.passport{width:calc(100% - 38px);}
   .columns{grid-template-columns:1fr;}
   .adventureHeading{align-items:start;flex-direction:column;}
