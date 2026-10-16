@@ -16,7 +16,7 @@ const navigation = [
 
 function activeRoute(pathname) {
   if (pathname === "/dashboard") return "/dashboard";
-  if (pathname === "/journey") return "/journey";
+  if (pathname === "/journey" || pathname === "/reward") return "/journey";
   if (pathname === "/badges") return "/badges";
   if (pathname === "/profile" || pathname === "/edit-profile") return "/profile";
   return "/workshops";
