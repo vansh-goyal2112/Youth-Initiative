@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import AdventureTrail from "@/components/gamification/AdventureTrail";
+import JournalStamps from "@/components/gamification/JournalStamps";
 import playfulSkin from "@/components/gamification/playfulSkin.module.css";
 import {
   useEffect,
@@ -44,6 +45,8 @@ export default function JourneyPage() {
 
   const [pathways, setPathways] =
     useState([]);
+
+  const [registrations, setRegistrations] = useState([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -109,6 +112,20 @@ export default function JourneyPage() {
           setGameData(
             data.gamification
           );
+        }
+
+        // Learning journal stamps are based on the same verified
+        // workshop records used by the dashboard.
+        try {
+          const registrationsResponse = await studentFetch("/api/registrations");
+          if (registrationsResponse.ok) {
+            const registrationData = await registrationsResponse.json();
+            if (!cancelled) {
+              setRegistrations(registrationData.registrations || []);
+            }
+          }
+        } catch {
+          // The Adventure Map should remain usable without journal data.
         }
 
         try {
@@ -300,6 +317,8 @@ export default function JourneyPage() {
           quests={gameData.quests || []}
           totalXp={gameData.totalXp}
         />
+
+        <JournalStamps registrations={registrations} />
 
         <div className="journey-game-stats">
 
