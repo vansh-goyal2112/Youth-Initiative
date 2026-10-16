@@ -798,14 +798,8 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="dashboard-quest-reward">
-                    <Star
-                      size={14}
-                    />
-                    +
-                    {
-                      activeQuest.reward
-                    }
-                    {" XP"}
+                    <Star size={14} aria-hidden="true" />
+                    Skill Milestone
                   </div>
                 </div>
 
