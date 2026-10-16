@@ -31,7 +31,7 @@ export default function UpcomingAdventures({ workshops = [], registrations = [] 
         <div className={styles.headingCopy}>
           <span><Sparkles size={17} aria-hidden="true" /> YOUR NEXT DISCOVERY</span>
           <h2 id="coming-adventures-heading">Adventures Coming Soon!</h2>
-          <p>See what's happening at SAIT this week. Find something that sparks your curiosity!</p>
+          <p>See what is happening at SAIT this week. Find something that sparks your curiosity!</p>
         </div>
         <span className={styles.rocket} aria-hidden="true"><Rocket size={35} /></span>
       </div>
