@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import UpcomingAdventures from "@/components/gamification/UpcomingAdventures";
+import { daysUntilWorkshop } from "@/utils/upcomingWorkshops.mjs";
 import Image from "next/image";
 
 import {
@@ -227,17 +229,22 @@ export default function DashboardPage() {
     authLoading,
   ]);
 
-  const upcomingRegistrations =
-    useMemo(() => {
-      return registrations.filter(
-        (registration) =>
-          registration.status !==
-            "completed" &&
-          registration.workshop
-      );
-    }, [
-      registrations,
-    ]);
+  const upcomingRegistrations = useMemo(() => {
+    return registrations
+      .filter((registration) => {
+        if (registration.status === "completed" || !registration.workshop) {
+          return false;
+        }
+        const days = daysUntilWorkshop(registration.workshop.startDate);
+        return days === null || days >= 0;
+      })
+      .sort((first, second) => {
+        const firstDays = daysUntilWorkshop(first.workshop.startDate);
+        const secondDays = daysUntilWorkshop(second.workshop.startDate);
+        return (firstDays === null ? Infinity : firstDays)
+          - (secondDays === null ? Infinity : secondDays);
+      });
+  }, [registrations]);
 
   const nextWorkshop =
     upcomingRegistrations[0] ||
@@ -676,6 +683,11 @@ export default function DashboardPage() {
             detail="Earned"
           />
         </div>
+
+        <UpcomingAdventures
+          workshops={workshops}
+          registrations={registrations}
+        />
 
         {/* NEXT WORKSHOP + QUEST */}
 
@@ -1244,7 +1256,7 @@ function NextWorkshopCard({
               size={16}
             />
 
-            {workshop.date ||
+            {workshop.startDate ||
               "Workshop date"}
           </div>
 
