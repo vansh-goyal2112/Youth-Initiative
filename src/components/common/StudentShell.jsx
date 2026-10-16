@@ -4,41 +4,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import StudentHeader, { StudentBottomNavigation } from "@/components/common/StudentHeader";
 import styles from "./studentShell.module.css";
-
-const primaryRoutes = new Set([
-  "/dashboard",
-  "/workshops",
-  "/journey",
-  "/badges",
-  "/profile",
-  "/edit-profile",
-  "/registered-workshops",
-  "/completed-workshops",
-  "/scan-attendance",
-  "/reward",
-]);
-
-function isStudentRoute(pathname) {
-  return (
-    primaryRoutes.has(pathname) ||
-    pathname.startsWith("/workshops/") ||
-    pathname.startsWith("/registration-success/")
-  );
-}
-
-function backDestination(pathname) {
-  if (pathname === "/dashboard") return null;
-  if (pathname === "/workshops") return { href: "/dashboard", label: "Back to Home" };
-  if (pathname.startsWith("/workshops/")) return { href: "/workshops", label: "Back to Workshops" };
-  if (pathname === "/journey" || pathname === "/badges") return { href: "/dashboard", label: "Back to Home" };
-  if (pathname === "/profile") return { href: "/dashboard", label: "Back to Home" };
-  if (pathname === "/edit-profile") return { href: "/profile", label: "Back to Profile" };
-  if (pathname === "/completed-workshops") return { href: "/registered-workshops", label: "Back to My Workshops" };
-  if (pathname === "/registered-workshops") return { href: "/workshops", label: "Back to Workshops" };
-  if (pathname === "/scan-attendance") return { href: "/registered-workshops", label: "Back to My Workshops" };
-  if (pathname.startsWith("/registration-success/")) return { href: "/workshops", label: "Back to Workshops" };
-  return { href: "/dashboard", label: "Back to Home" };
-}
+import { isStudentRoute, studentBackDestination } from "@/utils/studentRouteConfig.mjs";
 
 /**
  * A single shell provides consistent student navigation without changing
@@ -54,7 +20,7 @@ export default function StudentShell({ children }) {
     return children;
   }
 
-  const back = backDestination(pathname);
+  const back = studentBackDestination(pathname);
 
   return (
     <div className={styles.shell}>
