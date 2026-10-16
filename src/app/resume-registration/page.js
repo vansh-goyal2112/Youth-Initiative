@@ -95,6 +95,12 @@ export default function ResumeRegistrationPage() {
                 Try Another Email
               </button>
               <Link href="/login" className={styles.secondary}>Return to Login <ArrowRight size={17} aria-hidden="true"/></Link>
+              <p className={styles.smallHelp}>
+                Nothing arrives? The old registration may already be closed.
+                You can <Link href="/register">start a new registration</Link>, or contact
+                <a href="mailto:youth.programs@sait.ca"> Youth Initiative support</a>
+                if you no longer have access to the original email.
+              </p>
             </div>
           ) : (
             <div className={styles.mainCopy}>
