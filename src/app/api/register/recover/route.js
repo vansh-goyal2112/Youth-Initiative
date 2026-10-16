@@ -65,7 +65,7 @@ function stageEmail(registration, stage, token) {
   };
 }
 
-function recoveryTokenUpdates(stage, token, now) {
+function recoveryTokenUpdates(stage, token) {
   const hash = crypto.createHash("sha256").update(token).digest("hex");
   const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
   if (stage === "parental_consent") {
@@ -132,7 +132,7 @@ export async function POST(request) {
     const token = crypto.randomBytes(32).toString("hex");
     const now = cosmosNow();
     const updates = {
-      ...recoveryTokenUpdates(stage, token, now),
+      ...recoveryTokenUpdates(stage, token),
       ...nextRecoveryCounter(registration),
       registrationRecoveryRequestedAt: now,
       emailStatus: "sending",
