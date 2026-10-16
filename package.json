@@ -7,10 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/*.test.mjs",
+    "test": "npm run test:unit",
     "scrape:sait-programs": "node scripts/scrapeSaitPrograms.mjs",
     "ingest:sait": "node scripts/ingestSait.mjs",
-    "demo:recommendations": "node scripts/demoRecommendations.mjs"
+    "demo:recommendations": "node scripts/demoRecommendations.mjs",
+    "test:unit": "node --test tests/*.test.mjs",
+    "test:smoke": "node scripts/httpSmoke.mjs"
   },
   "engines": {
     "node": ">=20.9.0"
