@@ -48,6 +48,7 @@ export default function RegisterPage() {
 
   const [registrationError, setRegistrationError] =
     useState("");
+  const [resumeSuggested, setResumeSuggested] = useState(false);
 
   const handleRegistration = async (
     values,
@@ -60,6 +61,7 @@ export default function RegisterPage() {
 
     try {
       setRegistrationError("");
+      setResumeSuggested(false);
 
       const requestBody = {
         firstName: values.firstName
@@ -96,6 +98,7 @@ export default function RegisterPage() {
         await response.json();
 
       if (!response.ok) {
+        setResumeSuggested(responseData?.code === "registration-already-pending");
         if (responseData.fieldErrors) {
           setErrors(responseData.fieldErrors);
         }
@@ -496,13 +499,46 @@ export default function RegisterPage() {
                       )}
 
                       {registrationError && (
+                        <div className="registration-server-error" role="alert">
+                          {registrationError}
+                        </div>
+                      )}
+
+                      {resumeSuggested && (
                         <div
-                          className="registration-server-error"
-                          role="alert"
+                          style={{
+                            marginTop: "12px",
+                            padding: "15px",
+                            border: "1px solid #d6c9ec",
+                            borderRadius: "14px",
+                            background: "#f7f2ff",
+                          }}
                         >
-                          {
-                            registrationError
-                          }
+                          <strong style={{ display: "block", fontSize: "14px", marginBottom: "7px" }}>
+                            Already started registering?
+                          </strong>
+                          <p style={{ fontSize: "13px", lineHeight: 1.5, margin: "0 0 12px" }}>
+                            Even if your old verification or consent link expired,
+                            you can securely request a new one.
+                          </p>
+                          <Link
+                            href="/resume-registration"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              minHeight: "43px",
+                              padding: "11px 15px",
+                              borderRadius: "11px",
+                              background: "#d5253b",
+                              color: "#fff",
+                              fontSize: "13px",
+                              fontWeight: 850,
+                              textDecoration: "none",
+                            }}
+                          >
+                            Resume Registration
+                          </Link>
                         </div>
                       )}
                     </div>
@@ -537,6 +573,12 @@ export default function RegisterPage() {
                         account?{" "}
                         <Link href="/login">
                           Login
+                        </Link>
+                      </p>
+                      <p className="register-login-text">
+                        Didn&apos;t finish signing up?{" "}
+                        <Link href="/resume-registration">
+                          Resume Registration
                         </Link>
                       </p>
                     </div>
