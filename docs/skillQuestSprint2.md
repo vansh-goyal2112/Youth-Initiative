@@ -175,3 +175,61 @@ Added unit tests `tests/studentRouteConfig.test.mjs` and
 `tests/discoverySpin.test.mjs`. Frontend smoke tests and visual
 review on real browsers remain necessary; the CI build cannot verify
 visual consistency by itself.
+
+## Fourth update: Cosmos-backed Explorer Passport student profile
+
+**Root cause:** The legacy Profile page read `student` from `useAuth()`,
+but `AuthContext` originally provided `studentProfile`. As a result,
+the screen showed blank/fallback identity fields even when the
+authenticated Cosmos student document included `youthId` and
+`contactEmail`.
+
+**Fix:** `AuthContext` now exposes `student: studentProfile` as a
+backward-compatible alias for the existing Dashboard and StudentShell
+while retaining its original `studentProfile` field. The new Profile
+page reads the correct `studentProfile` field and also fetches
+`GET /api/student/profile` with `studentFetch` for fresh
+authenticated Cosmos data. It loads `GET /api/gamification` for current
+XP, badges, level and verified workshop totals. If fresh loading
+fails, it warns clearly when using cached authenticated context.
+
+**Design:** The new Profile is an animated, accessible and responsive
+**Skill Quest Explorer Passport** with personal initials, level/rank,
+progress meter, Youth ID and actual contact email from Cosmos,
+date-of-birth and learning preference, emoji-enhanced interest worlds,
+earned badge preview, and links to Adventure Map, Badges and Workshop
+history. Existing Edit Preferences and Log Out actions are retained.
+Styles live in `src/app/profile/profileAdventure.module.css`; no
+global stylesheet rewrite.
+
+**Privacy:** The profile does not expose Firebase UID as a Youth ID
+or display the synthetic `@youthinitiative.local` Firebase sign-in
+email as a real contact address. It uses only the logged-in
+student's authenticated profile. No public student sharing or social
+leaderboard has been introduced.
+
+**Checks:** Added `tests/studentProfileDisplay.test.mjs` for field
+mapping, missing-value fallbacks, dates and progress sourcing.
+
+### Required manual acceptance checks
+
+- [ ] Log in as a test student whose Cosmos record has `youthId`
+      and `contactEmail`. Confirm both fields show accurate values.
+- [ ] Confirm Firebase synthetic login email and Firebase UID are
+      never substituted for missing Youth ID/contact information.
+- [ ] Edit learning mode and interests; return to Profile and confirm
+      refreshed Cosmos data is displayed without logging out.
+- [ ] Verify level, XP, badge count and completed workshop count match
+      `/api/gamification`.
+- [ ] Try an authorized profile with absent optional fields; display
+      useful placeholders instead of `undefined` or a fake account ID.
+- [ ] Check Profile layout on mobile, tablet, desktop and 200% zoom;
+      test keyboard focus, screen reader, reduced motion and PWA mode.
+- [ ] Test Edit Preferences, View Journey, View Badges, Completed
+      Workshops and Log Out links.
+- [ ] Confirm test student data remains private; avoid using actual
+      minors' personal information in screenshots or PR attachments.
+
+**Status:** Compilation/lint/unit tests verify the implementation,
+but end-to-end live Firebase/Cosmos and visual-device tests require
+an authenticated test account and cannot be claimed without them.
