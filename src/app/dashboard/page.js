@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import UpcomingAdventures from "@/components/gamification/UpcomingAdventures";
+import SkillQuestHub from "@/components/gamification/SkillQuestHub";
+import dashboardSkin from "@/components/gamification/dashboardQuest.module.css";
 import { daysUntilWorkshop } from "@/utils/upcomingWorkshops.mjs";
 import Image from "next/image";
 
@@ -250,28 +252,6 @@ export default function DashboardPage() {
     upcomingRegistrations[0] ||
     null;
 
-  const activeQuest =
-    useMemo(() => {
-      if (
-        !gameData?.quests
-      ) {
-        return null;
-      }
-
-      return (
-        gameData.quests.find(
-          (quest) =>
-            !quest.completed
-        ) ||
-        gameData.quests[
-          gameData.quests.length -
-            1
-        ]
-      );
-    }, [
-      gameData,
-    ]);
-
   const recommendedWorkshops =
     useMemo(() => {
       const registeredIds =
@@ -427,20 +407,17 @@ export default function DashboardPage() {
     )[0] ||
     "Explorer";
 
-  const questProgress =
-    activeQuest
-      ? Math.min(
-          100,
-          Math.round(
-            (activeQuest.current /
-              activeQuest.target) *
-              100
-          )
-        )
-      : 0;
+  async function refreshRegistrations() {
+    const response = await studentFetch("/api/registrations");
+    const updated = await response.json();
+    if (!response.ok) {
+      throw new Error(updated.message || "Could not refresh journal progress.");
+    }
+    setRegistrations(updated.registrations || []);
+  }
 
   return (
-    <main className="student-dashboard">
+    <main className={`student-dashboard ${dashboardSkin.dashboardQuest}`}>
       {/* DESKTOP HEADER */}
 
       <header className="student-app-header">
@@ -642,227 +619,45 @@ export default function DashboardPage() {
       {/* MAIN CONTENT */}
 
       <section className="student-content-container dashboard-main">
-        {/* PLAYER STATS */}
-
-        <div className="dashboard-stat-grid">
-          <DashboardStat
-            icon={
-              CheckCircle2
-            }
-            value={
-              gameData.completedWorkshops
-            }
-            label="Completed"
-            detail="Workshops"
-          />
-
-          <DashboardStat
-            icon={Trophy}
-            value={
-              gameData.badgeCount
-            }
-            label="Badges"
-            detail="Unlocked"
-          />
-
-          <DashboardStat
-            icon={Compass}
-            value={
-              gameData.categoryCount
-            }
-            label="Skill Areas"
-            detail="Explored"
-          />
-
-          <DashboardStat
-            icon={Zap}
-            value={
-              gameData.totalXp
-            }
-            label="Total XP"
-            detail="Earned"
-          />
-        </div>
+        {/* SKILL QUEST HQ: saved focus missions and verified learning journal */}
+        <SkillQuestHub
+          gameData={gameData}
+          student={student}
+          registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
+        />
 
         <UpcomingAdventures
           workshops={workshops}
           registrations={registrations}
         />
 
-        {/* NEXT WORKSHOP + QUEST */}
-
-        <div className="dashboard-focus-grid">
-          <section className="dashboard-section">
-            <div className="dashboard-section-heading">
-              <div>
-                <span>
-                  UP NEXT
-                </span>
-
-                <h2>
-                  Continue Your
-                  Journey
-                </h2>
-              </div>
-
-              <Link href="/registered-workshops">
-                View all
-                <ChevronRight
-                  size={16}
-                />
-              </Link>
+        <section className="dashboard-section dashboard-next-adventure">
+          <div className="dashboard-section-heading">
+            <div>
+              <span>YOUR NEXT WORKSHOP</span>
+              <h2>Next Stop on Your Journey</h2>
             </div>
-
-            {nextWorkshop ? (
-              <NextWorkshopCard
-                registration={
-                  nextWorkshop
-                }
-              />
-            ) : (
-              <div className="dashboard-empty-workshop">
-                <div>
-                  <Rocket
-                    size={31}
-                  />
-                </div>
-
-                <section>
-                  <span>
-                    READY FOR YOUR NEXT
-                    QUEST?
-                  </span>
-
-                  <h3>
-                    Find a workshop
-                    that interests you.
-                  </h3>
-
-                  <p>
-                    Register for a
-                    workshop and start
-                    earning XP, badges
-                    and skill progress.
-                  </p>
-
-                  <Link href="/workshops">
-                    Explore Workshops
-                    <ChevronRight
-                      size={16}
-                    />
-                  </Link>
-                </section>
-              </div>
-            )}
-          </section>
-
-          <section className="dashboard-section">
-            <div className="dashboard-section-heading">
-              <div>
-                <span>
-                  ACTIVE QUEST
-                </span>
-
-                <h2>
-                  Your Challenge
-                </h2>
-              </div>
-
-              <Link href="/journey">
-                All quests
-                <ChevronRight
-                  size={16}
-                />
-              </Link>
+            <Link href="/registered-workshops">
+              View My Workshops <ChevronRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
+          {nextWorkshop ? (
+            <NextWorkshopCard registration={nextWorkshop} />
+          ) : (
+            <div className="dashboard-empty-workshop">
+              <div><Rocket size={31} aria-hidden="true" /></div>
+              <section>
+                <span>A NEW ADVENTURE AWAITS</span>
+                <h3>Find a workshop that sparks your curiosity!</h3>
+                <p>Discover something new, try a skill, and start building your real learning journey.</p>
+                <Link href="/workshops">
+                  Explore Workshops <ChevronRight size={16} aria-hidden="true"/>
+                </Link>
+              </section>
             </div>
-
-            {activeQuest && (
-              <article
-                className={`dashboard-quest-card ${
-                  activeQuest.completed
-                    ? "completed"
-                    : ""
-                }`}
-              >
-                <div className="dashboard-quest-top">
-                  <div className="dashboard-quest-icon">
-                    {activeQuest.completed ? (
-                      <CheckCircle2
-                        size={27}
-                      />
-                    ) : (
-                      <Target
-                        size={27}
-                      />
-                    )}
-                  </div>
-
-                  <div className="dashboard-quest-reward">
-                    <Star size={14} aria-hidden="true" />
-                    Skill Milestone
-                  </div>
-                </div>
-
-                <span className="dashboard-quest-label">
-                  {activeQuest.completed
-                    ? "QUEST COMPLETE"
-                    : "IN PROGRESS"}
-                </span>
-
-                <h3>
-                  {
-                    activeQuest.title
-                  }
-                </h3>
-
-                <p>
-                  {
-                    activeQuest.description
-                  }
-                </p>
-
-                <div className="dashboard-quest-progress-heading">
-                  <span>
-                    Quest Progress
-                  </span>
-
-                  <strong>
-                    {
-                      activeQuest.current
-                    }
-                    {" / "}
-                    {
-                      activeQuest.target
-                    }
-                  </strong>
-                </div>
-
-                <div className="dashboard-quest-progress">
-                  <div
-                    style={{
-                      width:
-                        `${questProgress}%`,
-                    }}
-                  />
-                </div>
-
-                <div className="dashboard-quest-footer">
-                  <span>
-                    {questProgress}%
-                    complete
-                  </span>
-
-                  <Link href="/journey">
-                    View Skill Quest
-                    <ChevronRight
-                      size={14}
-                    />
-                  </Link>
-                </div>
-              </article>
-            )}
-          </section>
-        </div>
+          )}
+        </section>
 
         {/* SKILL TRACKS */}
 
@@ -1170,37 +965,6 @@ export default function DashboardPage() {
         </Link>
       </nav>
     </main>
-  );
-}
-
-function DashboardStat({
-  icon: Icon,
-  value,
-  label,
-  detail,
-}) {
-  return (
-    <article className="dashboard-stat-card">
-      <div className="dashboard-stat-icon">
-        <Icon
-          size={21}
-        />
-      </div>
-
-      <div>
-        <strong>
-          {value}
-        </strong>
-
-        <span>
-          {label}
-        </span>
-
-        <small>
-          {detail}
-        </small>
-      </div>
-    </article>
   );
 }
 
