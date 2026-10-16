@@ -1,526 +1,385 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { signOut } from "firebase/auth";
 import {
-  useRouter,
-} from "next/navigation";
-
-import {
+  ArrowRight,
   Award,
   BookOpen,
   CalendarDays,
+  CheckCircle2,
   ChevronRight,
+  CircleHelp,
+  Compass,
   Edit3,
-  Home,
+  GraduationCap,
+  Heart,
+  LockKeyhole,
   LogOut,
   Mail,
-  Map,
-  Monitor,
+  MonitorPlay,
+  Orbit,
+  RefreshCcw,
+  Rocket,
   ShieldCheck,
+  Sparkles,
+  Star,
   Trophy,
   UserRound,
+  WandSparkles,
   Zap,
 } from "lucide-react";
 
+import { auth } from "@/services/firebase";
+import { useAuth } from "@/contexts/AuthContext";
+import { studentFetch } from "@/services/studentApi";
 import {
-  signOut,
-} from "firebase/auth";
+  formatLearningPreference,
+  formatStudentBirthDate,
+  formatStudentInterest,
+  profileProgress,
+  studentContactEmail,
+  studentDisplayName,
+  studentInitials,
+  studentInterests,
+  studentYouthId,
+} from "@/utils/studentProfileDisplay.mjs";
+import styles from "./profileAdventure.module.css";
 
-import {
-  auth,
-} from "@/services/firebase";
+const interestIcons = {
+  coding: "💻",
+  "artificial intelligence": "🤖",
+  robotics: "🦾",
+  "skilled trades": "🛠️",
+  business: "💡",
+  design: "🎨",
+  health: "💚",
+  aviation: "✈️",
+  culinary: "🧁",
+};
 
-import {
-  useAuth,
-} from "@/contexts/AuthContext";
+function StatTile({ Icon, count, label, className }) {
+  return (
+    <div className={`${styles.statTile} ${className || ""}`}>
+      <span className={styles.statIcon}><Icon size={23} aria-hidden="true" /></span>
+      <strong>{count}</strong>
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function InfoRow({ Icon, label, value, placeholder, emphasized = false }) {
+  return (
+    <div className={styles.infoRow}>
+      <span className={styles.infoIcon}><Icon size={19} aria-hidden="true" /></span>
+      <div>
+        <span className={styles.infoLabel}>{label}</span>
+        <strong className={`${styles.infoValue} ${emphasized ? styles.highlightValue : ""}`}>
+          {value || <span className={styles.missingValue}>{placeholder || "Not available"}</span>}
+        </strong>
+      </div>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
-  const router =
-    useRouter();
+  const router = useRouter();
+  const { user, studentProfile, loading: authLoading } = useAuth();
 
-  const {
-    user,
-    student,
-    loading,
-  } = useAuth();
+  const [freshStudent, setFreshStudent] = useState(null);
+  const [gamification, setGamification] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [profileError, setProfileError] = useState("");
+  const [gamificationError, setGamificationError] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+
+    let cancelled = false;
+
+    async function loadProfile() {
+      setLoading(true);
+      setProfileError("");
+      setGamificationError("");
+
+      const [profileResult, progressResult] = await Promise.allSettled([
+        studentFetch("/api/student/profile", { cache: "no-store" }),
+        studentFetch("/api/gamification", { cache: "no-store" }),
+      ]);
+
+      if (cancelled) return;
+
+      if (profileResult.status === "fulfilled") {
+        try {
+          const data = await profileResult.value.json();
+          if (!profileResult.value.ok || !data?.student) {
+            throw new Error(data?.message || "Profile information could not be refreshed.");
+          }
+          if (!cancelled) setFreshStudent({ uid: user.uid, data: data.student });
+        } catch (error) {
+          if (!cancelled) setProfileError(error.message || "Could not refresh your profile.");
+        }
+      } else {
+        setProfileError("Could not refresh your profile from the server.");
+      }
+
+      if (progressResult.status === "fulfilled") {
+        try {
+          const data = await progressResult.value.json();
+          if (!progressResult.value.ok || !data?.gamification) {
+            throw new Error(data?.message || "Progress is unavailable.");
+          }
+          if (!cancelled) setGamification({ uid: user.uid, data: data.gamification });
+        } catch {
+          if (!cancelled) setGamificationError("Latest achievements could not be refreshed.");
+        }
+      } else {
+        setGamificationError("Latest achievements could not be refreshed.");
+      }
+
+      if (!cancelled) setLoading(false);
+    }
+
+    loadProfile();
+    return () => { cancelled = true; };
+  }, [user, authLoading, refreshKey]);
 
   async function handleLogout() {
-    await signOut(
-      auth
-    );
-
-    router.replace(
-      "/login"
-    );
+    try {
+      setLoggingOut(true);
+      setLogoutError("");
+      await signOut(auth);
+      router.replace("/login");
+    } catch {
+      setLogoutError("Could not log out. Please try again.");
+      setLoggingOut(false);
+    }
   }
 
-  if (loading) {
+  const authenticatedFresh = user && freshStudent?.uid === user.uid ? freshStudent.data : null;
+  const authenticatedProgress = user && gamification?.uid === user.uid ? gamification.data : null;
+
+  if (authLoading || (user && loading && !studentProfile && !authenticatedFresh)) {
     return (
-      <main className="profile-state">
-        Loading profile...
+      <main className={styles.statusPage} role="status">
+        <Sparkles size={34} className={styles.statusSparkle} aria-hidden="true" />
+        <h1>Preparing your explorer passport...</h1>
+        <p>Gathering your student details and achievements.</p>
       </main>
     );
   }
 
   if (!user) {
     return (
-      <main className="profile-state">
-        <h1>
-          Login Required
-        </h1>
-
-        <Link href="/login">
-          Login
-        </Link>
+      <main className={styles.statusPage}>
+        <LockKeyhole size={35} aria-hidden="true" />
+        <h1>Log in to see your passport</h1>
+        <p>Your Skill Quest profile belongs to you.</p>
+        <Link href="/login" className={styles.primaryAction}>Go to Login <ArrowRight size={17} aria-hidden="true" /></Link>
       </main>
     );
   }
 
-  const fullName =
-    student?.fullName ||
-    `${student?.firstName || ""} ${
-      student?.lastName || ""
-    }`.trim();
+  const student = authenticatedFresh || studentProfile;
 
-  const initials =
-    `${
-      student?.firstName?.[0] || ""
-    }${
-      student?.lastName?.[0] || ""
-    }`.toUpperCase();
+  if (!student) {
+    return (
+      <main className={styles.statusPage}>
+        <CircleHelp size={35} aria-hidden="true" />
+        <h1>We could not load your profile</h1>
+        <p>{profileError || "Your student information is temporarily unavailable."}</p>
+        <button type="button" className={styles.primaryAction} onClick={() => setRefreshKey(value => value + 1)}>
+          <RefreshCcw size={17} aria-hidden="true" /> Try Again
+        </button>
+      </main>
+    );
+  }
+
+  const name = studentDisplayName(student);
+  const initials = studentInitials(student);
+  const youthId = studentYouthId(student);
+  const email = studentContactEmail(student);
+  const birthDate = formatStudentBirthDate(student.dateOfBirth);
+  const interests = studentInterests(student);
+  const progress = profileProgress(student, authenticatedProgress);
+  const badges = Array.isArray(authenticatedProgress?.badges) ? authenticatedProgress.badges : [];
+  const xpToGo = progress.nextLevelXp == null ? null : Math.max(0, Number(progress.nextLevelXp) - progress.totalXp);
 
   return (
-    <main className="student-profile-page">
+    <main className={styles.profilePage}>
+      <section className={styles.hero} aria-labelledby="profile-heading">
+        <span className={styles.heroBubbleOne} aria-hidden="true" />
+        <span className={styles.heroBubbleTwo} aria-hidden="true" />
+        <span className={styles.heroStarOne} aria-hidden="true">✦</span>
+        <span className={styles.heroStarTwo} aria-hidden="true">✳</span>
 
-      <section className="profile-hero">
-
-        <div className="student-content-container">
-
-          <span className="profile-eyebrow">
-            MY PROFILE
-          </span>
-
-          <div className="profile-identity">
-
-            <div className="profile-avatar">
-              {initials || "YI"}
-            </div>
-
-            <div>
-              <h1>
-                {fullName}
-              </h1>
-
-              <p>
-                SAIT Youth Initiative
-                Student
-              </p>
-
-              <span>
-                <ShieldCheck
-                  size={14}
-                />
-
-                Active Account
-              </span>
-            </div>
-
-            <Link
-              href="/edit-profile"
-              className="profile-edit-button"
-            >
-              <Edit3
-                size={16}
-              />
-
-              Edit Profile
-            </Link>
-
+        <div className={styles.heroInner}>
+          <div className={styles.heroIntro}>
+            <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true"/> MY SKILL QUEST PASSPORT</span>
+            <h1 id="profile-heading">My Explorer Profile</h1>
+            <p>Every adventure begins with you. Discover the skills you&apos;ve built and where your curiosity can take you next.</p>
           </div>
-
+          <Link href="/edit-profile" className={styles.editButton}>
+            <Edit3 size={17} aria-hidden="true"/> Edit My Preferences
+          </Link>
         </div>
 
+        <div className={styles.passport}>
+          <div className={styles.avatarShell} aria-label={`Avatar initials: ${initials}`}>
+            <span className={styles.avatarRing} aria-hidden="true" />
+            <span className={styles.avatar}>{initials}</span>
+            <span className={styles.avatarStar} aria-hidden="true"><Star size={17} fill="currentColor"/></span>
+          </div>
+          <div className={styles.passportIdentity}>
+            <span className={styles.passportWelcome}>WELCOME, EXPLORER!</span>
+            <h2>{name}</h2>
+            <div className={styles.passportChips}>
+              <span><ShieldCheck size={16} aria-hidden="true"/> Active Explorer</span>
+              <span><Rocket size={16} aria-hidden="true"/> Level {progress.level}</span>
+              <span><Trophy size={16} aria-hidden="true"/> {progress.rank}</span>
+            </div>
+          </div>
+          <div className={styles.passportSeal}>
+            <span className={styles.sealIcon}><WandSparkles size={28} aria-hidden="true"/></span>
+            <span>OFFICIAL</span>
+            <strong>Skill Quest</strong>
+            <small>Adventure Passport</small>
+          </div>
+        </div>
       </section>
 
+      <section className={styles.content}>
+        {profileError && (
+          <div className={styles.warning} role="status">
+            <CircleHelp size={19} aria-hidden="true"/>
+            <span>{profileError} Showing your last authenticated profile information.</span>
+            <button type="button" onClick={() => setRefreshKey(value => value + 1)}>Retry</button>
+          </div>
+        )}
 
-      <section className="student-content-container profile-content">
-
-        <div className="profile-game-stats">
-
-          <ProfileStat
-            icon={Zap}
-            value={
-              student?.totalXp ||
-              0
-            }
-            label="Total XP"
-          />
-
-          <ProfileStat
-            icon={Trophy}
-            value={
-              student?.level ||
-              1
-            }
-            label="Level"
-          />
-
-          <ProfileStat
-            icon={Award}
-            value={
-              student?.badgeCount ||
-              0
-            }
-            label="Badges"
-          />
-
-          <ProfileStat
-            icon={BookOpen}
-            value={
-              student
-                ?.completedWorkshopCount ||
-              0
-            }
-            label="Completed"
-          />
-
+        <div className={styles.statsGrid} aria-label="My learning achievements">
+          <StatTile Icon={Zap} count={progress.totalXp} label="Total XP" className={styles.tileGold}/>
+          <StatTile Icon={Star} count={progress.level} label="Explorer Level" className={styles.tilePurple}/>
+          <StatTile Icon={Award} count={progress.badges} label="Badges Earned" className={styles.tilePink}/>
+          <StatTile Icon={BookOpen} count={progress.completed} label="Workshops Completed" className={styles.tileMint}/>
         </div>
 
-
-        <div className="profile-layout">
-
-          <section className="profile-section-card">
-
-            <div className="profile-section-heading">
-              <div>
-                <span>
-                  ACCOUNT
-                </span>
-
-                <h2>
-                  Student Information
-                </h2>
-              </div>
+        <section className={styles.progressCard} aria-labelledby="level-heading">
+          <div className={styles.progressIcon}><Orbit size={30} aria-hidden="true"/></div>
+          <div className={styles.progressBody}>
+            <div className={styles.progressTitle}>
+              <div><span>YOUR NEXT MILESTONE</span><h2 id="level-heading">Level {progress.level} · {progress.rank}</h2></div>
+              <strong>{xpToGo == null ? "Top Level!" : `${xpToGo} XP to go`}</strong>
             </div>
+            <div className={styles.progressTrack} role="progressbar" aria-label="Progress to next explorer level" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.progressPercentage}>
+              <span style={{width: `${progress.progressPercentage}%`}}/>
+            </div>
+            <p>{xpToGo == null ? "Amazing! You have reached the current highest level." : "Keep attending workshops and earning verified XP to reach your next level."}</p>
+          </div>
+          <Link href="/journey" className={styles.progressLink}>View Map <ArrowRight size={16} aria-hidden="true"/></Link>
+        </section>
 
+        {gamificationError && (
+          <p className={styles.subtleNotice} role="status">{gamificationError} Displaying your saved profile totals.</p>
+        )}
 
-            <ProfileInformation
-              icon={UserRound}
-              label="Youth Initiative ID"
-              value={
-                student?.youthId ||
-                "Not available"
-              }
-              highlight
-            />
-
-            <ProfileInformation
-              icon={Mail}
-              label="Email"
-              value={
-                student?.contactEmail ||
-                "Not available"
-              }
-            />
-
-            <ProfileInformation
-              icon={CalendarDays}
-              label="Date of Birth"
-              value={
-                student?.dateOfBirth ||
-                "Not available"
-              }
-            />
-
-            <ProfileInformation
-              icon={Monitor}
-              label="Learning Preference"
-              value={
-                formatLearningMode(
-                  student?.learningMode
-                )
-              }
-            />
-
+        <div className={styles.columns}>
+          <section className={styles.panel} aria-labelledby="identity-heading">
+            <div className={styles.panelHeading}>
+              <span className={styles.panelIcon}><UserRound size={23} aria-hidden="true"/></span>
+              <div><span>MY IDENTITY</span><h2 id="identity-heading">Explorer Information</h2></div>
+            </div>
+            <p className={styles.panelLead}>Your own student details, securely loaded from your SAIT Youth Initiative account.</p>
+            <div className={styles.infoList}>
+              <InfoRow Icon={GraduationCap} label="Youth Initiative ID" value={youthId} placeholder="Please contact the program team" emphasized/>
+              <InfoRow Icon={Mail} label="Contact Email" value={email} placeholder="No contact email is recorded"/>
+              <InfoRow Icon={CalendarDays} label="Date of Birth" value={birthDate} placeholder="No date recorded"/>
+              <InfoRow Icon={MonitorPlay} label="Learning Preference" value={formatLearningPreference(student.learningMode)}/>
+            </div>
+            <p className={styles.privateNote}><LockKeyhole size={16} aria-hidden="true"/> Your account details are private and visible only to you while signed in.</p>
           </section>
 
-
-          <section className="profile-section-card">
-
-            <div className="profile-section-heading">
-
-              <div>
-                <span>
-                  INTERESTS
-                </span>
-
-                <h2>
-                  What I&apos;m Exploring
-                </h2>
-              </div>
-
-              <Link
-                href="/edit-profile"
-              >
-                Edit
-              </Link>
-
+          <section className={styles.panel} aria-labelledby="interests-heading">
+            <div className={styles.panelHeading}>
+              <span className={styles.panelIconPurple}><Compass size={23} aria-hidden="true"/></span>
+              <div><span>MY SKILL UNIVERSE</span><h2 id="interests-heading">Things I Love Exploring</h2></div>
+              <Link href="/edit-profile" className={styles.miniEdit} aria-label="Edit interests"><Edit3 size={16} aria-hidden="true"/> Edit</Link>
             </div>
-
-
-            {student?.interests?.length >
-            0 ? (
-              <div className="profile-interest-list">
-
-                {student.interests.map(
-                  (interest) => (
-                    <span
-                      key={interest}
-                    >
-                      {formatInterest(
-                        interest
-                      )}
-                    </span>
-                  )
-                )}
-
+            <p className={styles.panelLead}>Choose the worlds you want to explore. Your interests help you discover workshops and future pathways.</p>
+            {interests.length ? (
+              <div className={styles.interestGrid}>
+                {interests.map((interest) => (
+                  <div className={styles.interestItem} key={interest}>
+                    <span className={styles.interestEmoji} aria-hidden="true">{interestIcons[interest.toLowerCase()] || "🌟"}</span>
+                    <strong>{formatStudentInterest(interest)}</strong>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="profile-empty-interests">
-
-                <p>
-                  No interests selected
-                  yet.
-                </p>
-
-                <Link href="/edit-profile">
-                  Add Interests
-                </Link>
-
+              <div className={styles.emptyInterests}>
+                <span aria-hidden="true">🪐</span>
+                <strong>Your Skill Universe is waiting!</strong>
+                <p>Pick up to five interests to make your adventure more personal.</p>
+                <Link href="/edit-profile">Choose Interests <ArrowRight size={16} aria-hidden="true"/></Link>
               </div>
             )}
-
-
-            <Link
-              href="/journey"
-              className="profile-journey-link"
-            >
-              <div>
-                <Trophy
-                  size={20}
-                />
-
-                <span>
-                  View Skill Quest
-                </span>
-              </div>
-
-              <ChevronRight
-                size={17}
-              />
-            </Link>
-
-            <Link
-              href="/completed-workshops"
-              className="profile-journey-link"
-            >
-              <div>
-                <BookOpen
-                  size={20}
-                />
-
-                <span>
-                  Completed Workshops
-                </span>
-              </div>
-
-              <ChevronRight
-                size={17}
-              />
-            </Link>
-
+            <div className={styles.worldFooter}>
+              <Heart size={18} aria-hidden="true"/>
+              {interests.length} of 5 interests selected
+            </div>
           </section>
-
         </div>
 
+        <section className={styles.adventureSection} aria-labelledby="continue-heading">
+          <div className={styles.adventureHeading}>
+            <div><span><Sparkles size={16} aria-hidden="true"/> KEEP EXPLORING</span><h2 id="continue-heading">Where will your next adventure take you?</h2></div>
+            <p>Every workshop, badge, and challenge helps you discover more about yourself.</p>
+          </div>
+          <div className={styles.actionGrid}>
+            <Link href="/journey" className={styles.actionCard}>
+              <span className={styles.actionArtwork}><Rocket size={31} aria-hidden="true"/></span>
+              <strong>Adventure Map</strong>
+              <small>Follow your learning journey</small>
+              <ChevronRight size={19} aria-hidden="true"/>
+            </Link>
+            <Link href="/badges" className={styles.actionCard}>
+              <span className={styles.actionArtwork}><Trophy size={31} aria-hidden="true"/></span>
+              <strong>Badge Collection</strong>
+              <small>See what you&apos;ve unlocked</small>
+              <ChevronRight size={19} aria-hidden="true"/>
+            </Link>
+            <Link href="/completed-workshops" className={styles.actionCard}>
+              <span className={styles.actionArtwork}><BookOpen size={31} aria-hidden="true"/></span>
+              <strong>My Workshops</strong>
+              <small>Celebrate what you&apos;ve learned</small>
+              <ChevronRight size={19} aria-hidden="true"/>
+            </Link>
+          </div>
+          {badges.length > 0 && (
+            <div className={styles.earnedPreview}>
+              <span><CheckCircle2 size={17} aria-hidden="true"/> Recently unlocked achievements</span>
+              <div>
+                {badges.slice(0, 3).map((badge, index) => (
+                  <span key={badge.id || badge.badgeId || index}><Award size={16} aria-hidden="true"/>{badge.name || badge.badgeId || "Achievement"}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
 
-        <button
-          type="button"
-          className="profile-logout-button"
-          onClick={
-            handleLogout
-          }
-        >
-          <LogOut
-            size={17}
-          />
-
-          Log Out
-        </button>
-
+        <div className={styles.bottomActions}>
+          <Link href="/workshops" className={styles.exploreLink}><Sparkles size={18} aria-hidden="true"/> Explore New Workshops <ArrowRight size={17} aria-hidden="true"/></Link>
+          <button type="button" className={styles.logoutButton} onClick={handleLogout} disabled={loggingOut}>
+            <LogOut size={17} aria-hidden="true"/>{loggingOut ? "Logging Out..." : "Log Out"}
+          </button>
+        </div>
+        {logoutError && <p className={styles.warning} role="alert">{logoutError}</p>}
       </section>
-
-
-      <nav className="student-bottom-navigation">
-
-        <Link href="/dashboard">
-          <Home
-            size={20}
-          />
-
-          <span>
-            Home
-          </span>
-        </Link>
-
-        <Link href="/workshops">
-          <BookOpen
-            size={20}
-          />
-
-          <span>
-            Workshops
-          </span>
-        </Link>
-
-        <Link href="/journey">
-          <Map
-            size={20}
-          />
-
-          <span>
-            Journey
-          </span>
-        </Link>
-
-        <Link href="/badges">
-          <Trophy
-            size={20}
-          />
-
-          <span>
-            Badges
-          </span>
-        </Link>
-
-        <Link
-          href="/profile"
-          className="active"
-        >
-          <UserRound
-            size={20}
-          />
-
-          <span>
-            Profile
-          </span>
-        </Link>
-
-      </nav>
-
     </main>
   );
-}
-
-
-function ProfileStat({
-  icon: Icon,
-  value,
-  label,
-}) {
-  return (
-    <div className="profile-stat-card">
-      <Icon
-        size={21}
-      />
-
-      <strong>
-        {value}
-      </strong>
-
-      <span>
-        {label}
-      </span>
-    </div>
-  );
-}
-
-
-function ProfileInformation({
-  icon: Icon,
-  label,
-  value,
-  highlight = false,
-}) {
-  return (
-    <div className="profile-information-row">
-
-      <div className="profile-information-icon">
-        <Icon
-          size={18}
-        />
-      </div>
-
-      <div>
-        <span>
-          {label}
-        </span>
-
-        <strong
-          className={
-            highlight
-              ? "profile-highlight-value"
-              : ""
-          }
-        >
-          {value}
-        </strong>
-      </div>
-
-    </div>
-  );
-}
-
-
-function formatLearningMode(
-  mode
-) {
-  if (
-    mode ===
-    "in-person"
-  ) {
-    return "In Person";
-  }
-
-  if (
-    mode ===
-    "online"
-  ) {
-    return "Online";
-  }
-
-  if (
-    mode ===
-    "both"
-  ) {
-    return "Online & In Person";
-  }
-
-  return "Not selected";
-}
-
-
-function formatInterest(
-  interest
-) {
-  return interest
-    .split(" ")
-    .map(
-      (word) =>
-        word
-          .charAt(0)
-          .toUpperCase() +
-        word.slice(1)
-    )
-    .join(" ");
 }

@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import AdventureTrail from "@/components/gamification/AdventureTrail";
+import JournalStamps from "@/components/gamification/JournalStamps";
+import playfulSkin from "@/components/gamification/playfulSkin.module.css";
 import {
   useEffect,
   useState,
@@ -9,16 +12,11 @@ import {
 import {
   Award,
   BookOpen,
-  Check,
   Compass,
   Cpu,
-  Flame,
-  Hammer,
   Home,
   LoaderCircle,
-  Lock,
   Map,
-  Rocket,
   Sparkles,
   Star,
   Trophy,
@@ -48,11 +46,15 @@ export default function JourneyPage() {
   const [pathways, setPathways] =
     useState([]);
 
+  const [registrations, setRegistrations] = useState([]);
+
   const [loading, setLoading] =
     useState(true);
 
   const [errorMessage, setErrorMessage] =
     useState("");
+
+  const [rewardStatus, setRewardStatus] = useState("");
 
   useEffect(() => {
     if (
@@ -67,6 +69,29 @@ export default function JourneyPage() {
 
     async function loadGameProgress() {
       try {
+        // Reconcile only genuinely verified attendance. A processing
+        // transaction is never blindly replayed to avoid double XP.
+        try {
+          const reconciliation = await studentFetch(
+            "/api/gamification/reconcile",
+            { method: "POST" }
+          );
+          if (reconciliation.ok) {
+            const result = await reconciliation.json();
+            if (!cancelled) {
+              setRewardStatus(
+                result.pendingCount > 0
+                  ? "Some workshop rewards are still processing. Your verified attendance is safe."
+                  : ""
+              );
+            }
+          }
+        } catch (error) {
+          // The student's journey must stay available even if a
+          // temporary rewards-recovery request cannot finish.
+          console.warn("Reward reconciliation unavailable:", error);
+        }
+
         const response =
           await studentFetch(
             "/api/gamification"
@@ -87,6 +112,20 @@ export default function JourneyPage() {
           setGameData(
             data.gamification
           );
+        }
+
+        // Learning journal stamps are based on the same verified
+        // workshop records used by the dashboard.
+        try {
+          const registrationsResponse = await studentFetch("/api/registrations");
+          if (registrationsResponse.ok) {
+            const registrationData = await registrationsResponse.json();
+            if (!cancelled) {
+              setRegistrations(registrationData.registrations || []);
+            }
+          }
+        } catch {
+          // The Adventure Map should remain usable without journal data.
         }
 
         try {
@@ -176,7 +215,7 @@ export default function JourneyPage() {
   }
 
   return (
-    <main className="journey-game-page">
+    <main className={`journey-game-page ${playfulSkin.journeyShell}`}>
 
       <section className="journey-game-hero">
         <div className="journey-game-glow journey-game-glow-one" />
@@ -268,6 +307,18 @@ export default function JourneyPage() {
 
 
       <section className="student-content-container journey-game-content">
+        {rewardStatus && (
+          <p role="status" className={playfulSkin.rewardNotice}>
+            {rewardStatus}
+          </p>
+        )}
+
+        <AdventureTrail
+          quests={gameData.quests || []}
+          totalXp={gameData.totalXp}
+        />
+
+        <JournalStamps registrations={registrations} />
 
         <div className="journey-game-stats">
 
@@ -364,42 +415,6 @@ export default function JourneyPage() {
 
         </section>
 
-
-        <section className="quest-section">
-
-          <div className="game-section-heading">
-
-            <div>
-              <span>
-                ACTIVE CHALLENGES
-              </span>
-
-              <h2>
-                Skill Quests
-              </h2>
-            </div>
-
-            <p>
-              Complete challenges as you
-              explore more of SAIT.
-            </p>
-
-          </div>
-
-          <div className="quest-grid">
-
-            {gameData.quests.map(
-              (quest) => (
-                <QuestCard
-                  key={quest.id}
-                  quest={quest}
-                />
-              )
-            )}
-
-          </div>
-
-        </section>
 
         {/* FUTURE SAIT PATHWAYS SECTION */}
         {pathways.length > 0 && (
@@ -605,87 +620,3 @@ function SkillTrackCard({
 }
 
 
-function QuestCard({
-  quest,
-}) {
-  const Icon =
-    quest.icon === "rocket"
-      ? Rocket
-      : quest.icon === "hammer"
-        ? Hammer
-        : quest.icon === "compass"
-          ? Compass
-          : quest.icon === "cpu"
-            ? Cpu
-            : Trophy;
-
-  const progress =
-    Math.min(
-      100,
-      Math.round(
-        (quest.current /
-          quest.target) *
-          100
-      )
-    );
-
-  return (
-    <article
-      className={`quest-card ${
-        quest.completed
-          ? "completed"
-          : ""
-      }`}
-    >
-
-      <div className="quest-icon">
-        {quest.completed ? (
-          <Check size={24} />
-        ) : (
-          <Icon size={24} />
-        )}
-      </div>
-
-      <div className="quest-content">
-
-        <div className="quest-title-row">
-          <h3>
-            {quest.title}
-          </h3>
-
-          <span>
-            +{quest.reward} XP
-          </span>
-        </div>
-
-        <p>
-          {quest.description}
-        </p>
-
-        <div className="quest-progress-track">
-          <div
-            style={{
-              width:
-                `${progress}%`,
-            }}
-          />
-        </div>
-
-        <div className="quest-footer">
-          <span>
-            {quest.current} /{" "}
-            {quest.target}
-          </span>
-
-          <span>
-            {quest.completed
-              ? "Quest Complete"
-              : `${progress}%`}
-          </span>
-        </div>
-
-      </div>
-
-    </article>
-  );
-}

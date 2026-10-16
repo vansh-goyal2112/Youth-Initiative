@@ -1,0 +1,258 @@
+/* Site-wide student UX, scoped to student routes only. No global reset. */
+.shell {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  background: #f2f6ff;
+}
+.pageContent { position: relative; z-index: 1; min-width: 0; }
+
+/* The original per-page headers were inconsistent. The shared chrome replaces
+   their visual footprint while existing page logic and mobile links remain. */
+.pageContent :global(.student-app-header),
+.pageContent :global(.workshop-details-header),
+.pageContent :global(.student-bottom-navigation) {
+  display: none !important;
+}
+
+/* Increase usable real estate at full laptop/desktop widths, but keep the
+   original breakpoints and avoid stretching text beyond a comfortable width. */
+.pageContent :global(.student-content-container) {
+  width: min(1380px, calc(100% - 52px));
+  max-width: 1380px;
+}
+
+/* Reintroduce personality to the workshop page without touching filters,
+   workshop links, list semantics, or Tailwind styles. */
+.pageContent :global(.student-workshops-page) {
+  background: linear-gradient(180deg, #f7f5ff 0%, #eff7ff 54%, #f9faff 100%);
+}
+.pageContent :global(.workshops-hero-section) {
+  position: relative;
+  overflow: hidden;
+  padding: 43px 0 46px;
+  background:
+    radial-gradient(circle at 88% 13%, #ffdf9e83 0 96px, transparent 97px),
+    radial-gradient(circle at 10% 97%, #c7bcff50 0 130px, transparent 131px),
+    linear-gradient(110deg, #eef3ff, #fff8f1 60%, #f3eafb);
+  border-bottom: 1px solid #e4e0f1;
+}
+.pageContent :global(.workshops-hero-section)::before {
+  content: "";
+  position: absolute;
+  left: 6%;
+  top: 16%;
+  width: 33px;
+  height: 33px;
+  border: 7px solid #d9c6f3;
+  border-radius: 50%;
+  opacity: .8;
+  pointer-events: none;
+  animation: wanderLeft 12s ease-in-out infinite;
+}
+.pageContent :global(.workshops-hero-section)::after {
+  content: "✦";
+  position: absolute;
+  right: 9%;
+  top: 38%;
+  color: #eca954;
+  font-size: 68px;
+  opacity: .5;
+  pointer-events: none;
+  animation: twinkleFloat 13s ease-in-out infinite;
+}
+.pageContent :global(.workshops-hero-content) { position: relative; z-index: 1; }
+.pageContent :global(.workshops-hero-content h1) {
+  font-weight: 900;
+  letter-spacing: -.9px;
+}
+.pageContent :global(.workshop-hero-stat) {
+  border: 2px solid #e8d2fc;
+  border-radius: 22px;
+  box-shadow: 0 5px 0 #ede3f5;
+  background: #fffdfde8;
+}
+.pageContent :global(.workshops-main-content) { padding-top: 29px; }
+.pageContent :global(.student-workshop-grid) {
+  gap: 19px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.pageContent :global(.student-workshop-card) {
+  border: 1px solid #e2ddef;
+  border-radius: 23px;
+  box-shadow: 0 6px 0 #e5e7f1;
+}
+.pageContent :global(.student-workshop-card:hover) {
+  box-shadow: 0 8px 0 #dedaf1, 0 17px 30px #29396112;
+}
+.pageContent :global(.student-workshop-search),
+.pageContent :global(.workshop-filter-panel) {
+  border-radius: 17px;
+}
+.pageContent :global(.workshop-filter-panel) {
+  border: 1px solid #e0dded;
+  box-shadow: 0 5px 0 #e6e9f1;
+}
+.pageContent :global(.student-workshop-content h3) { font-weight: 900; }
+
+/* Header illustrations gently move in place; meaningful information,
+   links, buttons and content blocks never float. */
+.pageContent :global(.dashboard-game-hero),
+.pageContent :global(.journey-game-hero),
+.pageContent :global(.badges-hero),
+.pageContent :global(.profile-hero),
+.pageContent :global(.registered-workshops-hero),
+.pageContent :global(.completed-workshops-hero) {
+  position: relative;
+  overflow: hidden;
+}
+.pageContent :global(.journey-game-hero)::after,
+.pageContent :global(.badges-hero)::after,
+.pageContent :global(.profile-hero)::after,
+.pageContent :global(.registered-workshops-hero)::after,
+.pageContent :global(.completed-workshops-hero)::after {
+  content: "✦";
+  position: absolute;
+  right: 5%;
+  top: 14%;
+  font-size: clamp(46px, 5vw, 85px);
+  color: #ffd18655;
+  line-height: 1;
+  pointer-events: none;
+  animation: twinkleFloat 12s ease-in-out infinite;
+}
+.pageContent :global(.dashboard-game-hero) {
+  border-bottom: 2px solid #ffffff25;
+}
+
+/* Leave intentionally calm space around content, adding restrained decorative
+   accents at extra-wide edges instead of inserting fake cards/content. */
+.ambient {
+  position: fixed;
+  inset: 90px 0 75px;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ambient span { display: block; position: absolute; }
+.bubbleOne,.bubbleTwo,.bubbleThree,.bubbleFour { border-radius: 50%; }
+.bubbleOne {
+  width: 76px; height: 76px;
+  left: max(8px, calc((100vw - 1540px) / 2 - 12px));
+  top: 11%;
+  border: 10px solid #96bced;
+  opacity: .23;
+  animation: bubbleDriftOne 13s ease-in-out infinite;
+}
+.bubbleTwo {
+  width: 44px; height: 44px;
+  right: max(16px, calc((100vw - 1530px) / 2 - 3px));
+  top: 28%;
+  background: #f3b263;
+  opacity: .26;
+  animation: bubbleDriftTwo 16s ease-in-out infinite;
+}
+.bubbleThree {
+  width: 61px; height: 61px;
+  left: max(5px, calc((100vw - 1580px) / 2));
+  bottom: 10%;
+  border: 11px solid #bca3e9;
+  opacity: .22;
+  animation: bubbleDriftTwo 18s ease-in-out infinite reverse;
+}
+.bubbleFour {
+  width: 69px; height: 69px;
+  right: max(5px, calc((100vw - 1600px) / 2));
+  bottom: 16%;
+  border: 12px solid #8fdfc3;
+  opacity: .2;
+  animation: bubbleDriftOne 15s ease-in-out infinite;
+}
+.starOne,.starTwo,.starThree { font-size: 42px; font-weight: 700; }
+.starOne {
+  left: max(13px, calc((100vw - 1570px) / 2));
+  top: 43%;
+  color: #ad8bd5;
+  opacity: .32;
+  animation: twinkleFloat 11s ease-in-out infinite;
+}
+.starTwo {
+  right: max(13px, calc((100vw - 1580px) / 2));
+  top: 63%;
+  color: #efad50;
+  opacity: .33;
+  animation: twinkleFloat 15s ease-in-out infinite reverse;
+}
+.starThree {
+  right: max(30px, calc((100vw - 1600px) / 2));
+  top: 7%;
+  font-size: 26px;
+  color: #79b7ea;
+  opacity: .3;
+  animation: twinkleFloat 12s ease-in-out infinite;
+}
+
+/* Keep fixed PWA navigation from overlapping screens without their own footer
+   padding, while preserving page-specific responsive rules elsewhere. */
+.pageContent :global(.scan-attendance-page),
+.pageContent :global(.workshop-details-page),
+.pageContent :global(.registration-confirm-page),
+.pageContent :global(.reward-page),
+.pageContent :global(.student-profile-page) {
+  padding-bottom: max(95px, calc(78px + env(safe-area-inset-bottom)));
+}
+.pageContent :global(.student-workshops-page),
+.pageContent :global(.registered-workshops-page),
+.pageContent :global(.completed-workshops-page) {
+  padding-bottom: max(105px, calc(80px + env(safe-area-inset-bottom)));
+}
+
+@keyframes wanderLeft {
+  0%,100% { transform: translate(0,0) rotate(0); }
+  50% { transform: translate(9px, -8px) rotate(18deg); }
+}
+@keyframes twinkleFloat {
+  0%,100% { transform: translateY(0) rotate(-8deg); opacity: .35; }
+  50% { transform: translateY(-12px) rotate(12deg); opacity: .65; }
+}
+@keyframes bubbleDriftOne {
+  0%,100% { transform: translate3d(0,0,0); }
+  50% { transform: translate3d(6px, -18px, 0); }
+}
+@keyframes bubbleDriftTwo {
+  0%,100% { transform: translate3d(0,0,0); }
+  50% { transform: translate3d(-11px, 13px, 0); }
+}
+@media (max-width: 1350px) {
+  .ambient { opacity: .55; }
+}
+@media (max-width: 1100px) {
+  .ambient { display: none; }
+  .pageContent :global(.student-content-container) {
+    width: min(1180px, calc(100% - 38px));
+  }
+}
+@media (max-width: 850px) {
+  .pageContent :global(.student-workshop-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pageContent :global(.workshops-hero-section) { padding: 33px 0; }
+}
+@media (max-width: 600px) {
+  .pageContent :global(.student-content-container) {
+    width: calc(100% - 30px);
+  }
+  .pageContent :global(.student-workshop-grid) {
+    grid-template-columns: 1fr;
+  }
+  .pageContent :global(.workshops-hero-section) { padding: 24px 0 29px; }
+  .pageContent :global(.workshops-hero-section)::after,
+  .pageContent :global(.workshops-hero-section)::before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell *, .shell *::before, .shell *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

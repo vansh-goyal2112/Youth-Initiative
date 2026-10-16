@@ -260,7 +260,7 @@ export async function POST(request) {
           completedAt,
 
           completionXpAwarded:
-            true,
+            false,
 
           updatedAt:
             completedAt,
@@ -289,41 +289,71 @@ export async function POST(request) {
     }
 
     /*
-      Gamification is still handled
-      by the existing service.
-
-      We will migrate that service
-      separately so its existing
-      reward logic is preserved.
+      Attendance and XP live in separate Cosmos documents.
+      Recording attendance must succeed even when the reward
+      service is temporarily unavailable. The authenticated
+      reconciliation endpoint can safely retry this verified
+      completion later.
     */
+    let reward = null;
+    let rewardPending = false;
 
-    const reward =
-      await processWorkshopCompletion({
+    try {
+      reward = await processWorkshopCompletion({
         studentId,
-
-        workshopId:
-          session.workshopId,
-
+        workshopId: session.workshopId,
         workshop,
       });
 
+      // A duplicate or in-progress transaction can report zero new XP.
+      // Do not mark the registration paid unless the ledger confirms it.
+      const rewardTransaction = await readCosmosDocument(
+        "xpTransactions",
+        `${studentId}_${session.workshopId}`
+      );
+
+      if (rewardTransaction?.status !== "completed") {
+        rewardPending = true;
+        reward = null;
+      }
+
+      const latestRegistration = !rewardPending && await readCosmosDocument(
+        "registrations",
+        registration.id
+      );
+
+      if (latestRegistration && latestRegistration.attendanceStatus === "verified") {
+        try {
+          await replaceCosmosDocument(
+            "registrations",
+            latestRegistration,
+            {
+              completionXpAwarded: true,
+              updatedAt: cosmosNow(),
+            }
+          );
+        } catch (error) {
+          // The deterministic XP transaction prevents double awards.
+          // A future reconciliation can update the registration flag.
+          console.error("Could not synchronize attendance reward flag:", error);
+        }
+      }
+    } catch (error) {
+      rewardPending = true;
+      console.error("Attendance was saved but XP needs reconciliation:", error);
+    }
+
     return Response.json({
       success: true,
-
-      message:
-        "Attendance verified successfully!",
-
+      message: rewardPending
+        ? "Attendance verified. Your reward is still being processed."
+        : "Attendance verified successfully!",
+      rewardPending,
       workshop: {
-        id:
-          session.workshopId,
-
-        title:
-          workshop.title,
-
-        category:
-          workshop.category,
+        id: session.workshopId,
+        title: workshop.title,
+        category: workshop.category,
       },
-
       reward,
     });
   } catch (error) {

@@ -413,6 +413,8 @@ export async function GET(request) {
       gamification: {
         totalXp,
 
+        activeQuestId: student.activeQuestId || null,
+
         level:
           levelInformation.level,
 
