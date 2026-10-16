@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 export const RECOVERABLE_STATES = Object.freeze({
   pending_email_verification: "email_verification",
   email_verified: "account_setup",
@@ -62,4 +64,76 @@ export function nextRecoveryCounter(registration, now = Date.now()) {
     registrationRecoveryCount: active ? (Number(registration?.registrationRecoveryCount) || 0) + 1 : 1,
     registrationRecoveryWindowStartedAt: active ? registration.registrationRecoveryWindowStartedAt : new Date(now).toISOString(),
   };
+}
+
+/**
+ * Pure stage-specific message/link builder.  Verify and consent links retain
+ * their existing token transport rules (#fragment for adult email verification,
+ * ?query for consent and activation).
+ */
+export function buildRecoveryEmail(registration, stage, token, baseUrl) {
+  if (
+    !registration?.id ||
+    !["parental_consent", "email_verification", "account_setup"].includes(stage) ||
+    typeof token !== "string" ||
+    !token ||
+    typeof baseUrl !== "string" ||
+    !/^https?:\/\//.test(baseUrl)
+  ) {
+    throw new Error("Invalid registration recovery link parameters.");
+  }
+
+  const root = baseUrl.replace(/\/+$/, "");
+  const id = encodeURIComponent(registration.id);
+  const encodedToken = encodeURIComponent(token);
+
+  switch (stage) {
+    case "parental_consent":
+      return {
+        subject: "Continue Parental Consent – SAIT Youth Initiative",
+        url: `${root}/consent/${id}?token=${encodedToken}`,
+        intro: "A new parental consent link was requested for an unfinished Youth Initiative registration.",
+        action: "Review Parental Consent",
+      };
+
+    case "email_verification":
+      return {
+        subject: "Continue Registration – Verify Your Email",
+        url: `${root}/verify-email/${id}#token=${encodedToken}`,
+        intro: "A new email verification link was requested for an unfinished Youth Initiative registration.",
+        action: "Verify My Email",
+      };
+
+    default:
+      return {
+        subject: "Continue Youth Initiative Account Setup",
+        url: `${root}/set-password/${id}?token=${encodedToken}`,
+        intro: "A new account setup link was requested for an approved or verified Youth Initiative registration.",
+        action: "Complete Account Setup",
+      };
+  }
+}
+
+/** No plaintext token is written to Cosmos. Use an injectable clock in tests. */
+export function createRecoveryTokenUpdates(stage, token, now = Date.now()) {
+  if (
+    !["parental_consent", "email_verification", "account_setup"].includes(stage) ||
+    typeof token !== "string" ||
+    !token ||
+    !Number.isFinite(now)
+  ) {
+    throw new Error("Invalid recovery token parameters.");
+  }
+
+  const hash = createHash("sha256").update(token).digest("hex");
+  const expiresAt = new Date(now + 30 * 60 * 1000).toISOString();
+
+  switch (stage) {
+    case "parental_consent":
+      return { consentTokenHash: hash, consentExpiresAt: expiresAt };
+    case "email_verification":
+      return { emailVerificationTokenHash: hash, emailVerificationExpiresAt: expiresAt };
+    default:
+      return { activationTokenHash: hash, activationExpiresAt: expiresAt };
+  }
 }
