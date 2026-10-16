@@ -1,0 +1,157 @@
+/* Dashboard-only refresh. Existing globals, components and navigation remain untouched. */
+.dashboardQuest {
+  background: linear-gradient(180deg,#f5f6ff 0%,#f0f8ff 54%,#f7f7ff 100%);
+  color: #19334c;
+}
+.dashboardQuest :global(.dashboard-game-hero) {
+  position:relative;
+  overflow:hidden;
+  padding:39px 0 47px;
+  background:
+    radial-gradient(circle at 93% 12%,#f7ca764d 0 110px,transparent 112px),
+    radial-gradient(circle at 6% 100%,#8be4ca30 0 150px,transparent 152px),
+    radial-gradient(circle at 50% 150%,#fc9bc42e 0 160px,transparent 161px),
+    linear-gradient(117deg,#252960 5%,#4c3d99 58%,#8854a2);
+}
+.dashboardQuest :global(.dashboard-game-hero)::after {
+  content:"✦   ✳   ✦";
+  position:absolute;
+  right:5%;
+  top:23%;
+  font-size:35px;
+  letter-spacing:18px;
+  color:#ffdeac5e;
+  transform:rotate(-13deg);
+  pointer-events:none;
+}
+.dashboardQuest :global(.dashboard-welcome) { max-width:830px; position:relative;z-index:1; }
+.dashboardQuest :global(.dashboard-eyebrow) {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:8px 12px; border:1px solid #ffdeb380; border-radius:999px;
+  background:#ffffff1a; color:#ffebc2; font-size:12px; font-weight:900; letter-spacing:.7px;
+}
+.dashboardQuest :global(.dashboard-welcome h1) {
+  margin:15px 0 7px;
+  font-size:clamp(33px,5vw,52px);
+  font-weight:950;
+  letter-spacing:-1.3px;
+  line-height:1.12;
+}
+.dashboardQuest :global(.dashboard-welcome h1 strong) { color:#ffd36f; }
+.dashboardQuest :global(.dashboard-welcome p) {
+  max-width:610px;
+  color:#f0eaff;
+  font-size:15px;
+  line-height:1.65;
+}
+.dashboardQuest :global(.dashboard-player-panel) {
+  border:1px solid #ffffff60; border-radius:22px;
+  background:#ffffff1b; box-shadow:0 8px 28px #1c164633;
+  backdrop-filter:blur(8px);
+  margin-top:21px;
+}
+.dashboardQuest :global(.dashboard-level-emblem) {
+  border:4px solid #ffffff90;
+  background:linear-gradient(135deg,#ffb55b,#f15b4d);
+  box-shadow:0 6px 0 #ae3542,0 11px 18px #140f4535;
+}
+.dashboardQuest :global(.dashboard-rank-line h2) { color:#fff7e9;font-size:clamp(20px,3vw,27px); }
+.dashboardQuest :global(.dashboard-rank-line > div:first-child > span),
+.dashboardQuest :global(.dashboard-player-progress > p),
+.dashboardQuest :global(.dashboard-progress-labels),
+.dashboardQuest :global(.dashboard-total-xp span) { font-size:12px;color:#e9e2ff; }
+.dashboardQuest :global(.dashboard-total-xp) {border:1px solid #fff3c962;background:#fff4cb25;color:#ffe9b5;}
+.dashboardQuest :global(.dashboard-total-xp strong) {font-size:17px;}
+.dashboardQuest :global(.dashboard-xp-track) {height:13px;background:#ffffff45;}
+.dashboardQuest :global(.dashboard-xp-fill) {
+  border-radius:999px;
+  background:linear-gradient(90deg,#ffbd61,#f9786e);
+}
+.dashboardQuest :global(.dashboard-main) { padding-top:30px;padding-bottom:100px; }
+.dashboardQuest :global(.dashboard-section) {margin-top:30px;}
+.dashboardQuest :global(.dashboard-section-heading h2) {
+  color:#1e3755;
+  font-size:clamp(22px,3vw,28px);
+  font-weight:900;
+  letter-spacing:-.45px;
+}
+.dashboardQuest :global(.dashboard-section-heading > div > span) {
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.5px;
+  color:#b13b44;
+}
+.dashboardQuest :global(.dashboard-section-heading > a) {
+  font-size:13px;font-weight:800;color:#285d97;
+}
+.dashboardQuest :global(.dashboard-next-workshop) {
+  overflow:hidden;border:2px solid #d9e4f4;border-radius:22px;box-shadow:0 6px 0 #e3eaf4;background:#fff;
+}
+.dashboardQuest :global(.dashboard-next-content > small),
+.dashboardQuest :global(.dashboard-next-details),
+.dashboardQuest :global(.dashboard-next-actions a) {font-size:13px;}
+.dashboardQuest :global(.dashboard-next-content h3) {font-size:22px;font-weight:900;}
+.dashboardQuest :global(.dashboard-empty-workshop) {
+  border:2px solid #dcd7f6;border-radius:22px;
+  background:linear-gradient(120deg,#f9f2ff,#fff8ee);
+  box-shadow:0 6px 0 #e7e1f6;
+}
+.dashboardQuest :global(.dashboard-empty-workshop h3) {font-size:22px;font-weight:900;}
+.dashboardQuest :global(.dashboard-empty-workshop p),
+.dashboardQuest :global(.dashboard-empty-workshop section > span) {font-size:13px;color:#586a7a;}
+.dashboardQuest :global(.dashboard-empty-workshop a) {font-size:13px;}
+.dashboardQuest :global(.dashboard-skill-card) {
+  border:2px solid #dae8f4;border-radius:21px;
+  background:linear-gradient(160deg,#fff,#f4fbff);
+  box-shadow:0 6px 0 #e5edf6;
+}
+.dashboardQuest :global(.dashboard-skill-card:nth-child(2)) {background:linear-gradient(160deg,#fff,#fbf4ff);}
+.dashboardQuest :global(.dashboard-skill-card:nth-child(3)) {background:linear-gradient(160deg,#fff,#fff8eb);}
+.dashboardQuest :global(.dashboard-skill-header > span),
+.dashboardQuest :global(.dashboard-skill-card > p),
+.dashboardQuest :global(.dashboard-skill-card footer) {
+  font-size:12px;color:#556b7f;
+}
+.dashboardQuest :global(.dashboard-skill-card h3) {font-size:20px;font-weight:900;}
+.dashboardQuest :global(.dashboard-skill-progress) {height:10px;border-radius:999px;}
+.dashboardQuest :global(.dashboard-recommendation-card) {
+  border:2px solid #dce5f2;border-radius:22px;background:#fff;
+  box-shadow:0 5px 0 #e4eaf2;overflow:hidden;
+}
+.dashboardQuest :global(.dashboard-recommendation-content h3) {font-size:18px;font-weight:900;}
+.dashboardQuest :global(.dashboard-recommendation-content small),
+.dashboardQuest :global(.dashboard-recommendation-content > div) {font-size:12px;}
+.dashboardQuest :global(.dashboard-journey-cta) {
+  border-radius:26px;
+  background:linear-gradient(120deg,#2b316a,#6b43a1);
+  box-shadow:0 7px 0 #d5d6ed;
+}
+.dashboardQuest :global(.dashboard-journey-cta span),
+.dashboardQuest :global(.dashboard-journey-cta p) {font-size:13px;color:#f1e6fc;}
+.dashboardQuest :global(.dashboard-journey-cta h2) {font-weight:900;}
+.dashboardQuest :global(.dashboard-journey-cta > a) {min-height:44px;font-size:13px;}
+.dashboardQuest :global(.dashboard-no-skills span) {font-size:13px;color:#617488;}
+.dashboardQuest :global(a:focus-visible), .dashboardQuest :global(button:focus-visible) {
+  outline:3px solid #2763e8;
+  outline-offset:4px;
+}
+@media (max-width:850px) {
+  .dashboardQuest :global(.dashboard-game-hero) {padding:31px 0 37px;}
+  .dashboardQuest :global(.dashboard-welcome h1) {font-size:35px;}
+  .dashboardQuest :global(.dashboard-main) {padding-top:22px;}
+  .dashboardQuest :global(.dashboard-game-hero)::after {display:none;}
+}
+@media (max-width:600px) {
+  .dashboardQuest :global(.dashboard-welcome h1) {font-size:31px;}
+  .dashboardQuest :global(.dashboard-welcome p) {font-size:13px;}
+  .dashboardQuest :global(.dashboard-game-hero) {padding:24px 0 32px;}
+  .dashboardQuest :global(.dashboard-player-panel) {border-radius:19px;}
+  .dashboardQuest :global(.dashboard-main) {padding-bottom:105px;}
+  .dashboardQuest :global(.dashboard-section-heading h2) {font-size:22px;}
+  .dashboardQuest :global(.dashboard-next-content h3) {font-size:19px;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .dashboardQuest *, .dashboardQuest *::before, .dashboardQuest *::after {
+    animation:none!important;transition:none!important;scroll-behavior:auto!important;
+  }
+}
