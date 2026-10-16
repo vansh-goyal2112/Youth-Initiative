@@ -119,3 +119,59 @@ Automated engagement-rule tests:
 **Limitations:** Additional journal stamps are not counted as existing XP
 badges; these are a separate collection. No daily streak punishments,
 public leaderboard, arbitrary bonus XP or social sharing are introduced.
+
+## Third update: shared navigation, whitespace and subtle motion
+
+The student experience now uses a **single shared header** on all primary
+student pages, including Dashboard, Workshops, workshop details, Journey,
+Badges, Profile, registered/completed workshops, QR attendance, reward and
+post-registration confirmation. On narrow screens, one matching mobile
+bottom navigation is used instead of each page rendering its own version.
+
+- Added `StudentHeader.jsx`, `StudentShell.jsx`, and CSS Modules in
+  `src/components/common/`. The StudentShell is attached through the
+  existing root layout **only for student learning routes**.
+- Public login/registration/onboarding pages and the separate admin
+  portal are intentionally unchanged.
+- The duplicated legacy headers, workshop-details back bar and mobile
+  bottom navigations are hidden by styles scoped inside StudentShell,
+  without deleting them from the original pages.
+- Predictable back links: Journey/Badges/Workshops -> Home, Workshop
+  details -> Workshops, Edit Profile -> Profile, Completed/QR -> Upcoming.
+- The shared header has a consistent 74px desktop height (responsive
+  66px tablet and 62px small mobile), active navigation, SAIT branding
+  and a small gently animated Skill Quest sparkle.
+- Larger desktop content widths of up to 1380px reduce unused space.
+  Very subtle, pointer-event-free drifting shapes decorate wide-screen
+  margins and workshop/page heroes; they do not block user controls.
+- The workshop catalogue's hero, cards, search/filter panel and spacing
+  are visually aligned with the playful Journey/Badges/Dashboard aesthetic.
+- Reduced-motion settings disable decorative animations throughout the
+  student shell. The former maximum-scale viewport cap was removed to
+  restore mobile pinch-zoom accessibility.
+- Added a **Surprise Me!** workshop compass that randomly reveals a
+  real active, unregistered, not-past workshop on the dashboard. It never
+  grants XP, registers a student, or invents workshop inventory.
+
+### Third-update manual QA before merge
+- [ ] Visually compare header height, logo, active tab, back link and
+      position on Dashboard, Workshops, workshop details, Journey,
+      Badges, Profile, registered/completed workshops and QR attendance.
+- [ ] Inspect 320px, 375px, 430px, 768px, 1024px, 1440px, and 1920px
+      breakpoints, and test 200% zoom.
+- [ ] Ensure the single shared mobile nav stays visible and never
+      overlaps a form, QR scanner, registration link or bottom action.
+- [ ] Check header/back links via keyboard, screen reader and PWA mode.
+- [ ] Check reduced-motion OS/browser setting: sparkle, bubbles and
+      discovery compass do not animate.
+- [ ] Verify that desktop floating elements never catch clicks or obscure
+      text, and do not cause scrollbars or layout shifts.
+- [ ] Verify Workshop filters, links, QR scanning, registration flow,
+      account recovery and non-student pages still work.
+- [ ] Click Surprise Me several times; confirm each result is an
+      actual available workshop and the details link works.
+
+Added unit tests `tests/studentRouteConfig.test.mjs` and
+`tests/discoverySpin.test.mjs`. Frontend smoke tests and visual
+review on real browsers remain necessary; the CI build cannot verify
+visual consistency by itself.
