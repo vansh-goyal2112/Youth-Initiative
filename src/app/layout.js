@@ -1,5 +1,6 @@
 import "./globals.css";
 import AppProviders from "@/components/common/AppProviders";
+import StudentShell from "@/components/common/StudentShell";
 
 export const metadata = {
   title: {
@@ -28,7 +29,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <StudentShell>{children}</StudentShell>
+        </AppProviders>
       </body>
     </html>
   );
