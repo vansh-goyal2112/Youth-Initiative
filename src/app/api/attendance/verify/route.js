@@ -305,7 +305,19 @@ export async function POST(request) {
         workshop,
       });
 
-      const latestRegistration = await readCosmosDocument(
+      // A duplicate or in-progress transaction can report zero new XP.
+      // Do not mark the registration paid unless the ledger confirms it.
+      const rewardTransaction = await readCosmosDocument(
+        "xpTransactions",
+        `${studentId}_${session.workshopId}`
+      );
+
+      if (rewardTransaction?.status !== "completed") {
+        rewardPending = true;
+        reward = null;
+      }
+
+      const latestRegistration = !rewardPending && await readCosmosDocument(
         "registrations",
         registration.id
       );
