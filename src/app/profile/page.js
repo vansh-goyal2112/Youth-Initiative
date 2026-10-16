@@ -120,7 +120,7 @@ export default function ProfilePage() {
           if (!profileResult.value.ok || !data?.student) {
             throw new Error(data?.message || "Profile information could not be refreshed.");
           }
-          if (!cancelled) setFreshStudent(data.student);
+          if (!cancelled) setFreshStudent({ uid: user.uid, data: data.student });
         } catch (error) {
           if (!cancelled) setProfileError(error.message || "Could not refresh your profile.");
         }
@@ -134,7 +134,7 @@ export default function ProfilePage() {
           if (!progressResult.value.ok || !data?.gamification) {
             throw new Error(data?.message || "Progress is unavailable.");
           }
-          if (!cancelled) setGamification(data.gamification);
+          if (!cancelled) setGamification({ uid: user.uid, data: data.gamification });
         } catch {
           if (!cancelled) setGamificationError("Latest achievements could not be refreshed.");
         }
@@ -161,7 +161,10 @@ export default function ProfilePage() {
     }
   }
 
-  if (authLoading || (user && loading && !studentProfile && !freshStudent)) {
+  const authenticatedFresh = freshStudent?.uid === user?.uid ? freshStudent.data : null;
+  const authenticatedProgress = gamification?.uid === user?.uid ? gamification.data : null;
+
+  if (authLoading || (user && loading && !studentProfile && !authenticatedFresh)) {
     return (
       <main className={styles.statusPage} role="status">
         <Sparkles size={34} className={styles.statusSparkle} aria-hidden="true" />
@@ -182,7 +185,7 @@ export default function ProfilePage() {
     );
   }
 
-  const student = freshStudent || studentProfile;
+  const student = authenticatedFresh || studentProfile;
 
   if (!student) {
     return (
@@ -203,8 +206,8 @@ export default function ProfilePage() {
   const email = studentContactEmail(student);
   const birthDate = formatStudentBirthDate(student.dateOfBirth);
   const interests = studentInterests(student);
-  const progress = profileProgress(student, gamification);
-  const badges = Array.isArray(gamification?.badges) ? gamification.badges : [];
+  const progress = profileProgress(student, authenticatedProgress);
+  const badges = Array.isArray(authenticatedProgress?.badges) ? authenticatedProgress.badges : [];
   const xpToGo = progress.nextLevelXp == null ? null : Math.max(0, Number(progress.nextLevelXp) - progress.totalXp);
 
   return (
