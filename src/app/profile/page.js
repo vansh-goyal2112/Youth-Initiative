@@ -161,8 +161,8 @@ export default function ProfilePage() {
     }
   }
 
-  const authenticatedFresh = freshStudent?.uid === user?.uid ? freshStudent.data : null;
-  const authenticatedProgress = gamification?.uid === user?.uid ? gamification.data : null;
+  const authenticatedFresh = user && freshStudent?.uid === user.uid ? freshStudent.data : null;
+  const authenticatedProgress = user && gamification?.uid === user.uid ? gamification.data : null;
 
   if (authLoading || (user && loading && !studentProfile && !authenticatedFresh)) {
     return (
