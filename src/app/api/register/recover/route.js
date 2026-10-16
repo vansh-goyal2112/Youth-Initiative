@@ -14,6 +14,8 @@ import {
   recoveryRecipient,
   recoveryLimit,
   nextRecoveryCounter,
+  buildRecoveryEmail,
+  createRecoveryTokenUpdates,
 } from "@/services/registrationRecovery.mjs";
 
 export const runtime = "nodejs";
@@ -33,48 +35,6 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
-}
-
-function stageEmail(registration, stage, token) {
-  const id = encodeURIComponent(registration.id);
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
-
-  if (stage === "parental_consent") {
-    return {
-      subject: "Continue Parental Consent – SAIT Youth Initiative",
-      url: `${appUrl}/consent/${id}?token=${encodeURIComponent(token)}`,
-      intro: "A new parental consent link was requested for an unfinished Youth Initiative registration.",
-      action: "Review Parental Consent",
-    };
-  }
-
-  if (stage === "email_verification") {
-    return {
-      subject: "Continue Registration – Verify Your Email",
-      url: `${appUrl}/verify-email/${id}#token=${encodeURIComponent(token)}`,
-      intro: "A new email verification link was requested for an unfinished Youth Initiative registration.",
-      action: "Verify My Email",
-    };
-  }
-
-  return {
-    subject: "Continue Youth Initiative Account Setup",
-    url: `${appUrl}/set-password/${id}?token=${encodeURIComponent(token)}`,
-    intro: "A new account setup link was requested for an approved or verified Youth Initiative registration.",
-    action: "Complete Account Setup",
-  };
-}
-
-function recoveryTokenUpdates(stage, token) {
-  const hash = crypto.createHash("sha256").update(token).digest("hex");
-  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-  if (stage === "parental_consent") {
-    return { consentTokenHash: hash, consentExpiresAt: expiresAt };
-  }
-  if (stage === "email_verification") {
-    return { emailVerificationTokenHash: hash, emailVerificationExpiresAt: expiresAt };
-  }
-  return { activationTokenHash: hash, activationExpiresAt: expiresAt };
 }
 
 /**
@@ -144,7 +104,7 @@ export async function POST(request) {
     const token = crypto.randomBytes(32).toString("hex");
     const now = cosmosNow();
     const updates = {
-      ...recoveryTokenUpdates(stage, token),
+      ...createRecoveryTokenUpdates(stage, token),
       ...nextRecoveryCounter(registration),
       registrationRecoveryRequestedAt: now,
       emailStatus: "sending",
@@ -161,7 +121,12 @@ export async function POST(request) {
       throw error;
     }
 
-    const mail = stageEmail(registration, stage, token);
+    const mail = buildRecoveryEmail(
+      registration,
+      stage,
+      token,
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    );
     const firstName = escapeHtml(registration.firstName || "Explorer");
     let sent = false;
 
