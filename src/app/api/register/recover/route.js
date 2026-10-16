@@ -98,6 +98,18 @@ export async function POST(request) {
       );
     }
 
+    // Never recover a stale pending record when an actual student account
+    // already exists for this address. Such users use Login/Password Reset.
+    const existingStudents = await queryCosmosDocuments(
+      "students",
+      "SELECT TOP 1 c.id FROM c WHERE c.contactEmail = @email",
+      [{ name: "@email", value: email }]
+    );
+
+    if (existingStudents.length > 0) {
+      return genericResponse();
+    }
+
     const pending = await queryCosmosDocuments(
       "pendingRegistrations",
       `SELECT * FROM c WHERE c.email = @email
