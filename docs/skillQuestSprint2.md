@@ -67,3 +67,55 @@ include `tests/rewardRecovery.test.mjs` and
 
 No push notifications, email reminders, new identities, or changes to
 administrator functionality are introduced in this branch.
+
+## Second update: interactive dashboard (October 16)
+
+The previous dashboard still looked like the older app. This update adds
+a large, page-scoped **Skill Quest HQ** with:
+
+- A playful purple/gold/red dashboard hero that matches Journey and Badges.
+- Real progress summaries for levels, verified workshops, badges and
+  learning-journal stamps.
+- **Choose Your Mission:** an authenticated, persistent personal focus
+  mission stored on the student's Cosmos record via
+  `POST /api/gamification/focus`. Choosing a mission does not grant XP
+  and does not restrict workshop registration.
+- **My Learning Journal:** a short, age-friendly two-question reflection
+  after **verified** attendance, saved once per workshop on the
+  student's existing registration document via
+  `POST /api/gamification/reflect`. There is no free text or public
+  sharing; reflection does not grant extra XP.
+- A journal stamp collection visible on both Dashboard and Journey.
+- Existing upcoming workshop notifications, registrations, recommendations,
+  skill tracks and mobile navigation remain available.
+
+The changes use new CSS Modules; `src/app/globals.css` has not been
+rewritten. Reflection and mission authorization reuse the existing
+`requireActiveStudent` Firebase/App Check and Cosmos account checks.
+
+## Additional verification before merge
+
+- [ ] Existing test student: select a mission, refresh the dashboard,
+      and confirm the same selected mission returns from Cosmos.
+- [ ] Confirm mission choice cannot be set by unauthenticated or
+      inactive accounts.
+- [ ] Confirm reflection cannot be saved before verified attendance
+      or on someone else's registration.
+- [ ] Save a reflection using the mood/moment selections; check
+      dashboard journal count and the Journey journal stamp.
+- [ ] Confirm repeated submissions cannot create duplicate stamps.
+- [ ] Test an account with zero completed workshops, several completed
+      workshops, and a completed workshop pending XP recovery.
+- [ ] Test keyboard interaction, focus indicators, radio groups,
+      screen readers and reduced-motion preferences.
+- [ ] Check visual layouts at 320px, 375px, 430px, 768px, 1024px,
+      1440px and 200% zoom on device or a real browser.
+- [ ] Confirm admin pages, authentication, workshop CRUD and the
+      existing bottom navigation are unchanged.
+
+Automated engagement-rule tests:
+`tests/skillQuestEngagement.test.mjs`.
+
+**Limitations:** Additional journal stamps are not counted as existing XP
+badges; these are a separate collection. No daily streak punishments,
+public leaderboard, arbitrary bonus XP or social sharing are introduced.
