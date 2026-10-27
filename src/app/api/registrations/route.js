@@ -12,6 +12,10 @@ import {
   readCosmosDocument,
 } from "@/services/cosmosData";
 
+import {
+  getWorkshopEligibility,
+} from "@/services/workshopEligibility";
+
 export const runtime = "nodejs";
 
 export async function GET(request) {
@@ -126,6 +130,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const {
+      student,
       uid,
     } =
       await requireActiveStudent(
@@ -175,6 +180,35 @@ export async function POST(request) {
         {
           status:
             404,
+        }
+      );
+    }
+
+    if (workshop.availabilityStatus === "closed") {
+      return Response.json(
+        {
+          success: false,
+          message: "SAIT currently lists registration for this workshop as closed.",
+        },
+        {
+          status: 409,
+        }
+      );
+    }
+
+    const eligibility = getWorkshopEligibility(
+      workshop,
+      student
+    );
+
+    if (eligibility.status === "ineligible") {
+      return Response.json(
+        {
+          success: false,
+          message: eligibility.reason,
+        },
+        {
+          status: 403,
         }
       );
     }

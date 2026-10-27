@@ -34,6 +34,7 @@ const initialValues = {
   lastName: "",
   email: "",
   dateOfBirth: "",
+  schoolGrade: "",
   parentEmail: "",
 };
 
@@ -73,6 +74,8 @@ export default function RegisterPage() {
         email: values.email.trim().toLowerCase(),
 
         dateOfBirth: values.dateOfBirth,
+
+        schoolGrade: values.schoolGrade,
 
         parentEmail: values.parentEmail
           ? values.parentEmail.trim().toLowerCase()
@@ -442,6 +445,34 @@ export default function RegisterPage() {
                           component="p"
                           className="auth-error-message"
                         />
+                      </div>
+
+                      <div className="auth-form-group">
+                        <label
+                          htmlFor="schoolGrade"
+                          className="auth-form-label"
+                        >
+                          Current School Grade (Optional)
+                        </label>
+
+                        <Field
+                          as="select"
+                          id="schoolGrade"
+                          name="schoolGrade"
+                          className="auth-form-input"
+                        >
+                          <option value="">Select your grade</option>
+                          <option value="K">Kindergarten</option>
+                          {Array.from({ length: 12 }, (_, index) => (
+                            <option key={index + 1} value={String(index + 1)}>
+                              Grade {index + 1}
+                            </option>
+                          ))}
+                        </Field>
+
+                        <p className="auth-helper-text">
+                          This helps us show youth programs with grade requirements.
+                        </p>
                       </div>
 
                       {requiresParentalConsent && (

@@ -763,6 +763,10 @@ export async function POST(
           dateOfBirth:
             registration.dateOfBirth,
 
+          schoolGrade:
+            registration.schoolGrade ||
+            null,
+
           requiresParentalConsent:
             registration
               .requiresParentalConsent ===

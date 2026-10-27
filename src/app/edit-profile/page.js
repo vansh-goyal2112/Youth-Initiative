@@ -45,6 +45,7 @@ export default function EditProfilePage() {
   const {
     user,
     studentProfile,
+    updateStudentProfile,
     loading,
   } =
     useAuth();
@@ -74,6 +75,7 @@ export default function EditProfilePage() {
       student={
         studentProfile
       }
+      updateStudentProfile={updateStudentProfile}
       router={router}
     />
   );
@@ -82,8 +84,17 @@ export default function EditProfilePage() {
 function EditProfileForm({
   user,
   student,
+  updateStudentProfile,
   router,
 }) {
+  const [
+    schoolGrade,
+    setSchoolGrade,
+  ] = useState(
+    student.schoolGrade ||
+      ""
+  );
+
   const [
     learningMode,
     setLearningMode,
@@ -200,6 +211,8 @@ function EditProfileForm({
 
             body:
               JSON.stringify({
+                schoolGrade:
+                  schoolGrade || null,
                 learningMode,
                 interests,
               }),
@@ -224,6 +237,7 @@ function EditProfileForm({
         );
       }
 
+      updateStudentProfile(result.student);
       router.push(
         "/profile"
       );
@@ -280,6 +294,28 @@ function EditProfileForm({
           }
           className="edit-profile-form"
         >
+          <div className="edit-profile-field">
+            <label htmlFor="schoolGrade">
+              Current School Grade
+            </label>
+
+            <select
+              id="schoolGrade"
+              value={schoolGrade}
+              onChange={(event) =>
+                setSchoolGrade(event.target.value)
+              }
+            >
+              <option value="">Not provided</option>
+              <option value="K">Kindergarten</option>
+              {Array.from({ length: 12 }, (_, index) => (
+                <option key={index + 1} value={String(index + 1)}>
+                  Grade {index + 1}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="edit-profile-field">
             <label>
               Learning Preference

@@ -165,6 +165,9 @@ export async function POST(request) {
     const dateOfBirth =
       validatedData.dateOfBirth;
 
+    const schoolGrade =
+      validatedData.schoolGrade || null;
+
     const age =
       calculateAge(
         dateOfBirth
@@ -386,6 +389,7 @@ export async function POST(request) {
           parentEmail,
 
           dateOfBirth,
+          schoolGrade,
           age,
 
           requiresParentalConsent,

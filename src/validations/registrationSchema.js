@@ -3,7 +3,7 @@ import * as Yup from "yup";
 const nameRegex =
   /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[ '-][A-Za-zÀ-ÖØ-öø-ÿ]+)*$/;
 
-export function calculateAge(dateOfBirth) {
+export function calculateAge(dateOfBirth, today = new Date()) {
   if (!dateOfBirth) {
     return null;
   }
@@ -15,8 +15,6 @@ export function calculateAge(dateOfBirth) {
   if (Number.isNaN(birthDate.getTime())) {
     return null;
   }
-
-  const today = new Date();
 
   let age =
     today.getFullYear() - birthDate.getFullYear();
@@ -138,6 +136,13 @@ export const registrationSchema = Yup.object({
         return age >= 5 && age <= 25;
       }
     ),
+
+  schoolGrade: Yup.string()
+    .oneOf(
+      ["", "K", ...Array.from({ length: 12 }, (_, index) => String(index + 1))],
+      "Select a valid current school grade."
+    )
+    .notRequired(),
 
   parentEmail: Yup.string()
     .transform((value) =>

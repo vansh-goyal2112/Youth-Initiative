@@ -7,11 +7,18 @@ import {
   queryCosmosDocuments,
 } from "@/services/cosmosData";
 
+import {
+  getWorkshopEligibility,
+} from "@/services/workshopEligibility";
+
 export const runtime = "nodejs";
 
 export async function GET(request) {
   try {
-    await requireActiveStudent(
+    const {
+      student,
+    } =
+      await requireActiveStudent(
       request
     );
 
@@ -36,15 +43,21 @@ export async function GET(request) {
 
     const workshops =
       workshopDocuments
-        .map(
-          (
-            workshop
-          ) => ({
-            id:
-              workshop.id,
+        .map((workshop) => {
+          const eligibility = getWorkshopEligibility(
+            workshop,
+            student
+          );
 
+          return {
+            id: workshop.id,
             ...workshop,
-          })
+            eligibilityStatus: eligibility.status,
+            eligibilityMessage: eligibility.reason,
+          };
+        })
+        .filter((workshop) =>
+          workshop.eligibilityStatus !== "ineligible"
         )
         .sort(
           (

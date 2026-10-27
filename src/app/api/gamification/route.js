@@ -7,6 +7,9 @@ import {
   queryCosmosDocuments,
   readCosmosDocument,
 } from "@/services/cosmosData";
+import {
+  getCompletedStudentWorkshops,
+} from "@/services/studentJourney";
 
 export const runtime = "nodejs";
 
@@ -212,74 +215,14 @@ export async function GET(request) {
       );
     }
 
-    /*
-      Load all completed
-      registrations for the
-      student.
-    */
-
-    const completedRegistrations =
-      await queryCosmosDocuments(
-        "registrations",
-        `
-          SELECT *
-          FROM c
-          WHERE c.studentId = @studentId
-            AND c.status = @status
-        `,
-        [
-          {
-            name:
-              "@studentId",
-
-            value:
-              studentId,
-          },
-          {
-            name:
-              "@status",
-
-            value:
-              "completed",
-          },
-        ]
-      );
-
     const completedWorkshops =
-      [];
-
-    /*
-      Load the workshop connected
-      to each completed registration.
-    */
-
-    for (
-      const registration of
-      completedRegistrations
-    ) {
-      if (
-        !registration.workshopId
-      ) {
-        continue;
-      }
-
-      const workshop =
-        await readCosmosDocument(
-          "workshops",
-          registration.workshopId
-        );
-
-      if (
-        workshop
-      ) {
-        completedWorkshops.push({
-          id:
-            workshop.id,
-
-          ...workshop,
-        });
-      }
-    }
+      await getCompletedStudentWorkshops(
+        studentId,
+        {
+          queryDocuments: queryCosmosDocuments,
+          readDocument: readCosmosDocument,
+        }
+      );
 
     const categoryProgress = {};
 

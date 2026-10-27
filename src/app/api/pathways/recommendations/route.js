@@ -3,6 +3,9 @@ import {
   readCosmosDocument,
 } from "@/services/cosmosData";
 import {
+  getCompletedStudentWorkshops,
+} from "@/services/studentJourney";
+import {
   getActiveSaitPrograms,
 } from "@/services/saitProgramService";
 import {
@@ -20,39 +23,13 @@ export async function GET(request) {
     const { uid: studentId, student } =
       await requireActiveStudent(request);
 
-    const registrationDocuments = await queryCosmosDocuments(
-      "registrations",
-      `
-        SELECT *
-        FROM c
-        WHERE c.studentId = @studentId AND c.status = @status
-      `,
-      [
-        {
-          name: "@studentId",
-          value: studentId,
-        },
-        {
-          name: "@status",
-          value: "completed",
-        },
-      ]
+    const completedWorkshops = await getCompletedStudentWorkshops(
+      studentId,
+      {
+        queryDocuments: queryCosmosDocuments,
+        readDocument: readCosmosDocument,
+      }
     );
-
-    const completedWorkshopResults = await Promise.all(
-      registrationDocuments.map(async (registration) => {
-        if (!registration.workshopId) {
-          return null;
-        }
-
-        return readCosmosDocument(
-          "workshops",
-          registration.workshopId
-        );
-      })
-    );
-
-    const completedWorkshops = completedWorkshopResults.filter(Boolean);
     const programs = await getActiveSaitPrograms();
     const recommendations = recommendSaitPrograms({
       student,

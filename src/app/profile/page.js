@@ -40,7 +40,7 @@ export default function ProfilePage() {
 
   const {
     user,
-    student,
+    studentProfile: student,
     loading,
   } = useAuth();
 
@@ -229,6 +229,18 @@ export default function ProfilePage() {
               value={
                 student?.dateOfBirth ||
                 "Not available"
+              }
+            />
+
+            <ProfileInformation
+              icon={BookOpen}
+              label="Current School Grade"
+              value={
+                student?.schoolGrade === "K"
+                  ? "Kindergarten"
+                  : student?.schoolGrade
+                    ? `Grade ${student.schoolGrade}`
+                    : "Not provided"
               }
             />
 

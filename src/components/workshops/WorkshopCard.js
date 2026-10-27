@@ -21,7 +21,16 @@ export default function WorkshopCard({ workshop }) {
       ? "Online"
       : workshop.learningMode === "both"
         ? "Online & In Person"
-        : "In Person";
+        : workshop.learningMode === "in-person"
+          ? "In Person"
+          : "Format not listed";
+
+  const eligibilityLabel =
+    workshop.grade ||
+    (Number.isInteger(workshop.minAge) ||
+    Number.isInteger(workshop.maxAge)
+      ? `Ages ${workshop.minAge ?? "?"} - ${workshop.maxAge ?? "up"}`
+      : "Eligibility not listed");
 
   return (
     <article className="student-workshop-card">
@@ -37,8 +46,10 @@ export default function WorkshopCard({ workshop }) {
         <span className="workshop-mode-badge">
           {workshop.learningMode === "online" ? (
             <Monitor size={13} />
-          ) : (
+          ) : workshop.learningMode === "in-person" ? (
             <MapPin size={13} />
+          ) : (
+            <CalendarDays size={13} />
           )}
 
           {learningMode}
@@ -52,6 +63,12 @@ export default function WorkshopCard({ workshop }) {
 
         <h2>{workshop.title}</h2>
 
+        {workshop.availabilityStatus === "closed" && (
+          <span className="workshop-availability-status">
+            Registration closed
+          </span>
+        )}
+
         <p className="workshop-card-description">
           {workshop.description ||
             "Explore this SAIT Youth Initiative learning opportunity."}
@@ -60,7 +77,7 @@ export default function WorkshopCard({ workshop }) {
         <div className="workshop-card-details">
           <div>
             <Users size={16} />
-            {workshop.grade || "Youth Program"}
+            {eligibilityLabel}
           </div>
 
           <div>
@@ -68,6 +85,15 @@ export default function WorkshopCard({ workshop }) {
             {workshop.startDate || "Date to be announced"}
           </div>
         </div>
+
+        {workshop.eligibilityStatus === "unconfirmed" && (
+          <p className="workshop-eligibility-notice">
+            Eligibility needs confirmation.{" "}
+            {workshop.grade && !workshop.minAge && !workshop.maxAge
+              ? "Add your grade to your profile to check grade-based eligibility."
+              : "Check the official SAIT page before registering."}
+          </p>
+        )}
 
         <div className="workshop-card-footer">
           <span>

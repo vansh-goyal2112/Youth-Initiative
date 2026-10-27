@@ -389,6 +389,8 @@ export function AuthProvider({
 
     studentProfile,
 
+    updateStudentProfile: setStudentProfile,
+
     loading,
 
     isAuthenticated:

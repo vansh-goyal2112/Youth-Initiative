@@ -206,10 +206,36 @@ async function loadExistingUrls(container) {
 
 // For workshops only scraper-owned text fields may change on an existing document.
 function mergeWorkshop(existing, record) {
+  const isScrapedRecord = existing.importedFromExcel === false;
+  const mergeScrapedField = (field, fallback = null) => {
+    if (isScrapedRecord) {
+      return Object.hasOwn(record, field) ? record[field] : fallback;
+    }
+
+    return record[field] ?? existing[field] ?? fallback;
+  };
+  const updates = {
+    description: record.description || existing.description,
+    grade: mergeScrapedField("grade"),
+    audience: mergeScrapedField("audience", "students"),
+    availabilityStatus: mergeScrapedField("availabilityStatus", "unknown"),
+    minAge: mergeScrapedField("minAge"),
+    maxAge: mergeScrapedField("maxAge"),
+    minGrade: mergeScrapedField("minGrade"),
+    maxGrade: mergeScrapedField("maxGrade"),
+    informationUrl: record.informationUrl || existing.informationUrl,
+    registrationUrl: record.registrationUrl || existing.registrationUrl,
+    image: mergeScrapedField("image"),
+    learningMode: mergeScrapedField("learningMode"),
+    location: mergeScrapedField("location"),
+    startDate: mergeScrapedField("startDate"),
+    endDate: mergeScrapedField("endDate"),
+    time: mergeScrapedField("time", ""),
+  };
+
   return {
     ...stripSystemFields(existing),
-    description: record.description || existing.description,
-    grade: record.grade ?? existing.grade ?? null,
+    ...updates,
   };
 }
 function reasonOf(error) {
@@ -288,6 +314,12 @@ async function runDataset({
 
   if (dryRun) {
     report.skipped = report.duplicatesRemoved;
+    return report;
+  }
+
+  if (report.failed > 0) {
+    report.skipped =
+      report.duplicatesRemoved + report.records.length;
     return report;
   }
 

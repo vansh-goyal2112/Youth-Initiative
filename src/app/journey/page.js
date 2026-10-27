@@ -48,6 +48,12 @@ export default function JourneyPage() {
   const [pathways, setPathways] =
     useState([]);
 
+  const [pathwaysLoading, setPathwaysLoading] =
+    useState(true);
+
+  const [pathwaysError, setPathwaysError] =
+    useState("");
+
   const [loading, setLoading] =
     useState(true);
 
@@ -90,15 +96,37 @@ export default function JourneyPage() {
         }
 
         try {
-          const pathwayRes = await studentFetch("/api/pathways/recommendations");
-          if (pathwayRes.ok) {
-            const pathwayData = await pathwayRes.json();
-            if (!cancelled && pathwayData?.recommendations) {
-              setPathways(pathwayData.recommendations);
-            }
+          const pathwayResponse = await studentFetch(
+            "/api/pathways/recommendations"
+          );
+          const pathwayData = await pathwayResponse.json();
+
+          if (
+            !pathwayResponse.ok ||
+            pathwayData?.success !== true ||
+            !Array.isArray(pathwayData.recommendations)
+          ) {
+            throw new Error(
+              pathwayData?.message ||
+                "SAIT program recommendations could not be loaded."
+            );
           }
-        } catch {
-          // Gracefully omit pathway recommendations if not available
+
+          if (!cancelled) {
+            setPathways(pathwayData.recommendations);
+            setPathwaysError("");
+          }
+        } catch (error) {
+          if (!cancelled) {
+            setPathwaysError(
+              error.message ||
+                "SAIT program recommendations could not be loaded."
+            );
+          }
+        } finally {
+          if (!cancelled) {
+            setPathwaysLoading(false);
+          }
         }
       } catch (error) {
         if (
@@ -401,65 +429,78 @@ export default function JourneyPage() {
 
         </section>
 
-        {/* FUTURE SAIT PATHWAYS SECTION */}
-        {pathways.length > 0 && (
-          <section className="quest-section">
+        <section className="quest-section">
             <div className="game-section-heading">
               <div>
                 <span>FUTURE PATHWAYS</span>
                 <h2>Recommended SAIT Programs</h2>
               </div>
               <p>
-                Possible post-secondary pathways after Grade 12 tailored to your interests and completed workshops.
+                Possible future learning pathways matched to your interests and completed workshops. These are suggestions, not admission or career guarantees.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
-              {pathways.map((rec) => (
-                <div
-                  key={rec.program.id}
-                  className="bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <Sparkles size={12} />
-                        {rec.score}% MATCH
-                      </span>
-                      <GraduationCap size={18} className="text-slate-400" />
-                    </div>
-
-                    <h3 className="text-base font-bold text-slate-800 line-clamp-2 mb-2">
-                      {rec.program.title}
-                    </h3>
-
-                    <div className="space-y-1.5 mb-4">
-                      {rec.reasons?.map((reason, idx) => (
-                        <p
-                          key={idx}
-                          className="text-xs text-slate-600 flex items-start gap-1.5"
-                        >
-                          <span className="text-emerald-500 font-bold mt-0.5">•</span>
-                          <span>{reason}</span>
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  <a
-                    href={rec.program.informationUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+            {pathwaysLoading ? (
+              <p className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+                <LoaderCircle className="button-spinner" size={18} />
+                Loading SAIT program recommendations...
+              </p>
+            ) : pathwaysError ? (
+              <p className="mt-3 text-sm text-red-700" role="alert">
+                {pathwaysError}
+              </p>
+            ) : pathways.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-600">
+                No program matches yet. Add interests or complete a workshop to
+                help us find relevant SAIT pathways.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+                {pathways.map((rec) => (
+                  <div
+                    key={rec.program.id}
+                    className="bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
                   >
-                    <span>View SAIT Program</span>
-                    <ExternalLink size={14} />
-                  </a>
-                </div>
-              ))}
-            </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Sparkles size={12} />
+                          {rec.score}% MATCH
+                        </span>
+                        <GraduationCap size={18} className="text-slate-400" />
+                      </div>
+
+                      <h3 className="text-base font-bold text-slate-800 line-clamp-2 mb-2">
+                        {rec.program.title}
+                      </h3>
+
+                      <div className="space-y-1.5 mb-4">
+                        {rec.reasons?.map((reason, idx) => (
+                          <p
+                            key={idx}
+                            className="text-xs text-slate-600 flex items-start gap-1.5"
+                          >
+                            <span className="text-emerald-500 font-bold mt-0.5">•</span>
+                            <span>{reason}</span>
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+
+                    <a
+                      href={rec.program.informationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                    >
+                      <span>View SAIT Program</span>
+                      <ExternalLink size={14} />
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
-        )}
 
         <section className="journey-achievement-section">
 

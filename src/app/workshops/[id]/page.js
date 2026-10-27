@@ -126,15 +126,19 @@ export default function WorkshopDetailsPage() {
             <span className="workshop-details-mode">
               {workshop.learningMode === "online" ? (
                 <Monitor size={16} />
-              ) : (
+              ) : workshop.learningMode === "in-person" ? (
                 <MapPin size={16} />
+              ) : (
+                <CalendarDays size={16} />
               )}
 
               {workshop.learningMode === "online"
                 ? "Online"
                 : workshop.learningMode === "both"
                   ? "Online & In Person"
-                  : "In Person"}
+                  : workshop.learningMode === "in-person"
+                    ? "In Person"
+                    : "Format not listed"}
             </span>
           </div>
 
@@ -150,11 +154,38 @@ export default function WorkshopDetailsPage() {
               {workshop.description}
             </p>
 
+            {workshop.availabilityStatus === "closed" && (
+              <div className="workshop-availability-notice" role="status">
+                <strong>Registration closed</strong>
+                <p>
+                  SAIT currently lists all sessions for this camp as closed.
+                  Check the official page for future dates.
+                </p>
+              </div>
+            )}
+
+            {workshop.eligibilityStatus === "unconfirmed" && (
+              <div className="workshop-eligibility-notice" role="status">
+                <strong>Eligibility not confirmed</strong>
+                <p>
+                  {workshop.eligibilityMessage} Add your current grade to
+                  your profile if this workshop lists a grade requirement,
+                  and check the official SAIT page before registering.
+                </p>
+              </div>
+            )}
+
             <div className="workshop-information-grid">
               <InformationItem
                 icon={Users}
                 label="Grade"
-                value={workshop.grade}
+                value={
+                  workshop.grade ||
+                  (Number.isInteger(workshop.minAge) ||
+                  Number.isInteger(workshop.maxAge)
+                    ? `Ages ${workshop.minAge ?? "?"} - ${workshop.maxAge ?? "up"}`
+                    : "Eligibility not listed")
+                }
               />
 
               <InformationItem
@@ -180,9 +211,7 @@ export default function WorkshopDetailsPage() {
                 label="Location"
                 value={
                   workshop.location ||
-                  (workshop.learningMode === "online"
-                    ? "Online"
-                    : "SAIT Campus")
+                  (workshop.learningMode === "online" ? "Online" : "Not listed")
                 }
               />
             </div>
@@ -213,34 +242,54 @@ export default function WorkshopDetailsPage() {
             </div>
           </div>
 
-          <h2>Ready to register?</h2>
+          {workshop.availabilityStatus === "closed" ? (
+            <>
+              <h2>Registration unavailable</h2>
+              <p>
+                SAIT currently lists this workshop&apos;s sessions as closed.
+              </p>
+              <a
+                href={workshop.informationUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="official-workshop-link"
+              >
+                Check SAIT for future dates
+                <ExternalLink size={17} />
+              </a>
+            </>
+          ) : (
+            <>
+              <h2>Ready to register?</h2>
 
-          <p>
-            Registration is completed through the official
-            SAIT Youth Programs registration portal.
-          </p>
+              <p>
+                Registration is completed through the official
+                SAIT Youth Programs registration portal.
+              </p>
 
-          <a
-            href={registrationUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="workshop-register-button"
-          >
-            Register Now
-            <ExternalLink size={18} />
-          </a>
+              <a
+                href={registrationUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="workshop-register-button"
+              >
+                Register Now
+                <ExternalLink size={18} />
+              </a>
 
-          <Link
-            href={`/registration-success/${workshop.id}`}
-            className="registration-confirmation-link"
-          >
-            I completed registration
-          </Link>
+              <Link
+                href={`/registration-success/${workshop.id}`}
+                className="registration-confirmation-link"
+              >
+                I completed registration
+              </Link>
 
-          <div className="workshop-registration-note">
-            After registering on the official portal,
-            return here and confirm your registration.
-          </div>
+              <div className="workshop-registration-note">
+                After registering on the official portal,
+                return here and confirm your registration.
+              </div>
+            </>
+          )}
         </aside>
       </div>
     </main>

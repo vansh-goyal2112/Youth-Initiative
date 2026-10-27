@@ -73,6 +73,11 @@ export default function DashboardPage() {
   ] = useState([]);
 
   const [
+    workshopRecommendations,
+    setWorkshopRecommendations,
+  ] = useState([]);
+
+  const [
     loading,
     setLoading,
   ] = useState(true);
@@ -181,6 +186,20 @@ export default function DashboardPage() {
         );
 
         try {
+          const workshopRecResponse = await studentFetch(
+            "/api/workshops/recommendations"
+          );
+          if (workshopRecResponse.ok) {
+            const workshopRecResult = await workshopRecResponse.json();
+            if (!cancelled && workshopRecResult?.recommendations) {
+              setWorkshopRecommendations(workshopRecResult.recommendations);
+            }
+          }
+        } catch {
+          // Fall back to the basic on-page suggestions
+        }
+
+        try {
           const pathwayResponse = await studentFetch(
             "/api/pathways/recommendations"
           );
@@ -267,6 +286,48 @@ export default function DashboardPage() {
 
   const recommendedWorkshops =
     useMemo(() => {
+      const workshopsById =
+        new Map(
+          workshops.map(
+            (workshop) => [
+              workshop.id,
+              workshop,
+            ]
+          )
+        );
+
+      const apiRecommended =
+        workshopRecommendations
+          .map(
+            (recommendation) => {
+              const workshop =
+                workshopsById.get(
+                  recommendation.workshop.id
+                );
+
+              return workshop
+                ? {
+                    ...workshop,
+                    recommendationScore:
+                      recommendation.score,
+                    recommendationReasons:
+                      recommendation.reasons,
+                  }
+                : null;
+            }
+          )
+          .filter(Boolean);
+
+      if (
+        apiRecommended.length >
+        0
+      ) {
+        return apiRecommended.slice(
+          0,
+          3
+        );
+      }
+
       const registeredIds =
         new Set(
           registrations.map(
@@ -345,6 +406,7 @@ export default function DashboardPage() {
       );
     }, [
       workshops,
+      workshopRecommendations,
       registrations,
       student,
     ]);
@@ -1327,6 +1389,12 @@ function RecommendedWorkshop({
         <h3>
           {workshop.title}
         </h3>
+
+        {workshop.recommendationReasons?.[0] && (
+          <p>
+            {workshop.recommendationReasons[0]}
+          </p>
+        )}
 
         <div>
           <span>

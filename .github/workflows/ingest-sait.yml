@@ -1,0 +1,67 @@
+name: Ingest SAIT programs and workshops
+
+on:
+  schedule:
+    # Every Monday at 08:00 UTC
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (scrape and validate only; nothing is written to Cosmos DB)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: ingest-sait
+  cancel-in-progress: false
+
+env:
+  COSMOS_ENDPOINT: https://youth-initiative-cosmos-vg.documents.azure.com:443/
+  COSMOS_DATABASE_NAME: YouthInitiative
+
+jobs:
+  ingest:
+    name: Scrape SAIT and upload to Cosmos DB
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Login to Azure
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Dry run
+        if: ${{ inputs.dry_run }}
+        run: npm run ingest:sait -- --dry-run --output tmp/review.json
+
+      - name: Ingest programs and workshops
+        if: ${{ !inputs.dry_run }}
+        run: npm run ingest:sait -- --output tmp/report.json
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sait-ingestion-report
+          path: tmp/*.json
+          if-no-files-found: ignore
+          retention-days: 30
