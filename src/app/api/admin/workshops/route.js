@@ -1,3 +1,4 @@
+import { assignWorkshopImage, usedWorkshopImageIds } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
 
 import {
@@ -223,9 +224,12 @@ export async function POST(
     const createdAt =
       cosmosNow();
 
+    const existingImages = await queryCosmosDocuments("workshops", "SELECT c.id, c.imageAssetId FROM c");
+    const imageAssignment = assignWorkshopImage(workshopData, usedWorkshopImageIds(existingImages));
     await createCosmosDocument(
       "workshops",
       {
+        ...imageAssignment,
         id:
           workshopId,
 
@@ -355,6 +359,7 @@ export async function PUT(
       "workshops",
       existingWorkshop,
       {
+        // Preserve assigned image when other workshop details change.
         ...buildWorkshopData(
           workshopData
         ),
