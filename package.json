@@ -11,7 +11,7 @@
     "scrape:sait-programs": "node scripts/scrapeSaitPrograms.mjs",
     "ingest:sait": "node scripts/ingestSait.mjs",
     "demo:recommendations": "node scripts/demoRecommendations.mjs",
-    "test:unit": "node --test tests/*.test.mjs",
+    "test:unit": "node --test",
     "test:smoke": "node scripts/httpSmoke.mjs"
   },
   "engines": {
