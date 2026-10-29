@@ -245,28 +245,39 @@ export async function GET(request) {
         ]
       );
 
-    const completedWorkshops = [];
+    const completedWorkshops =
+      [];
 
-    // Preserve workshop ordering and counts while avoiding one
-    // serial database round trip per completed registration.
-    // Keep concurrency bounded to avoid a burst of Cosmos requests.
-    const workshopIds = completedRegistrations
-      .map((registration) => registration.workshopId)
-      .filter(Boolean);
-    const workshopBatchSize = 8;
+    /*
+      Load the workshop connected
+      to each completed registration.
+    */
 
-    for (let start = 0; start < workshopIds.length; start += workshopBatchSize) {
-      const batch = workshopIds.slice(start, start + workshopBatchSize);
-      const found = await Promise.all(
-        batch.map((workshopId) =>
-          readCosmosDocument("workshops", workshopId)
-        )
-      );
+    for (
+      const registration of
+      completedRegistrations
+    ) {
+      if (
+        !registration.workshopId
+      ) {
+        continue;
+      }
 
-      for (const workshop of found) {
-        if (workshop) {
-          completedWorkshops.push({ id: workshop.id, ...workshop });
-        }
+      const workshop =
+        await readCosmosDocument(
+          "workshops",
+          registration.workshopId
+        );
+
+      if (
+        workshop
+      ) {
+        completedWorkshops.push({
+          id:
+            workshop.id,
+
+          ...workshop,
+        });
       }
     }
 
