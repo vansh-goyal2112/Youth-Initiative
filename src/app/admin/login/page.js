@@ -2,6 +2,7 @@
 
 import {
   useState,
+  useRef,
 } from "react";
 
 import {
@@ -21,6 +22,8 @@ import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
   sendPasswordResetEmail,
+  getMultiFactorResolver,
+  TotpMultiFactorGenerator,
   signOut,
 } from "firebase/auth";
 
@@ -49,6 +52,8 @@ export default function AdminLoginPage() {
     useState("");
 
   const [mode, setMode] = useState("login");
+  const mfaResolverRef = useRef(null);
+  const [totpCode, setTotpCode] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
 
   const [
@@ -110,7 +115,21 @@ export default function AdminLoginPage() {
         setMode("request");
         return;
       }
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (mode === "mfa") {
+        const resolver = mfaResolverRef.current;
+        const hint = resolver?.hints?.find((entry) =>
+          entry.factorId === TotpMultiFactorGenerator.FACTOR_ID);
+        if (!hint || !/^\d{6}$/.test(totpCode)) {
+          throw new Error("Enter the six-digit code from your authenticator.");
+        }
+        await resolver.resolveSignIn(
+          TotpMultiFactorGenerator.assertionForSignIn(hint.uid, totpCode)
+        );
+        mfaResolverRef.current = null;
+        setTotpCode("");
+      } else {
+        await signInWithEmailAndPassword(auth, email.trim(), password);
+      }
       if (mode === "request") {
         const response = await adminFetch("/api/admin/access-request", { method: "POST" });
         const data = await response.json();
@@ -184,6 +203,12 @@ export default function AdminLoginPage() {
     } catch (
       error
     ) {
+      if (error?.code === "auth/multi-factor-auth-required") {
+        mfaResolverRef.current = getMultiFactorResolver(auth, error);
+        setMode("mfa");
+        setErrorMessage("");
+        return;
+      }
       console.error(
         "Admin login error:",
         error
@@ -213,7 +238,7 @@ export default function AdminLoginPage() {
           SAIT YOUTH INITIATIVE
         </span>
 
-        <h1>{mode === "register" ? "Request an Admin Account" : mode === "request" ? "Submit Access Request" : mode === "reset" ? "Reset Password" : "Administrator Login"}</h1>
+        <h1>{mode === "mfa" ? "Verify Authenticator Code" : mode === "register" ? "Request an Admin Account" : mode === "request" ? "Submit Access Request" : mode === "reset" ? "Reset Password" : "Administrator Login"}</h1>
 
         <p>
           Sign in with your authorized
@@ -246,7 +271,7 @@ export default function AdminLoginPage() {
             />
           </label>
 
-          {mode !== "reset" && <label>
+          {mode !== "reset" && mode !== "mfa" && <label>
             Password
 
             <div className="admin-password-input">
@@ -299,6 +324,16 @@ export default function AdminLoginPage() {
             </div>
           </label>}
 
+          {mode === "mfa" && (
+            <label className="block text-sm font-semibold text-slate-700">
+              Authenticator code
+              <input type="text" inputMode="numeric" pattern="[0-9]{6}"
+                minLength={6} maxLength={6} autoComplete="one-time-code"
+                value={totpCode} onChange={(e) => setTotpCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                className="mt-2 w-full rounded-xl border border-slate-300 p-3"
+                placeholder="6-digit code" required />
+            </label>
+          )}
           {mode === "register" && <p className="mt-2 text-xs text-slate-500">Use at least 12 characters with uppercase, lowercase, a number and a symbol.</p>}
 
           {infoMessage && <div className="admin-success-message" role="status">{infoMessage}</div>}
@@ -334,7 +369,7 @@ export default function AdminLoginPage() {
                   size={18}
                 />
 
-                {mode === "register" ? "Register & Verify Email" : mode === "request" ? "Request Approval" : mode === "reset" ? "Send Reset Email" : "Login to Admin Portal"}
+                {mode === "mfa" ? "Verify & Continue" : mode === "register" ? "Register & Verify Email" : mode === "request" ? "Request Approval" : mode === "reset" ? "Send Reset Email" : "Login to Admin Portal"}
               </>
             )}
           </button>
