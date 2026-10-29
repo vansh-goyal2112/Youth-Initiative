@@ -28,13 +28,16 @@ export async function POST(request) {
    return reply({uri:totpUri(secret,admin.email),manualKey:secret.match(/.{1,4}/g).join(" ")});
   }
   const code=String(body.code||"").replaceAll(" ","");
-  if(!/^\\d{6}$/.test(code))return reply({message:"Enter a six-digit code."},400);
+  const recovery=action==="verify" && /^[a-fA-F0-9]{16}$/.test(code.replaceAll("-",""));
+  if(!recovery && !/^\\d{6}$/.test(code))return reply({message:"Enter a six-digit code or recovery code."},400);
   if((state.lockUntil||0)>Date.now())return reply({message:"Too many attempts. Try again later."},429);
   const enrolling=action==="enroll";
   if(enrolling && (state.secret||!state.pending||state.pendingExpires<Date.now()))return reply({message:"Setup expired or already enabled. Start again."},409);
   if(!enrolling&&!state.secret)return reply({message:"Enroll your authenticator first."},409);
   const secret=decryptSecret(enrolling?state.pending:state.secret);
-  const step=verifyTotp(secret,code);
+  const recoveryHash=recovery?hashRecoveryCode(code):null;
+  const recoveryIndex=recovery?(state.recoveryHashes||[]).indexOf(recoveryHash):-1;
+  const step=recoveryIndex>=0?(state.lastStep??-1)+1:verifyTotp(secret,code);
   if(step<0||(!enrolling && step<=(state.lastStep??-1))) {
    const failures=(state.failures||0)+1;
    await replaceCosmosDocument("admins",current,{mfa:{...state,failures:failures>=5?0:failures,lockUntil:failures>=5?Date.now()+300000:0}});
@@ -43,6 +46,7 @@ export async function POST(request) {
   const version=enrolling?randomBytes(12).toString("hex"):state.version;
   let recoveryCodes;
   const next={...state,failures:0,lockUntil:0,lastStep:step};
+  if(recoveryIndex>=0)next.recoveryHashes=state.recoveryHashes.filter((_,i)=>i!==recoveryIndex);
   if(enrolling){
     recoveryCodes=Array.from({length:8},()=>randomBytes(8).toString("hex").toUpperCase());
     next.secret=state.pending;next.version=version;next.recoveryHashes=recoveryCodes.map(hashRecoveryCode);
