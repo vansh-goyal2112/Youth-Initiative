@@ -435,3 +435,18 @@
 .admin-revamp .admin-workshop-form .admin-form-buttons{display:flex;justify-content:flex-end;gap:12px;margin-top:24px;padding-top:20px;border-top:1px solid #e9edf3}
 .admin-revamp .admin-cancel-button{border:1px solid #dde3eb;background:white;color:#4f5d75;padding:11px 16px;border-radius:12px;font-weight:750;font-size:13px}
 @media(max-width:750px){.admin-workshops-stats{grid-template-columns:1fr}.admin-workshops-stats>div{padding:16px}.admin-revamp .admin-workshop-filters select{flex:1;min-width:130px}.admin-workshops-intro .admin-workshop-actions{width:100%}}
+
+/* Screenshot QA: high-contrast navigation, no competing legacy admin styles */
+.admin-revamp .admin-app-sidebar{color:#e5eaf4!important;background:#141d30!important}
+.admin-revamp .admin-app-sidebar .admin-app-navigation{scrollbar-width:thin;scrollbar-color:#34445f transparent;overscroll-behavior:contain}
+.admin-revamp .admin-app-sidebar .admin-app-nav-link,
+.admin-revamp .admin-app-sidebar .admin-app-nav-link svg,
+.admin-revamp .admin-app-sidebar .admin-app-nav-link span{color:#c6d2e5!important;opacity:1!important;visibility:visible!important}
+.admin-revamp .admin-app-sidebar .admin-app-nav-link:hover{background:#263650!important;color:#fff!important}
+.admin-revamp .admin-app-sidebar .admin-app-nav-link:hover *,
+.admin-revamp .admin-app-sidebar .admin-app-nav-link.is-active *{color:#fff!important}
+.admin-revamp .admin-app-sidebar .admin-app-nav-link.is-active{background:#e84e3a!important;color:white!important;box-shadow:0 7px 18px #0d142a44}
+.admin-revamp .admin-app-sidebar .admin-app-navigation p{color:#90a5c4!important;opacity:1!important}
+.admin-revamp .admin-app-sidebar-inner{min-height:0}
+.admin-revamp .admin-app-sidebar .admin-app-navigation a{font-weight:650!important;font-size:13px!important;line-height:1.35!important}
+@media(min-width:1024px){.admin-revamp .admin-app-sidebar .admin-app-navigation{overflow-y:auto}}
