@@ -18,6 +18,9 @@ import {
 
 import {
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signOut,
 } from "firebase/auth";
 
@@ -45,6 +48,9 @@ export default function AdminLoginPage() {
   ] =
     useState("");
 
+  const [mode, setMode] = useState("login");
+  const [infoMessage, setInfoMessage] = useState("");
+
   const [
     showPassword,
     setShowPassword,
@@ -69,6 +75,7 @@ export default function AdminLoginPage() {
     event.preventDefault();
 
     try {
+      setInfoMessage("");
       setLoading(
         true
       );
@@ -83,11 +90,29 @@ export default function AdminLoginPage() {
         through Firebase Authentication.
       */
 
-      await signInWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
+      if (!/^[^@\s]+@sait\.ca$/i.test(email.trim())) {
+        throw new Error("A SAIT work email is required.");
+      }
+      if (mode === "reset") {
+        await sendPasswordResetEmail(auth, email.trim());
+        setInfoMessage("If this email has an account, a reset message will be sent.");
+        return;
+      }
+      if (mode === "register") {
+        const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        await sendEmailVerification(credential.user);
+        setInfoMessage("Verify your SAIT email, then return here and select Request Access.");
+        setMode("request");
+        return;
+      }
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (mode === "request") {
+        const response = await adminFetch("/api/admin/access-request", { method: "POST" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Unable to request access.");
+        setInfoMessage(data.message || "Pending Super Admin approval.");
+        return;
+      }
 
       /*
         Step 2:
@@ -183,9 +208,7 @@ export default function AdminLoginPage() {
           SAIT YOUTH INITIATIVE
         </span>
 
-        <h1>
-          Administrator Login
-        </h1>
+        <h1>{mode === "register" ? "Request an Admin Account" : mode === "request" ? "Submit Access Request" : mode === "reset" ? "Reset Password" : "Administrator Login"}</h1>
 
         <p>
           Sign in with your authorized
@@ -231,7 +254,7 @@ export default function AdminLoginPage() {
                 value={
                   password
                 }
-                required
+                required={mode !== "reset"}
                 autoComplete="current-password"
                 onChange={(
                   event
@@ -271,6 +294,7 @@ export default function AdminLoginPage() {
             </div>
           </label>
 
+          {infoMessage && <div className="admin-success-message" role="status">{infoMessage}</div>}
           {errorMessage && (
             <div
               className="admin-login-error"
@@ -295,7 +319,7 @@ export default function AdminLoginPage() {
                   className="button-spinner"
                 />
 
-                Signing in...
+                Processing...
               </>
             ) : (
               <>
@@ -303,11 +327,18 @@ export default function AdminLoginPage() {
                   size={18}
                 />
 
-                Login to Admin Portal
+                {mode === "register" ? "Register & Verify Email" : mode === "request" ? "Request Approval" : mode === "reset" ? "Send Reset Email" : "Login to Admin Portal"}
               </>
             )}
           </button>
         </form>
+        <div className="mt-5 flex flex-wrap justify-center gap-3 text-sm">
+          {["login","register","request","reset"].map((value) => (
+            <button key={value} type="button" onClick={() => {setMode(value);setErrorMessage("");setInfoMessage("");}} className={mode === value ? "font-bold text-orange-600" : "text-slate-600"}>
+              {value === "login" ? "Login" : value === "register" ? "New Admin" : value === "request" ? "Request Access" : "Forgot Password"}
+            </button>
+          ))}
+        </div>
       </section>
     </main>
   );
