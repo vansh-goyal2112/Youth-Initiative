@@ -41,6 +41,10 @@ export async function POST(request) {
         adminRole: admin.adminData.adminRole,
 
         permissions: resolveAdminPermissions(admin.adminData),
+
+        mfaVerified: admin.mfaVerified,
+
+        mfaRequired: process.env.ADMIN_REQUIRE_MFA === "true",
       },
     });
   } catch (error) {
