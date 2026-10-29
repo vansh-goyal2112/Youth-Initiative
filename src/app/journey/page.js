@@ -74,6 +74,10 @@ export default function JourneyPage() {
       // The first gamification request is the critical page data.
       // Optional panels and reward repair must not block navigation.
       const progressRequest = studentFetch("/api/gamification");
+      let finishInitialProgress;
+      const initialProgressSettled = new Promise((resolve) => {
+        finishInitialProgress = resolve;
+      });
 
       void (async () => {
         try {
@@ -118,7 +122,7 @@ export default function JourneyPage() {
 
           // Wait for the original snapshot to settle before refreshing:
           // an older in-flight response must not overwrite repaired XP.
-          await progressRequest.catch(() => null);
+          await initialProgressSettled;
           if (cancelled) return;
           const refreshed = await studentFetch("/api/gamification");
           if (!refreshed.ok) return;
@@ -144,6 +148,7 @@ export default function JourneyPage() {
         }
       } finally {
         if (!cancelled) setLoading(false);
+        finishInitialProgress();
       }
     }
 
