@@ -1,4 +1,5 @@
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
+import { recordAdminAudit } from "@/services/adminAudit";
 import { queryCosmosDocuments, readCosmosDocument } from "@/services/cosmosData";
 
 export const runtime = "nodejs";
@@ -26,6 +27,8 @@ export async function GET(request) {
     if (format === "csv") {
       await requireAdminPermission(request, "reports.export");
     }
+    // Report access is sensitive even though it uses an HTTP GET.
+    await recordAdminAudit({ actorUid: admin.uid, action: format === "csv" ? "reports.export" : "reports.generate", resource: "/api/admin/reports/student" });
     const matches = await queryCosmosDocuments("students",
       "SELECT * FROM c WHERE c.youthId = @youthId",
       [{ name: "@youthId", value: youthId }]);
