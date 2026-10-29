@@ -20,7 +20,6 @@ import {
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendEmailVerification,
   sendPasswordResetEmail,
   getMultiFactorResolver,
   TotpMultiFactorGenerator,
@@ -52,6 +51,7 @@ export default function AdminLoginPage() {
     useState("");
 
   const [mode, setMode] = useState("login");
+  const [resending, setResending] = useState(false);
   const mfaResolverRef = useRef(null);
   const [totpCode, setTotpCode] = useState("");
   const [infoMessage, setInfoMessage] = useState("");
@@ -73,6 +73,21 @@ export default function AdminLoginPage() {
     setErrorMessage,
   ] =
     useState("");
+
+  async function resendVerification() {
+    setResending(true);
+    setErrorMessage("");
+    try {
+      if (!auth.currentUser || auth.currentUser.email?.toLowerCase() !== email.trim().toLowerCase()) {
+        await signInWithEmailAndPassword(auth, email.trim(), password);
+      }
+      const response = await adminFetch("/api/admin/auth/send-verification", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Could not resend verification.");
+      setInfoMessage(data.message);
+    } catch (error) { setErrorMessage(error?.message || "Could not resend verification."); }
+    finally { setResending(false); }
+  }
 
   async function handleLogin(
     event
@@ -109,9 +124,11 @@ export default function AdminLoginPage() {
             !/[^A-Za-z0-9]/.test(password)) {
           throw new Error("Use at least 12 characters including uppercase, lowercase, a number and a symbol.");
         }
-        const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
-        await sendEmailVerification(credential.user);
-        setInfoMessage("Verify your SAIT email, then return here and select Request Access.");
+        await createUserWithEmailAndPassword(auth, email.trim(), password);
+        const response = await adminFetch("/api/admin/auth/send-verification", { method: "POST" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Verification email could not be sent.");
+        setInfoMessage("A verification link was sent through Azure Email. Open your SAIT inbox, verify, then return to request access.");
         setMode("request");
         return;
       }
@@ -374,6 +391,12 @@ export default function AdminLoginPage() {
             )}
           </button>
         </form>
+        {(mode === "request" || mode === "register") && (
+          <button type="button" disabled={resending} onClick={resendVerification}
+            className="mt-4 w-full rounded-xl border border-orange-300 px-4 py-2 text-sm font-semibold text-orange-700 disabled:opacity-50">
+            {resending ? "Sending verification..." : "Resend verification email via Azure"}
+          </button>
+        )}
         <div className="mt-5 flex flex-wrap justify-center gap-3 text-sm">
           {["login","register","request","reset"].map((value) => (
             <button key={value} type="button" onClick={() => {setMode(value);setErrorMessage("");setInfoMessage("");}} className={mode === value ? "font-bold text-orange-600" : "text-slate-600"}>
