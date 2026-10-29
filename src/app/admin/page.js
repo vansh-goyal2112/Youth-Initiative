@@ -27,6 +27,19 @@ function Metric({ icon: Icon, label, value, description }) {
 
 export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState({ students: "—", active: "—", workshops: "—", activeWorkshops: "—" });
+  const [permissions, setPermissions] = useState([]);
+
+  useEffect(() => {
+    const update = () => {
+      try {
+        const session = JSON.parse(sessionStorage.getItem("adminSession") || "{}");
+        setPermissions(Array.isArray(session.permissions) ? session.permissions : []);
+      } catch { setPermissions([]); }
+    };
+    queueMicrotask(update);
+    window.addEventListener("admin-session-updated", update);
+    return () => window.removeEventListener("admin-session-updated", update);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -47,6 +60,8 @@ export default function AdminDashboardPage() {
     return () => { active = false; };
   }, []);
 
+  const linkRights = { "/admin/students": "students.view", "/admin/workshops": "workshops.view", "/admin/attendance": "attendance.manage", "/admin/reports": "reports.generate", "/admin/team": "admins.view" };
+  const allowedLinks = links.filter(item => permissions.includes(linkRights[item.href]));
   return <main className="mx-auto max-w-7xl px-4 py-7 md:px-9 md:py-10">
     <div className="relative overflow-hidden rounded-3xl bg-slate-900 p-7 text-white shadow-xl md:p-10">
       <div className="absolute -right-12 -top-16 h-64 w-64 rounded-full bg-orange-500/20 blur-3xl" aria-hidden="true"/>
@@ -56,7 +71,7 @@ export default function AdminDashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Program command centre</h1>
           <p className="mt-3 max-w-xl text-sm leading-7 text-slate-300">Manage youth learning experiences, support student progress, and oversee your program with confidence.</p>
         </div>
-        <Link className="relative z-10 flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-orange-400" href="/admin/reports"><FileText size={17}/> Student reports <ArrowUpRight size={16}/></Link>
+        {permissions.includes("reports.generate") && <Link className="relative z-10 flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-orange-400" href="/admin/reports"><FileText size={17}/> Student reports <ArrowUpRight size={16}/></Link>}
       </div>
     </div>
 
@@ -74,7 +89,7 @@ export default function AdminDashboardPage() {
     <section className="mt-9">
       <div className="mb-4"><p className="text-xs font-bold uppercase tracking-widest text-orange-600">Your workspace</p><h2 className="mt-1 text-xl font-bold text-slate-900">Management tools</h2></div>
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {links.map(({href,icon:Icon,title,description,tag})=>
+        {allowedLinks.map(({href,icon:Icon,title,description,tag})=>
           <Link href={href} key={href} className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-lg">
             <div className="flex items-center justify-between"><span className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-50 text-orange-600"><Icon size={23}/></span><ChevronRight size={19} className="text-slate-400 transition group-hover:translate-x-1 group-hover:text-orange-600"/></div>
             <span className="mt-5 block text-xs font-bold uppercase tracking-wide text-orange-600">{tag}</span>
@@ -82,6 +97,7 @@ export default function AdminDashboardPage() {
             <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
           </Link>)}
       </div>
+      {allowedLinks.length === 0 && <p className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">No management tools are assigned to your account. Contact your Super Admin for access.</p>}
     </section>
     <p className="mt-8 flex items-center gap-2 text-xs text-slate-500"><ShieldCheck size={16}/> Access is verified by the server for every protected operation.</p>
   </main>;
