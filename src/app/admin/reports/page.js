@@ -1,4 +1,5 @@
 "use client";
+import "./report-print.css";
 import { useState } from "react";
 import { FileText, Download, Search, ShieldCheck, Printer } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
@@ -40,7 +41,7 @@ export default function AdminReportsPage() {
       URL.revokeObjectURL(url);
     } catch (err) { setError(err.message); }
   }
-  return <main className="mx-auto max-w-5xl px-4 py-8 md:px-8">
+  return <main className="admin-report-print mx-auto max-w-5xl px-4 py-8 md:px-8">
     <p className="text-xs font-bold uppercase tracking-[0.2em] text-orange-600">Student Insights</p>
     <h1 className="mt-2 text-3xl font-bold text-slate-900">Student Reports</h1>
     <p className="mt-2 text-slate-600">Generate an access-controlled report from live Cosmos DB records.</p>
