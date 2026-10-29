@@ -61,6 +61,12 @@ export default function AdminReportsPage() {
       <dl className="mt-6 grid gap-4 sm:grid-cols-2">
         {Object.entries(report.student).map(([key,value])=><div className="rounded-xl bg-slate-50 p-4" key={key}><dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{key.replace(/([A-Z])/g," $1")}</dt><dd className="mt-1 break-words text-sm font-semibold text-slate-900">{Array.isArray(value)?value.join(", ")||"—":String(value??"—")}</dd></div>)}
       </dl>
+      <h3 className="mt-8 text-lg font-bold text-slate-900">Learning journey</h3>
+      <dl className="mt-3 grid gap-3 sm:grid-cols-2">{Object.entries(report.journey || {}).map(([key,value])=>
+        <div key={key} className="rounded-xl border border-slate-200 p-4"><dt className="text-xs font-bold uppercase tracking-wide text-slate-500">{key.replace(/([A-Z])/g," $1")}</dt><dd className="mt-1 font-semibold text-slate-900">{Array.isArray(value)?value.join(", ")||"—":String(value??"—")}</dd></div>
+      )}</dl>
+      <h3 className="mt-8 text-lg font-bold text-slate-900">XP transaction history ({report.xpHistory?.length || 0})</h3>
+      <div className="mt-3 space-y-2">{(report.xpHistory || []).map((xp,i)=><div key={i} className="flex flex-wrap justify-between gap-3 rounded-xl bg-slate-50 p-3 text-sm"><span className="font-semibold text-slate-900">{xp.status || "Recorded"}</span><span className="text-slate-600">{xp.amount ?? "—"} XP · {xp.completedAt || xp.createdAt || "Date unavailable"}</span></div>)}</div>
       <h3 className="mt-8 text-lg font-bold text-slate-900">Workshop registrations ({report.registrations.length})</h3>
       <div className="mt-3 space-y-3">{report.registrations.map((r,i)=><div key={i} className="rounded-xl border border-slate-200 p-4"><p className="font-semibold text-slate-900">{r.workshopTitle}</p><p className="mt-1 text-sm text-slate-500">{r.status||"Unknown"} · Attendance: {r.attendanceStatus||"Not recorded"}</p></div>)}</div>
       <h3 className="mt-8 text-lg font-bold text-slate-900">Badges ({report.badges.length})</h3>
