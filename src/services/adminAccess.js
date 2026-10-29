@@ -162,6 +162,7 @@ export async function requireActiveAdmin(
       null,
 
     adminData,
+    mfaVerified: decodedToken.firebase?.sign_in_second_factor === "totp",
   };
 }
 
@@ -190,6 +191,11 @@ export function adminAccessResponse(
 }
 export async function requireAdminPermission(request, permission) {
   const admin = await requireActiveAdmin(request);
+  if (process.env.ADMIN_REQUIRE_MFA === "true" && !admin.mfaVerified) {
+    const error = new Error("Authenticator verification required. Open Account Security to enroll and sign in again.");
+    error.status = 403;
+    throw error;
+  }
   if (!hasAdminPermission(admin.adminData, permission)) {
     const error = new Error("You do not have permission for this action.");
     error.status = 403;
