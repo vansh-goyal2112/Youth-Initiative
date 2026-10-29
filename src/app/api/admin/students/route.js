@@ -422,7 +422,7 @@ export async function GET(
         true,
 
       students,
-    });
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (
     error
   ) {
