@@ -61,7 +61,7 @@ export default function AdminLayout({ children }) {
   const role = String(session.adminRole || session.role || "Team member").replaceAll("_", " ");
   const email = session.email || "Authorized administrator";
 
-  const sidebar = <div className="flex h-full flex-col">
+  const sidebar = <div className="admin-app-sidebar-inner flex h-full flex-col">
     <div className="flex min-h-24 items-center justify-between border-b border-white/10 px-5">
       <Link href="/admin" className="flex min-w-0 items-center gap-3" aria-label="Youth Initiative admin home">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#e83a2d] text-lg font-black tracking-tight text-white shadow-lg shadow-red-950/30">S</span>
@@ -70,7 +70,7 @@ export default function AdminLayout({ children }) {
       <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-slate-300 hover:bg-white/10 lg:hidden" aria-label="Close menu"><X size={20}/></button>
       <button type="button" onClick={() => setCollapsed(v => !v)} className="hidden rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white lg:block" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}><PanelLeftClose size={19}/></button>
     </div>
-    <nav className="flex-1 space-y-7 overflow-y-auto px-3 py-7" aria-label="Admin navigation">
+    <nav className="admin-app-navigation flex-1 space-y-5 overflow-y-auto px-3 py-5" aria-label="Admin navigation">
       {navigation.map(group => {
         const items = group.items.filter(item => !item.permission || permissions.includes(item.permission));
         if (!items.length) return null;
@@ -80,7 +80,7 @@ export default function AdminLayout({ children }) {
             {items.map(({ href, label, icon: Icon }) => {
               const active = href === "/admin" ? pathname === href : pathname.startsWith(href);
               return <Link key={href} href={href} title={collapsed ? label : undefined} aria-current={active ? "page" : undefined}
-                className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400 ${active ? "bg-[#e83a2d] text-white shadow-md shadow-red-950/20" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
+                className={`admin-app-nav-link group flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-400 ${active ? "is-active bg-[#e83a2d] text-white shadow-md shadow-red-950/20" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}>
                 <Icon size={19} className="shrink-0"/>{!collapsed && <><span className="flex-1">{label}</span>{active && <ChevronRight size={15} className="opacity-75"/>}</>}
               </Link>;
             })}
@@ -100,7 +100,7 @@ export default function AdminLayout({ children }) {
   return <AdminGuard>
     <div className="admin-revamp min-h-screen bg-[#f5f6fa] text-slate-900 lg:flex">
       {mobileOpen && <button type="button" className="fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-[2px] lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close navigation overlay"/>}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] bg-[#141d30] shadow-2xl transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 lg:shadow-none ${mobileOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "lg:w-[80px]" : "lg:w-[260px]"}`}>{sidebar}</aside>
+      <aside className={`admin-app-sidebar fixed inset-y-0 left-0 z-50 w-[280px] bg-[#141d30] shadow-2xl transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 lg:shadow-none ${mobileOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "lg:w-[80px]" : "lg:w-[260px]"}`}>{sidebar}</aside>
       <div className="min-w-0 flex-1">
         <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-md md:px-8">
           <div className="flex min-w-0 items-center gap-3">
