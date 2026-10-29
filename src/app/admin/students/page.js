@@ -18,7 +18,6 @@ import {
   RefreshCw,
   UserRoundCheck,
   ShieldCheck,
-  ArrowUpRight,
 } from "lucide-react";
 
 import {
