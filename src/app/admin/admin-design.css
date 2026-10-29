@@ -142,3 +142,47 @@
 .admin-dashboard-footer{padding:20px 22px;border:1px solid #e3e8f0;border-radius:15px;background:#fff;color:#77839a;font-size:12px}
 .admin-dashboard-footer a{color:#df4d39}
 @media(max-width:640px){.admin-dashboard-hero{border-radius:20px}.admin-dashboard-primary,.admin-dashboard-ghost{width:100%;justify-content:center}}
+
+/* Attendance studio */
+.admin-attendance-redesign{padding-top:37px!important}
+.admin-attendance-intro{margin-bottom:32px;max-width:750px}
+.admin-section-eyebrow{display:inline-flex;align-items:center;gap:9px;color:#e3503c;font-size:11px;letter-spacing:.16em;font-weight:850}
+.admin-attendance-intro h1{font-size:clamp(32px,4vw,46px);line-height:1.15;letter-spacing:-.055em;color:#1b2b43;font-weight:850;margin:14px 0 12px}
+.admin-attendance-intro h1 span{color:#e45540}
+.admin-attendance-intro p{color:#65738a;font-size:14px;line-height:1.8}
+.admin-attendance-grid{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);gap:24px;align-items:stretch}
+.admin-attendance-settings,.admin-attendance-preview{background:#fff;border:1px solid #e1e6f0;border-radius:22px;padding:clamp(22px,3vw,34px);box-shadow:0 12px 38px #17243a0a}
+.admin-panel-top{display:flex;gap:14px;align-items:center}
+.admin-panel-icon{display:grid;place-items:center;flex-shrink:0;width:50px;height:50px;border-radius:15px;color:#df513e;background:#fff0eb}
+.admin-panel-icon.violet{color:#7056c7;background:#f1efff}
+.admin-panel-kicker{color:#e45743;font-size:10px;font-weight:850;letter-spacing:.17em}
+.admin-panel-top h2{color:#1c2b44;letter-spacing:-.035em;font-weight:820;font-size:21px;margin-top:3px}
+.admin-panel-subtext{margin:22px 0 28px;color:#6d7a91;font-size:13px;line-height:1.8}
+.admin-attendance-fields{display:grid;gap:21px}
+.admin-attendance-fields label{display:grid;gap:10px}
+.admin-attendance-fields label>span{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:780;color:#37465e}
+.admin-attendance-fields label>span svg{color:#df5841}
+.admin-attendance-fields select{width:100%;min-height:53px;background:#fff;color:#24354e;border:1px solid #dae1eb;border-radius:12px;padding:0 16px;font-size:14px}
+.admin-attendance-fields select:focus{border-color:#ea725b;box-shadow:0 0 0 4px #e7563f1c;outline:0}
+.admin-attendance-workshop{display:flex;align-items:center;gap:11px;color:#227b5b;background:#eefaf4;border:1px solid #cfebdd;padding:14px;margin-top:20px;border-radius:12px;font-size:12px;line-height:1.7}
+.admin-attendance-workshop span{min-width:0;overflow-wrap:anywhere}
+.admin-attendance-generate{display:flex;justify-content:center;align-items:center;gap:10px;width:100%;min-height:54px;border-radius:12px;background:linear-gradient(100deg,#e44c39,#ee6548);box-shadow:0 8px 19px #e44c3928;color:white;font-size:13px;font-weight:820;margin-top:28px}
+.admin-attendance-generate svg:last-child{margin-left:auto}.admin-attendance-generate svg:first-child{margin-left:auto}
+.admin-attendance-generate:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 12px 23px #e44c3935}
+.admin-attendance-info{display:flex;align-items:flex-start;gap:11px;margin-top:23px;color:#8190a2;border-top:1px solid #e9edf2;padding-top:20px;font-size:12px;line-height:1.8}
+.admin-attendance-info svg{flex-shrink:0;color:#8297b0;margin-top:2px}
+.admin-attendance-preview-body{display:flex;align-items:center;justify-content:center;min-height:440px;flex-direction:column;text-align:center;background:linear-gradient(145deg,#f8faff,#f3f6fc);border:1px dashed #dbe3ee;border-radius:19px;padding:35px 25px;margin-top:23px}
+.admin-attendance-placeholder{display:grid;place-items:center;width:118px;height:118px;border-radius:32px;background:#fff;box-shadow:0 10px 25px #1c2b4a0c;color:#9cacbf;margin-bottom:25px}
+.admin-attendance-preview-body h3{font-size:20px;letter-spacing:-.035em;font-weight:830;color:#283953}
+.admin-attendance-preview-body>p{margin-top:10px;max-width:360px;color:#7b879b;font-size:13px;line-height:1.8}
+.admin-attendance-preview-body>span{display:flex;align-items:center;gap:7px;margin-top:25px;padding:9px 13px;background:white;border-radius:100px;color:#7e8ca1;font-size:11px;font-weight:750;border:1px solid #e8edf3}
+.admin-attendance-preview-body.has-qr{background:#f8fafc}
+.admin-attendance-qr-frame{width:min(100%,310px);padding:15px;border:1px solid #e5eaf1;background:white;border-radius:17px;box-shadow:0 11px 30px #182b490c}
+.admin-attendance-qr-frame img{width:100%;height:auto;display:block}
+.admin-attendance-active-badge{display:flex;align-items:center;gap:8px;background:#e9f9f0;color:#1a8058;font-weight:800;font-size:11px;padding:9px 14px;border-radius:100px;margin-top:20px}
+.admin-attendance-active-badge span{width:7px;height:7px;border-radius:50%;background:#19ad70}
+.admin-attendance-session-title{color:#1d2d45!important;font-weight:780!important;margin-top:14px!important}
+.admin-attendance-expiry{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;color:#7c899d;font-size:12px;margin-top:8px}
+.admin-attendance-expiry strong{color:#1d2c43}
+.admin-attendance-confirmation{font-size:12px!important;color:#227e5a!important}
+@media(max-width:960px){.admin-attendance-grid{grid-template-columns:1fr}.admin-attendance-preview-body{min-height:340px}}
