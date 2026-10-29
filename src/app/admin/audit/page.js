@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
-import { ShieldCheck, RefreshCw, Clock, FileSearch } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ShieldCheck, RefreshCw, Clock3, FileSearch, Search, Activity, LockKeyhole } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
 
 export default function AdminAuditPage() {
@@ -8,33 +8,46 @@ export default function AdminAuditPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [revision, setRevision] = useState(0);
+  const [query, setQuery] = useState("");
   useEffect(() => {
     let active = true;
     adminFetch("/api/admin/audit").then(async response => {
       const result = await response.json();
       if (!response.ok) throw new Error(result.message || "Audit history unavailable.");
-      if (active) setEvents(result.events || []);
-    }).catch(err => { if (active) setError(err.message); })
+      if (active) setEvents(Array.isArray(result.events) ? result.events : []);
+    }).catch(err => { if (active) setError(err.message || "Could not load audit records."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [revision]);
-  return <main className="mx-auto max-w-6xl px-4 py-8 md:px-8">
-    <header className="flex flex-wrap items-start justify-between gap-4">
-      <div><p className="text-xs font-bold uppercase tracking-widest text-orange-600">Access Governance</p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-900">Activity & Audit</h1>
-        <p className="mt-2 text-sm text-slate-600">A protected history of administrative action attempts. Sensitive request data is never recorded here.</p>
+  const filtered = useMemo(() => events.filter(item =>
+    [item.actorUid,item.action,item.resource,item.outcome].some(value => String(value || "").toLowerCase().includes(query.trim().toLowerCase()))), [events,query]);
+
+  return <main className="admin-audit-redesign mx-auto max-w-7xl px-4 py-8 md:px-8">
+    <header className="admin-team-intro">
+      <div><p className="admin-section-eyebrow"><ShieldCheck size={15}/> GOVERNANCE & OVERSIGHT</p>
+        <h1>Activity & audit<span>.</span></h1>
+        <p>A protected trail of administrator action attempts. No sensitive request body data is stored in this view.</p>
       </div>
-      <button className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-700" type="button" onClick={()=>{setLoading(true);setError("");setRevision(v=>v+1);}}><RefreshCw size={18}/> Refresh</button>
+      <button className="admin-team-refresh" disabled={loading} type="button" onClick={()=>{setLoading(true);setError("");setRevision(v=>v+1);}}><RefreshCw size={18} className={loading ? "animate-spin" : ""}/> Refresh activity</button>
     </header>
-    <section className="mt-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-4"><ShieldCheck className="text-orange-600" size={21}/><h2 className="font-bold text-slate-900">Recent administrator activity</h2></div>
-      {error && <p role="alert" className="p-5 text-red-700">{error}</p>}
-      {loading ? <p className="p-8 text-slate-500">Loading secure activity records…</p> :
-        events.length === 0 ? <div className="flex flex-col items-center gap-3 p-12 text-slate-500"><FileSearch size={35}/><p>No audit records found.</p></div> :
-        <div className="overflow-x-auto"><table className="min-w-full divide-y divide-slate-100 text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-600"><tr><th className="p-4">Date</th><th className="p-4">Administrator UID</th><th className="p-4">Permission</th><th className="p-4">Resource</th><th className="p-4">Outcome</th></tr></thead>
-          <tbody className="divide-y divide-slate-100">{events.map(e=><tr key={e.id}><td className="whitespace-nowrap p-4 text-slate-700"><span className="flex items-center gap-2"><Clock size={14}/>{new Date(e.createdAt).toLocaleString()}</span></td><td className="p-4 font-mono text-xs text-slate-600">{e.actorUid}</td><td className="p-4 font-semibold text-slate-900">{e.action}</td><td className="p-4 text-slate-600">{e.resource}</td><td className="p-4 capitalize text-slate-600">{e.outcome}</td></tr>)}</tbody>
-        </table></div>}
+    <div className="admin-audit-overview">
+      <div className="admin-panel-icon violet"><Activity size={22}/></div>
+      <div><strong>Administrative oversight</strong><span>Review which protected operations were attempted, by whom and when.</span></div>
+      <div className="admin-audit-total">{loading ? "…" : events.length}<small>Events</small></div>
+    </div>
+    <section className="admin-audit-panel">
+      <div className="admin-audit-panel-head"><div><h2>Recent administrator activity</h2><p>Search the recorded actions and resources below.</p></div><div className="admin-audit-search"><Search size={17}/><input type="search" aria-label="Search audit events" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Filter activity…"/></div></div>
+      {error && <div className="admin-auth-alert error m-5" role="alert"><ShieldCheck size={18}/>{error}</div>}
+      {loading ? <div className="admin-audit-empty" role="status"><RefreshCw size={30} className="animate-spin"/><h3>Loading audit history</h3><p>Retrieving protected records.</p></div> :
+       filtered.length === 0 ? <div className="admin-audit-empty"><FileSearch size={36}/><h3>{events.length ? "No matching activity" : "No audit events yet"}</h3><p>{events.length ? "Try a different search." : "Recorded administrator activity will appear here."}</p></div> :
+       <div className="overflow-x-auto"><table className="admin-audit-table"><thead><tr><th>When</th><th>Administrator UID</th><th>Action</th><th>Resource</th><th>Recorded outcome</th></tr></thead><tbody>
+        {filtered.map(event => <tr key={event.id}><td><span className="admin-audit-time"><Clock3 size={14}/>{event.createdAt ? new Date(event.createdAt).toLocaleString() : "Unknown"}</span></td>
+          <td><span className="admin-audit-uid">{event.actorUid || "—"}</span></td>
+          <td><span className="admin-audit-action">{event.action || "—"}</span></td>
+          <td><span className="admin-audit-resource">{event.resource || "—"}</span></td>
+          <td><span className="admin-audit-outcome">{event.outcome || "Recorded"}</span></td></tr>)}
+       </tbody></table></div>}
     </section>
+    <p className="admin-audit-disclaimer"><LockKeyhole size={16}/> This view records protected action attempts and does not independently establish whether each operation succeeded.</p>
   </main>;
 }
