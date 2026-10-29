@@ -138,7 +138,12 @@ export default function AdminLoginPage() {
         setMode("request");
         return;
       }
-      if (mode === "mfa") {
+      if (mode === "appMfa") {
+        const otpResponse = await adminFetch("/api/admin/mfa",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"verify",code:totpCode})});
+        const otpData = await otpResponse.json();
+        if (!otpResponse.ok) throw new Error(otpData.message || "Incorrect authenticator code.");
+        setTotpCode("");
+      } else if (mode === "mfa") {
         const resolver = mfaResolverRef.current;
         const hint = resolver?.hints?.find((entry) =>
           entry.factorId === TotpMultiFactorGenerator.FACTOR_ID);
@@ -188,6 +193,10 @@ export default function AdminLoginPage() {
       const data =
         await response.json();
 
+      if (response.status === 428) {
+        setMode("appMfa");
+        return;
+      }
       if (
         !response.ok
       ) {
@@ -253,6 +262,7 @@ export default function AdminLoginPage() {
     register: { eyebrow: "JOIN THE TEAM", title: "Create an admin account", detail: "Start with your SAIT email. Every new account requires verification and approval.", action: "Create account" },
     request: { eyebrow: "ACCESS REQUEST", title: "Request administrator access", detail: "Already verified your SAIT email? Send your application for review.", action: "Submit access request" },
     reset: { eyebrow: "ACCOUNT RECOVERY", title: "Reset your password", detail: "We’ll send password recovery instructions to your SAIT email.", action: "Send recovery email" },
+    appMfa: { eyebrow: "EXTRA PROTECTION", title: "Verify your authenticator", detail: "Enter the current six-digit code to access the administration workspace.", action: "Verify & continue" },
     mfa: { eyebrow: "EXTRA PROTECTION", title: "Two-step verification", detail: "Enter the six-digit code from your authenticator app.", action: "Verify & continue" },
   }[mode] || {};
   const options = [{ id: "login", text: "Sign in" }, { id: "register", text: "Create account" }, { id: "request", text: "Request access" }];
@@ -284,21 +294,21 @@ export default function AdminLoginPage() {
             <span className="admin-auth-eyebrow">{content.eyebrow}</span>
             <h1>{content.title}</h1>
             <p className="admin-auth-intro">{content.detail}</p>
-            {mode !== "mfa" && mode !== "reset" && <div className="admin-auth-tabs" role="group" aria-label="Account options">
+            {mode !== "mfa" && mode !== "appMfa" && mode !== "reset" && <div className="admin-auth-tabs" role="group" aria-label="Account options">
               {options.map(item => <button type="button" key={item.id} aria-pressed={mode === item.id} className={mode === item.id ? "selected" : ""}
                 onClick={() => { setMode(item.id); setErrorMessage(""); setInfoMessage(""); }}>{item.text}</button>)}
             </div>}
             <form onSubmit={handleLogin} className="admin-auth-form">
-              {mode !== "mfa" && <label className="admin-auth-field"><span>SAIT email address</span><div className="admin-auth-input-wrap"><Mail size={19}/><input type="email" value={email} required autoComplete="email" placeholder="name@sait.ca" onChange={event => setEmail(event.target.value)}/></div></label>}
-              {mode !== "reset" && mode !== "mfa" && <label className="admin-auth-field"><span>Password</span><div className="admin-auth-input-wrap"><LockKeyhole size={18}/><input type={showPassword ? "text" : "password"} value={password} required autoComplete={mode === "register" ? "new-password" : "current-password"} placeholder="Enter your password" onChange={event => setPassword(event.target.value)}/><button className="admin-auth-visibility" type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(value => !value)}>{showPassword ? <EyeOff size={19}/> : <Eye size={19}/>}</button></div></label>}
+              {mode !== "mfa" && mode !== "appMfa" && <label className="admin-auth-field"><span>SAIT email address</span><div className="admin-auth-input-wrap"><Mail size={19}/><input type="email" value={email} required autoComplete="email" placeholder="name@sait.ca" onChange={event => setEmail(event.target.value)}/></div></label>}
+              {mode !== "reset" && mode !== "mfa" && mode !== "appMfa" && <label className="admin-auth-field"><span>Password</span><div className="admin-auth-input-wrap"><LockKeyhole size={18}/><input type={showPassword ? "text" : "password"} value={password} required autoComplete={mode === "register" ? "new-password" : "current-password"} placeholder="Enter your password" onChange={event => setPassword(event.target.value)}/><button className="admin-auth-visibility" type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(value => !value)}>{showPassword ? <EyeOff size={19}/> : <Eye size={19}/>}</button></div></label>}
               {mode === "register" && <p className="admin-auth-hint">At least 12 characters, with uppercase, lowercase, a number and a symbol.</p>}
-              {mode === "mfa" && <label className="admin-auth-field"><span>Authenticator code</span><div className="admin-auth-input-wrap"><KeyRound size={19}/><input type="text" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete="one-time-code" value={totpCode} onChange={event => setTotpCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 6))} placeholder="000000" required/></div></label>}
+              {(mode === "mfa" || mode === "appMfa") && <label className="admin-auth-field"><span>Authenticator code</span><div className="admin-auth-input-wrap"><KeyRound size={19}/><input type="text" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete="one-time-code" value={totpCode} onChange={event => setTotpCode(event.target.value.replace(/[^0-9]/g, "").slice(0, 6))} placeholder="000000" required/></div></label>}
               {infoMessage && <div className="admin-auth-alert success" role="status"><CheckCircle2 size={19}/><span>{infoMessage}</span></div>}
               {errorMessage && <div className="admin-auth-alert error" role="alert"><ShieldCheck size={19}/><span>{errorMessage}</span></div>}
               <button className="admin-auth-submit" type="submit" disabled={loading}>{loading ? <><LoaderCircle size={19} className="animate-spin"/> Processing...</> : <>{mode === "register" ? <UserRoundPlus size={19}/> : <LockKeyhole size={18}/>} {content.action}<ArrowRight size={19}/></>}</button>
             </form>
             {(mode === "request" || mode === "register") && <button type="button" disabled={resending} className="admin-auth-secondary" onClick={resendVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Resend verification email</button>}
-            {mode === "reset" || mode === "mfa" ? <button type="button" className="admin-auth-back" onClick={() => {setMode("login");setErrorMessage("");setInfoMessage("");}}>← Back to sign in</button> :
+            {mode === "reset" || mode === "mfa" || mode === "appMfa" ? <button type="button" className="admin-auth-back" onClick={() => {setMode("login");setErrorMessage("");setInfoMessage("");}}>← Back to sign in</button> :
               <button type="button" className="admin-auth-back" onClick={() => {setMode("reset");setErrorMessage("");setInfoMessage("");}}>Forgot your password?</button>}
             <div className="admin-auth-trust"><ShieldCheck size={16}/><span>Protected access · SAIT verified accounts only</span></div>
           </div>
