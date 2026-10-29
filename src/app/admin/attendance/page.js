@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { LoaderCircle, QrCode, CalendarCheck2, Timer, ShieldCheck, CheckCircle2, ArrowRight, BookOpen, ScanLine, RefreshCw, Clock3 } from "lucide-react";
+import { LoaderCircle, QrCode, CalendarCheck2, Timer, ShieldCheck, CheckCircle2, ArrowRight, BookOpen, ScanLine, RefreshCw, Clock3, BarChart3, ArrowUpRight } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
 
 export default function AdminAttendancePage() {
@@ -60,6 +61,7 @@ export default function AdminAttendancePage() {
       <span className="admin-section-eyebrow"><ScanLine size={15}/> ENGAGEMENT OPERATIONS</span>
       <h1>Attendance <span>studio.</span></h1>
       <p>Create a secure, time-limited check-in for your next workshop. One scan connects the experience to a student’s learning journey.</p>
+      <Link href="/admin/engagement" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:border-rose-300 hover:text-rose-700"><BarChart3 size={17}/> View workshop engagement <ArrowUpRight size={16}/></Link>
     </div>
     <div className="admin-attendance-grid">
       <section className="admin-attendance-settings" aria-label="Attendance session settings">
