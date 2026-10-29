@@ -48,6 +48,7 @@ export default function AdminLayout({ children }) {
   useEffect(() => { queueMicrotask(() => setMobileOpen(false)); }, [pathname]);
 
   async function logoutAdmin() {
+    try { await fetch("/api/admin/mfa/logout", { method: "POST" }); } catch { /* Firebase sign-out still proceeds. */ }
     await signOut(auth);
     sessionStorage.removeItem("adminSession");
     router.replace("/admin/login");
