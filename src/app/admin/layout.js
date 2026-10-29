@@ -106,47 +106,59 @@ export default function AdminLayout({
               label="Dashboard"
             />
 
-            {can("students.view") && (\n            <AdminNavLink
+            {can("students.view") && (
+            <AdminNavLink
               href="/admin/students"
               pathname={pathname}
               icon={Users}
               label="Students"
-            />\n            )}
+            />
+            )}
 
-            {can("workshops.view") && (\n            <AdminNavLink
+            {can("workshops.view") && (
+            <AdminNavLink
               href="/admin/workshops"
               pathname={pathname}
               icon={BookOpen}
               label="Workshops"
-            />\n            )}
+            />
+            )}
 
-            {can("reports.generate") && (\n            <AdminNavLink
+            {can("reports.generate") && (
+            <AdminNavLink
               href="/admin/reports"
               pathname={pathname}
               icon={FileText}
               label="Student Reports"
-            />\n            )}
+            />
+            )}
 
-            {can("admins.view") && (\n            <AdminNavLink
+            {can("admins.view") && (
+            <AdminNavLink
               href="/admin/team"
               pathname={pathname}
               icon={ShieldCheck}
               label="Team & Permissions"
-            />\n            )}
+            />
+            )}
 
-            {can("audit.view") && (\n            <AdminNavLink
+            {can("audit.view") && (
+            <AdminNavLink
               href="/admin/audit"
               pathname={pathname}
               icon={ClipboardList}
               label="Activity & Audit"
-            />\n            )}
+            />
+            )}
 
-            {can("attendance.manage") && (\n            <AdminNavLink
+            {can("attendance.manage") && (
+            <AdminNavLink
               href="/admin/attendance"
               pathname={pathname}
               icon={QrCode}
               label="Attendance"
-            />\n            )}
+            />
+            )}
 
           </nav>
 
