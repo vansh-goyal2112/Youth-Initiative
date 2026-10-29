@@ -323,6 +323,19 @@ export default function AdminWorkshopsPage() {
     }
   }
 
+  async function handleAssignImages() {
+    try {
+      setSaving(true); setMessage(""); setErrorMessage("");
+      const response = await adminFetch("/api/admin/workshops/assign-images", { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Image assignment failed.");
+      setMessage(`Images assigned: ${result.assigned}. Waiting for new artwork: ${result.needsImage}. Already assigned: ${result.unchanged}.`);
+      await loadWorkshops();
+    } catch (error) {
+      setErrorMessage(error.message || "Image assignment failed.");
+    } finally { setSaving(false); }
+  }
+
   async function handleExcelImport(event) {
     const selectedFile =
       event.target.files?.[0];
@@ -426,6 +439,7 @@ export default function AdminWorkshopsPage() {
         <div><p className="admin-section-eyebrow"><BookOpen size={16}/> PROGRAM OPERATIONS</p><h1>Workshop studio<span>.</span></h1>
           <p>Build inspiring learning experiences. Plan, publish and manage every workshop from one workspace.</p></div>
         <div className="admin-workshop-actions">
+          <button type="button" className="admin-team-refresh" onClick={handleAssignImages} disabled={saving || importing}><Layers3 size={17}/> Assign artwork</button>
           <button type="button" className="admin-team-refresh" onClick={loadWorkshops} disabled={loading}><RefreshCw size={17} className={loading?"animate-spin":""}/> Refresh</button>
           <label className="admin-import-button">{importing ? <LoaderCircle size={19} className="button-spinner"/> : <Upload size={19}/>}
             {importing ? "Importing…" : "Import Excel"}
