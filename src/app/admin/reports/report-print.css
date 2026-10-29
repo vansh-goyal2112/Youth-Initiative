@@ -1,40 +1,40 @@
-/* Confidential report print layout. Browser "Save as PDF" uses this layout. */
+/* Print just the confidential report, never the navigation or filter controls. */
 @media print {
-  @page { size: A4; margin: 16mm; }
-  body:has(.admin-report-print) .admin-sidebar,
-  body:has(.admin-report-print) .admin-sidebar-logout,
-  body:has(.admin-report-print) .admin-report-controls,
-  body:has(.admin-report-print) .admin-report-print button {
+  @page { size: A4; margin: 14mm; }
+  body:has(.admin-report-print) { background: #fff !important; }
+  body:has(.admin-report-print) .admin-revamp { display: block !important; background: #fff !important; }
+  body:has(.admin-report-print) .admin-revamp > aside,
+  body:has(.admin-report-print) .admin-revamp > div > header,
+  body:has(.admin-report-print) .admin-reports-heading,
+  body:has(.admin-report-print) .admin-report-search-panel,
+  body:has(.admin-report-print) .admin-reports-actions,
+  body:has(.admin-report-print) .admin-reports-empty {
     display: none !important;
   }
-  body:has(.admin-report-print) .admin-shell {
-    display: block !important;
-    background: #fff !important;
-  }
-  body:has(.admin-report-print) .admin-content-shell {
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    max-width: none !important;
-  }
+  body:has(.admin-report-print) .admin-revamp > div { width: 100% !important; max-width: none !important; }
   body:has(.admin-report-print) .admin-report-print {
-    max-width: 100% !important;
+    display: block !important;
     padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
     color: #111827 !important;
   }
-  body:has(.admin-report-print) .admin-report-print section {
-    border-color: #d1d5db !important;
+  body:has(.admin-report-print) .admin-reports-result {
+    border: none !important;
     box-shadow: none !important;
-    break-inside: avoid-page;
+    margin: 0 !important;
+    overflow: visible !important;
   }
-  body:has(.admin-report-print) .admin-report-print dl > div,
-  body:has(.admin-report-print) .admin-report-print .rounded-xl {
+  body:has(.admin-report-print) .admin-report-section,
+  body:has(.admin-report-print) .admin-reports-stats > div {
     break-inside: avoid-page;
+    box-shadow: none !important;
   }
-  body:has(.admin-report-print) .admin-report-print h1,
   body:has(.admin-report-print) .admin-report-print h2,
   body:has(.admin-report-print) .admin-report-print h3 {
     break-after: avoid-page;
   }
+  body:has(.admin-report-print) .admin-reports-two-columns { display: block !important; }
+  body:has(.admin-report-print) .admin-report-details { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
+  body:has(.admin-report-print) .admin-reports-stats { print-color-adjust: exact; }
 }
