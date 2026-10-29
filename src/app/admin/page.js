@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowUpRight, BookOpen, CalendarCheck2, ChevronRight, ClipboardList,
   FileText, GraduationCap, ShieldCheck, Sparkles, Users, UserRoundCheck,
-  Activity, ArrowRight, Zap, LockKeyhole,
+  Activity, ArrowRight, Zap, LockKeyhole, BarChart3,
 } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
 
