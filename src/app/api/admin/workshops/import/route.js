@@ -315,7 +315,7 @@ async function saveImportedWorkshop(
         { ...workshopData,
           image: existingWorkshop.image || workshopData.image || null,
           imageAssetId: existingWorkshop.imageAssetId || workshopData.imageAssetId || null,
-          imageStatus: existingWorkshop.imageAssetId ? "assigned" : workshopData.imageStatus,
+          imageStatus: existingWorkshop.imageAssetId ? "assigned" : existingWorkshop.image ? "custom" : workshopData.imageStatus,
           createdAt: existingWorkshop.createdAt || workshopData.createdAt,
         }
       );
@@ -456,8 +456,8 @@ export async function POST(
           );
 
         const existing = byId.get(workshopData.id);
-        const assignment = existing?.imageAssetId
-          ? {image: existing.image, imageAssetId: existing.imageAssetId, imageStatus:"assigned"}
+        const assignment = existing?.image
+          ? {image: existing.image, imageAssetId: existing.imageAssetId || null, imageStatus: existing.imageAssetId ? "assigned" : "custom"}
           : assignWorkshopImage(workshopData, usedImages);
         if (assignment.imageAssetId) usedImages.add(assignment.imageAssetId);
         await saveImportedWorkshop({ ...workshopData, ...assignment });
