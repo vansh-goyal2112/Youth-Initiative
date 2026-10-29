@@ -42,8 +42,10 @@ if (existing?.adminRole === "super_admin" && existing.status === "active") {
   throw new Error("Existing administrator record is not pending. Manual security review required.");
 } else {
   const now = new Date().toISOString();
+  // Cosmos server-managed metadata must never be sent back in replacement documents.
+  const { _rid, _self, _etag, _attachments, _ts, ...existingData } = existing || {};
   const document = {
-    ...(existing || {}), id: user.uid, firebaseUid: user.uid, role: "admin",
+    ...existingData, id: user.uid, firebaseUid: user.uid, role: "admin",
     adminRole: "super_admin", email, status: "active", permissionOverrides: {},
     createdAt: existing?.createdAt || now, updatedAt: now, activatedAt: now,
     bootstrapVersion: 1,
