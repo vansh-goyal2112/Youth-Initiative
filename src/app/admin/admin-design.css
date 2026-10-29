@@ -382,3 +382,26 @@
 .admin-security-buttons{display:flex;gap:10px;flex-wrap:wrap}
 .admin-security-buttons>button:last-child{border-radius:12px;border:1px solid #e0e5ed;color:#52637c;font-weight:730;padding:13px 17px}
 @media(max-width:910px){.admin-security-grid{grid-template-columns:1fr}}
+
+/* Student directory */
+.admin-students-intro{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:25px}
+.admin-students-intro h1{font-size:clamp(31px,4vw,43px);font-weight:850;letter-spacing:-.055em;color:#1b2b43;margin:12px 0}
+.admin-students-intro h1 span{color:#e45540}
+.admin-students-intro p:last-child{max-width:650px;font-size:14px;color:#708098;line-height:1.75}
+.admin-students-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.admin-students-stats>div{display:flex;align-items:center;gap:16px;background:#fff;border:1px solid #e3e8ef;border-radius:18px;padding:22px;box-shadow:0 7px 22px #17243a08}
+.admin-students-stats>div>span{display:grid;place-items:center;width:49px;height:49px;border-radius:14px;flex-shrink:0}
+.admin-students-stats>div>span.blue{background:#eef3ff;color:#4777c3}
+.admin-students-stats>div>span.green{background:#e8f8f0;color:#28966d}
+.admin-students-stats>div>span.rose{background:#ffefec;color:#dc6652}
+.admin-students-stats>div>div{display:grid;gap:7px}
+.admin-students-stats strong{font-size:26px;line-height:1;font-weight:850;letter-spacing:-.04em;color:#1d2d46}
+.admin-students-stats small{font-size:11px;color:#8390a4;font-weight:680}
+.admin-students-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:25px 0 18px}
+.admin-revamp .admin-students-toolbar .admin-student-search{display:flex;flex:1;margin:0;min-width:240px;min-height:52px;padding:9px 17px;box-shadow:none}
+.admin-students-filter{min-height:52px;min-width:175px;padding:10px 15px;border-radius:12px;border:1px solid #e1e6ee;color:#3d4c64;background:#fff;font-size:12px;font-weight:750}
+.admin-students-results{font-size:11px;font-weight:800;color:#7c899b;white-space:nowrap;padding:0 8px}
+.admin-revamp .admin-student-table td:first-child strong{display:block;font-size:13px}
+.admin-revamp .admin-student-table td:first-child span{display:block;color:#8995a6;font-size:11px;margin-top:6px;overflow-wrap:anywhere}
+.admin-revamp .admin-student-table td:last-child{white-space:nowrap}
+@media(max-width:750px){.admin-students-stats{grid-template-columns:1fr}.admin-students-stats>div{padding:16px}.admin-students-toolbar .admin-students-filter{flex:1}.admin-students-results{margin-left:auto}}
