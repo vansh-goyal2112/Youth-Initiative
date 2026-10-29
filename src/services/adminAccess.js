@@ -1,4 +1,5 @@
 import { hasAdminPermission, isSaitEmail, resolveAdminPermissions } from "@/services/adminPermissions";
+import { recordAdminAudit } from "@/services/adminAudit";
 import {
   adminAuth,
 } from "@/services/firebaseAdmin";
@@ -193,6 +194,14 @@ export async function requireAdminPermission(request, permission) {
     const error = new Error("You do not have permission for this action.");
     error.status = 403;
     throw error;
+  }
+  // Fail closed if a privileged state-changing request cannot be audited.
+  if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+    await recordAdminAudit({
+      actorUid: admin.uid,
+      action: permission,
+      resource: new URL(request.url).pathname,
+    });
   }
   return admin;
 }
