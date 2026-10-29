@@ -1,3 +1,4 @@
+import { resolveAdminPermissions } from "@/services/adminPermissions";
 import {
   adminAccessResponse,
   requireActiveAdmin,
@@ -36,6 +37,10 @@ export async function POST(request) {
 
         status:
           admin.adminData.status,
+
+        adminRole: admin.adminData.adminRole,
+
+        permissions: resolveAdminPermissions(admin.adminData),
       },
     });
   } catch (error) {
