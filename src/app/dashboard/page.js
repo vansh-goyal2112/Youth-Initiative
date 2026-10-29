@@ -185,19 +185,23 @@ export default function DashboardPage() {
             []
         );
 
-        try {
-          const pathwayResponse = await studentFetch(
-            "/api/pathways/recommendations"
-          );
-          if (pathwayResponse.ok) {
-            const pathwayResult = await pathwayResponse.json();
-            if (!cancelled && pathwayResult?.recommendations) {
-              setPathwayRecommendations(pathwayResult.recommendations);
+        // Recommendations do not determine whether dashboard content is ready.
+        // Keep the same cards and API data, but load them independently.
+        void (async () => {
+          try {
+            const pathwayResponse = await studentFetch(
+              "/api/pathways/recommendations"
+            );
+            if (pathwayResponse.ok) {
+              const pathwayResult = await pathwayResponse.json();
+              if (!cancelled && pathwayResult?.recommendations) {
+                setPathwayRecommendations(pathwayResult.recommendations);
+              }
             }
+          } catch {
+            // Gracefully omit post-secondary recommendations if not ready.
           }
-        } catch {
-          // Gracefully omit post-secondary recommendations if not ready
-        }
+        })();
       } catch (error) {
         console.error(
           "Dashboard loading error:",
