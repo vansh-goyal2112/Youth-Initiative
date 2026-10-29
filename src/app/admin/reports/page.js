@@ -1,12 +1,16 @@
 "use client";
 import "./report-print.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FileText, Download, Search, ShieldCheck, Printer } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
 
 export default function AdminReportsPage() {
   const [youthId, setYouthId] = useState("");
   const [report, setReport] = useState(null);
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get("youthId");
+    if (value && value.length <= 80) queueMicrotask(() => setYouthId(value));
+  }, []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   async function loadReport() {
