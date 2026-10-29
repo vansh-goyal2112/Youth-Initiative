@@ -13,6 +13,7 @@ import {
   QrCode,
   Users,
   ShieldCheck,
+  FileText,
 } from "lucide-react";
 
 import {
@@ -99,6 +100,13 @@ export default function AdminLayout({
               pathname={pathname}
               icon={BookOpen}
               label="Workshops"
+            />
+
+            <AdminNavLink
+              href="/admin/reports"
+              pathname={pathname}
+              icon={FileText}
+              label="Student Reports"
             />
 
             <AdminNavLink
