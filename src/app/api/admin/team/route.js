@@ -9,7 +9,7 @@ export async function GET(request) {
     await requireAdminPermission(request, "admins.view");
     const records = await queryCosmosDocuments("admins",
       "SELECT c.id, c.email, c.status, c.adminRole, c.permissionOverrides, c.requestedAt, c.updatedAt, c.createdAt FROM c WHERE c.role = 'admin'");
-    return Response.json({ success: true, admins: records });
+    return Response.json({ success: true, admins: records }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return adminAccessResponse(error) || Response.json({ message: "Unable to load staff." }, { status: 500 });
   }
