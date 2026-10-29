@@ -4,7 +4,7 @@ import {
 
 import {
   adminAccessResponse,
-  requireActiveAdmin,
+  requireAdminPermission,
 } from "@/services/adminAccess";
 
 import {
@@ -367,9 +367,7 @@ export async function GET(
   request
 ) {
   try {
-    await requireActiveAdmin(
-      request
-    );
+    await requireAdminPermission(request, "students.view");
 
     const studentDocuments =
       await queryCosmosDocuments(
@@ -472,9 +470,7 @@ export async function PUT(
 
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "students.edit");
 
     const requestBody =
       await request.json();
@@ -734,9 +730,7 @@ export async function DELETE(
 
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "students.deactivate");
 
     const requestBody =
       await request.json();
