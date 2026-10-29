@@ -99,6 +99,11 @@ export default function AdminLoginPage() {
         return;
       }
       if (mode === "register") {
+        if (password.length < 12 || !/[A-Z]/.test(password) ||
+            !/[a-z]/.test(password) || !/[0-9]/.test(password) ||
+            !/[^A-Za-z0-9]/.test(password)) {
+          throw new Error("Use at least 12 characters including uppercase, lowercase, a number and a symbol.");
+        }
         const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
         await sendEmailVerification(credential.user);
         setInfoMessage("Verify your SAIT email, then return here and select Request Access.");
@@ -241,7 +246,7 @@ export default function AdminLoginPage() {
             />
           </label>
 
-          <label>
+          {mode !== "reset" && <label>
             Password
 
             <div className="admin-password-input">
@@ -292,7 +297,9 @@ export default function AdminLoginPage() {
                 )}
               </button>
             </div>
-          </label>
+          </label>}
+
+          {mode === "register" && <p className="mt-2 text-xs text-slate-500">Use at least 12 characters with uppercase, lowercase, a number and a symbol.</p>}
 
           {infoMessage && <div className="admin-success-message" role="status">{infoMessage}</div>}
           {errorMessage && (
