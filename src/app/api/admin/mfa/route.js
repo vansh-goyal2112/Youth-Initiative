@@ -29,7 +29,7 @@ export async function POST(request) {
   }
   const code=String(body.code||"").replaceAll(" ","");
   const recovery=action==="verify" && /^[a-fA-F0-9]{16}$/.test(code.replaceAll("-",""));
-  if(!recovery && !/^\\d{6}$/.test(code))return reply({message:"Enter a six-digit code or recovery code."},400);
+  if(!recovery && !/^\d{6}$/.test(code))return reply({message:"Enter a six-digit code or recovery code."},400);
   if((state.lockUntil||0)>Date.now())return reply({message:"Too many attempts. Try again later."},429);
   const enrolling=action==="enroll";
   if(enrolling && (state.secret||!state.pending||state.pendingExpires<Date.now()))return reply({message:"Setup expired or already enabled. Start again."},409);
