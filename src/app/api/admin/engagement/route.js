@@ -73,13 +73,19 @@ export async function GET(request) {
     if (format === "csv") await requireAdminPermission(request, "reports.export");
     const {start,end} = periodBounds(period,anchor);
     const today = new Date().toISOString().slice(0,10);
-    const [workshops,registrations] = await Promise.all([
-      queryCosmosDocuments("workshops",
-        "SELECT c.id, c.title, c.programArea, c.startDate, c.endDate, c.capacity FROM c WHERE (c.startDate >= @start AND c.startDate < @end) OR (c.endDate >= @start AND c.endDate < @end)",
-        [{name:"@start",value:start},{name:"@end",value:end}]),
-      queryCosmosDocuments("registrations",
-        "SELECT c.workshopId, c.studentId, c.attendanceStatus, c.status FROM c WHERE IS_DEFINED(c.workshopId) AND IS_DEFINED(c.studentId)"),
-    ]);
+    const workshops = await queryCosmosDocuments("workshops",
+      "SELECT c.id, c.title, c.programArea, c.startDate, c.endDate, c.capacity FROM c WHERE (c.startDate >= @start AND c.startDate < @end) OR (c.endDate >= @start AND c.endDate < @end)",
+      [{name:"@start",value:start},{name:"@end",value:end}]);
+    const eligibleIds = workshops.filter(w => {
+      const date = String(w.endDate || w.startDate || "").slice(0,10);
+      return date >= start && date < end && date <= today;
+    }).map(w=>w.id);
+    // Query only the workshops in the selected reporting period.
+    const registrations = eligibleIds.length
+      ? await queryCosmosDocuments("registrations",
+          "SELECT c.workshopId, c.studentId, c.attendanceStatus, c.status FROM c WHERE ARRAY_CONTAINS(@ids, c.workshopId) AND IS_DEFINED(c.studentId)",
+          [{name:"@ids",value:eligibleIds}])
+      : [];
     const result = summarize(workshops,registrations,start,end,today);
     await recordAdminAudit({actorUid:admin.uid,action:format==="csv"?"reports.export":"reports.generate",resource:"/api/admin/engagement"});
     if (format==="csv") {
