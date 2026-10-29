@@ -15,6 +15,10 @@ import {
   UserRound,
   UserX,
   X,
+  RefreshCw,
+  UserRoundCheck,
+  ShieldCheck,
+  ArrowUpRight,
 } from "lucide-react";
 
 import {
@@ -30,6 +34,7 @@ export default function AdminStudentsPage() {
 
   const [searchText, setSearchText] =
     useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [
     selectedStudent,
@@ -96,13 +101,9 @@ export default function AdminStudentsPage() {
           .trim()
           .toLowerCase();
 
-      if (!search) {
-        return students;
-      }
-
       return students.filter(
         (student) => {
-          return [
+          return (statusFilter === "all" || (student.accountStatus || "active") === statusFilter) && (!search || [
             student.firstName,
             student.lastName,
             student.fullName,
@@ -114,12 +115,13 @@ export default function AdminStudentsPage() {
               String(value)
                 .toLowerCase()
                 .includes(search)
-            );
+            ));
         }
       );
     }, [
       students,
       searchText,
+      statusFilter,
     ]);
 
   async function saveStudent(
@@ -241,33 +243,16 @@ export default function AdminStudentsPage() {
 
   return (
     <main className="admin-students-page">
-      <div className="admin-page-heading">
-        <div>
-          <span>
-            ADMIN DASHBOARD
-          </span>
-
-          <h1>
-            Student Management
-          </h1>
-
-          <p>
-            View and manage Youth
-            Initiative student accounts.
-          </p>
-        </div>
-
-        <div className="admin-student-count">
-          <strong>
-            {students.length}
-          </strong>
-
-          <span>
-            Students
-          </span>
-        </div>
+      <div className="admin-students-intro">
+        <div><p className="admin-section-eyebrow"><Users size={16}/> STUDENT OPERATIONS</p><h1>Student directory<span>.</span></h1>
+          <p>Get a complete view of your youth community. Find profiles, support students, and explore their learning journeys.</p></div>
+        <button className="admin-team-refresh" type="button" disabled={loading} onClick={loadStudents}><RefreshCw size={18} className={loading?"animate-spin":""}/> Refresh students</button>
       </div>
-
+      <div className="admin-students-stats">
+        <div><span className="blue"><Users size={22}/></span><div><strong>{students.length}</strong><small>Total students</small></div></div>
+        <div><span className="green"><UserRoundCheck size={22}/></span><div><strong>{students.filter(s => (s.accountStatus || "active") === "active").length}</strong><small>Active accounts</small></div></div>
+        <div><span className="rose"><ShieldCheck size={22}/></span><div><strong>{students.filter(s => s.accountStatus === "inactive").length}</strong><small>Inactive accounts</small></div></div>
+      </div>
       {message && (
         <div className="admin-success-message">
           {message}
@@ -280,21 +265,11 @@ export default function AdminStudentsPage() {
         </div>
       )}
 
-      <div className="admin-student-search">
-        <Search size={19} />
-
-        <input
-          type="search"
-          placeholder="Search by name, Youth ID or email..."
-          value={searchText}
-          onChange={(event) =>
-            setSearchText(
-              event.target.value
-            )
-          }
-        />
+      <div className="admin-students-toolbar">
+        <div className="admin-student-search"><Search size={19}/><input type="search" aria-label="Search students" placeholder="Search by name, Youth ID or email…" value={searchText} onChange={event=>setSearchText(event.target.value)}/></div>
+        <select className="admin-students-filter" aria-label="Filter by account status" value={statusFilter} onChange={event=>setStatusFilter(event.target.value)}><option value="all">All account statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+        <div className="admin-students-results">{filteredStudents.length} results</div>
       </div>
-
       <section className="admin-student-table-card">
         {loading ? (
           <div className="admin-student-state">
@@ -398,7 +373,7 @@ export default function AdminStudentsPage() {
                         <div className="admin-row-actions">
                           <button
                             type="button"
-                            title="View"
+                            title="View student profile" aria-label="View student profile"
                             onClick={() =>
                               setSelectedStudent(
                                 student
@@ -412,7 +387,7 @@ export default function AdminStudentsPage() {
 
                           <button
                             type="button"
-                            title="Edit"
+                            title="Edit student profile" aria-label="Edit student profile"
                             onClick={() =>
                               setEditingStudent({
                                 ...student,
@@ -430,7 +405,7 @@ export default function AdminStudentsPage() {
 
                           <button
                             type="button"
-                            title="Deactivate"
+                            title="Deactivate student" aria-label="Deactivate student"
                             className="delete"
                             disabled={
                               student.accountStatus ===
