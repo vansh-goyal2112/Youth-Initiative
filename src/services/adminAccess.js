@@ -1,3 +1,4 @@
+import { hasAdminPermission, isSaitEmail, resolveAdminPermissions } from "@/services/adminPermissions";
 import {
   adminAuth,
 } from "@/services/firebaseAdmin";
@@ -88,6 +89,13 @@ export async function requireActiveAdmin(
     throw error;
   }
 
+  // Email ownership is required even if a stale Cosmos admin record exists.
+  if (!decodedToken.email_verified || !isSaitEmail(decodedToken.email)) {
+    const error = new Error("A verified SAIT email is required.");
+    error.status = 403;
+    throw error;
+  }
+
   /*
     Layer 3:
     verify administrator authorization
@@ -113,6 +121,13 @@ export async function requireActiveAdmin(
     throw error;
   }
 
+  if (!isSaitEmail(adminData.email) ||
+      adminData.email.trim().toLowerCase() !== decodedToken.email.trim().toLowerCase()) {
+    const error = new Error("Administrator identity does not match the approved account.");
+    error.status = 403;
+    throw error;
+  }
+
   if (
     adminData.role !==
       "admin" ||
@@ -126,6 +141,13 @@ export async function requireActiveAdmin(
 
     error.status = 403;
 
+    throw error;
+  }
+
+  // An unassigned legacy admin cannot inherit the new privileges.
+  if (resolveAdminPermissions(adminData).length === 0) {
+    const error = new Error("Administrator role assignment is required.");
+    error.status = 403;
     throw error;
   }
 
@@ -164,4 +186,13 @@ export function adminAccessResponse(
   }
 
   return null;
+}
+export async function requireAdminPermission(request, permission) {
+  const admin = await requireActiveAdmin(request);
+  if (!hasAdminPermission(admin.adminData, permission)) {
+    const error = new Error("You do not have permission for this action.");
+    error.status = 403;
+    throw error;
+  }
+  return admin;
 }
