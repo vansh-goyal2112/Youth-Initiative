@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { FileText, Download, Search, ShieldCheck } from "lucide-react";
+import { FileText, Download, Search, ShieldCheck, Printer } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
 
 export default function AdminReportsPage() {
@@ -55,6 +55,7 @@ export default function AdminReportsPage() {
     {report && <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-3"><FileText className="text-orange-600"/><div><h2 className="text-xl font-bold text-slate-900">{report.student.firstName} {report.student.lastName}</h2><p className="text-sm text-slate-500">{report.student.youthId}</p></div></div>
+        <button type="button" onClick={() => window.print()} className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 font-semibold text-white"><Printer size={17}/> Print / Save PDF</button>
         <button type="button" onClick={exportCsv} className="flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700"><Download size={17}/> Export CSV</button>
       </div>
       <dl className="mt-6 grid gap-4 sm:grid-cols-2">
