@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import {
   useEffect,
@@ -608,6 +609,12 @@ function StudentViewModal({
             )}
           </div>
         </div>
+        <Link
+          href={`/admin/reports?youthId=${encodeURIComponent(student.youthId || "")}`}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white hover:bg-orange-500"
+        >
+          Generate Full Report
+        </Link>
       </section>
     </div>
   );
