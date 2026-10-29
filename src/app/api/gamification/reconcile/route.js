@@ -24,12 +24,16 @@ const MAX_RECOVERIES_PER_REQUEST = 8;
  * balance may already have changed even when finalization failed.
  */
 export async function POST(request) {
+  const startedAt = performance.now();
+  let authDurationMs = 0;
+  let queryDurationMs = 0;
   try {
     const { uid: studentId } = await requireActiveStudent(request);
+    authDurationMs = performance.now() - startedAt;
 
     const completedRegistrations = await queryCosmosDocuments(
       "registrations",
-      `SELECT * FROM c
+      `SELECT TOP ${MAX_RECOVERIES_PER_REQUEST + 1} * FROM c
        WHERE c.studentId = @studentId
          AND c.status = @status
          AND c.attendanceStatus = @attendanceStatus`,
@@ -40,6 +44,7 @@ export async function POST(request) {
       ]
     );
 
+    queryDurationMs = performance.now() - startedAt - authDurationMs;
     const results = [];
 
     for (const registration of completedRegistrations.slice(
@@ -95,10 +100,11 @@ export async function POST(request) {
           });
         }
 
-        const finalTransaction = await readCosmosDocument(
-          "xpTransactions",
-          transactionId
-        );
+        // A completed transaction was already verified above. Only
+        // re-read after attempting a new award, which can mutate it.
+        const finalTransaction = action === "synchronize"
+          ? existingTransaction
+          : await readCosmosDocument("xpTransactions", transactionId);
 
         if (finalTransaction?.status !== "completed") {
           results.push({
@@ -150,6 +156,15 @@ export async function POST(request) {
           message: "Reward could not be finalized. Try again later.",
         });
       }
+    }
+
+    if (process.env.NODE_ENV !== "test") {
+      console.info("[reward-reconcile] timings", {
+        authMs: Math.round(authDurationMs),
+        registrationQueryMs: Math.round(queryDurationMs),
+        processingMs: Math.round(performance.now() - startedAt - authDurationMs - queryDurationMs),
+        checked: Math.min(completedRegistrations.length, MAX_RECOVERIES_PER_REQUEST),
+      });
     }
 
     return Response.json({
