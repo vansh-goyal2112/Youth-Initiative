@@ -185,23 +185,19 @@ export default function DashboardPage() {
             []
         );
 
-        // Pathway recommendations are optional. Do not hold the entire
-        // dashboard loading screen open while this independent request runs.
-        void (async () => {
-          try {
-            const pathwayResponse = await studentFetch(
-              "/api/pathways/recommendations"
-            );
-            if (pathwayResponse.ok) {
-              const pathwayResult = await pathwayResponse.json();
-              if (!cancelled && pathwayResult?.recommendations) {
-                setPathwayRecommendations(pathwayResult.recommendations);
-              }
+        try {
+          const pathwayResponse = await studentFetch(
+            "/api/pathways/recommendations"
+          );
+          if (pathwayResponse.ok) {
+            const pathwayResult = await pathwayResponse.json();
+            if (!cancelled && pathwayResult?.recommendations) {
+              setPathwayRecommendations(pathwayResult.recommendations);
             }
-          } catch {
-            // Gracefully omit post-secondary recommendations if not ready.
           }
-        })();
+        } catch {
+          // Gracefully omit post-secondary recommendations if not ready
+        }
       } catch (error) {
         console.error(
           "Dashboard loading error:",
