@@ -68,90 +68,82 @@ export default function JourneyPage() {
       false;
 
     async function loadGameProgress() {
-      try {
-        // Independent optional data can start while reward reconciliation
-        // runs. Keep the page's existing final loading state and XP
-        // ordering unchanged.
-        const optionalData = (async () => {
-          const results = await Promise.allSettled([
-            studentFetch("/api/registrations").then(async (response) =>
-              response.ok ? (await response.json()).registrations || [] : null
-            ),
-            studentFetch("/api/pathways/recommendations").then(async (response) =>
-              response.ok ? (await response.json()).recommendations || [] : null
-            ),
-          ]);
-          if (cancelled) return;
-          if (results[0].status === "fulfilled" && results[0].value !== null) {
-            setRegistrations(results[0].value);
-          }
-          if (results[1].status === "fulfilled" && results[1].value !== null) {
-            setPathways(results[1].value);
-          }
-        })();
+      setLoading(true);
+      setErrorMessage("");
 
-        // Reconcile only genuinely verified attendance. A processing
-        // transaction is never blindly replayed to avoid double XP.
+      // The first gamification request is the critical page data.
+      // Optional panels and reward repair must not block navigation.
+      const progressRequest = studentFetch("/api/gamification");
+
+      void (async () => {
         try {
-          const reconciliation = await studentFetch(
+          const response = await studentFetch("/api/registrations");
+          if (!response.ok) return;
+          const data = await response.json();
+          if (!cancelled) setRegistrations(data.registrations || []);
+        } catch {
+          // Journal remains optional.
+        }
+      })();
+
+      void (async () => {
+        try {
+          const response = await studentFetch("/api/pathways/recommendations");
+          if (!response.ok) return;
+          const data = await response.json();
+          if (!cancelled && data?.recommendations) {
+            setPathways(data.recommendations);
+          }
+        } catch {
+          // Recommendations remain optional.
+        }
+      })();
+
+      void (async () => {
+        try {
+          // Preserve the existing authenticated XP repair and its
+          // server-side safeguards. It runs without blocking the page.
+          const response = await studentFetch(
             "/api/gamification/reconcile",
             { method: "POST" }
           );
-          if (reconciliation.ok) {
-            const result = await reconciliation.json();
-            if (!cancelled) {
-              setRewardStatus(
-                result.pendingCount > 0
-                  ? "Some workshop rewards are still processing. Your verified attendance is safe."
-                  : ""
-              );
-            }
+          if (!response.ok) return;
+          const result = await response.json();
+          if (cancelled) return;
+          setRewardStatus(
+            result.pendingCount > 0
+              ? "Some workshop rewards are still processing. Your verified attendance is safe."
+              : ""
+          );
+
+          // Wait for the original snapshot to settle before refreshing:
+          // an older in-flight response must not overwrite repaired XP.
+          await progressRequest.catch(() => null);
+          if (cancelled) return;
+          const refreshed = await studentFetch("/api/gamification");
+          if (!refreshed.ok) return;
+          const updated = await refreshed.json();
+          if (!cancelled && updated?.gamification) {
+            setGameData(updated.gamification);
           }
         } catch (error) {
-          // The student's journey must stay available even if a
-          // temporary rewards-recovery request cannot finish.
           console.warn("Reward reconciliation unavailable:", error);
         }
+      })();
 
-        const response =
-          await studentFetch(
-            "/api/gamification"
-          );
-
-        const data =
-          await response.json();
-
+      try {
+        const response = await progressRequest;
+        const data = await response.json();
         if (!response.ok) {
-          throw new Error(
-            data.message
-          );
+          throw new Error(data.message || "Progress could not be loaded.");
         }
-
-        if (
-          !cancelled
-        ) {
-          setGameData(
-            data.gamification
-          );
-        }
-
-        await optionalData;
-
+        if (!cancelled) setGameData(data.gamification);
       } catch (error) {
-        if (
-          !cancelled
-        ) {
-          setErrorMessage(
-            error.message ||
-              "Progress could not be loaded."
-          );
+        if (!cancelled) {
+          setErrorMessage(error.message || "Progress could not be loaded.");
         }
       } finally {
-        if (
-          !cancelled
-        ) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
