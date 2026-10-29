@@ -5,6 +5,7 @@ import UpcomingAdventures from "@/components/gamification/UpcomingAdventures";
 import SkillQuestHub from "@/components/gamification/SkillQuestHub";
 import DiscoverySpinner from "@/components/gamification/DiscoverySpinner";
 import dashboardSkin from "@/components/gamification/dashboardQuest.module.css";
+import playfulSkin from "@/components/gamification/playfulSkin.module.css";
 import { daysUntilWorkshop } from "@/utils/upcomingWorkshops.mjs";
 import Image from "next/image";
 
@@ -869,7 +870,7 @@ export default function DashboardPage() {
                     href={rec.program.informationUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                    className={playfulSkin.programLink}
                   >
                     <span>View SAIT Program</span>
                     <ExternalLink size={14} />
