@@ -1,3 +1,4 @@
+import { isMfaCookieValid } from "@/services/adminMfa";
 import { hasAdminPermission, isSaitEmail, resolveAdminPermissions } from "@/services/adminPermissions";
 import { recordAdminAudit } from "@/services/adminAudit";
 import {
@@ -13,7 +14,7 @@ import {
 } from "@/services/cosmosData";
 
 export async function requireActiveAdmin(
-  request
+  request, {skipMfa = false} = {}
 ) {
   /*
     Layer 1:
@@ -152,7 +153,20 @@ export async function requireActiveAdmin(
     throw error;
   }
 
+  const enrolled = !!adminData.mfa?.secret;
+  const authTime = decodedToken.auth_time;
+  const mfaVerified = enrolled
+    ? isMfaCookieValid(request, decodedToken.uid, authTime, adminData.mfa.version)
+    : false;
+  if (enrolled && !mfaVerified && !skipMfa) {
+    const error = new Error("Authenticator code required.");
+    error.status = 428;
+    error.code = "ADMIN_MFA_REQUIRED";
+    throw error;
+  }
   return {
+    authTime,
+    mfaEnrolled: enrolled,
     uid:
       decodedToken.uid,
 
@@ -162,7 +176,7 @@ export async function requireActiveAdmin(
       null,
 
     adminData,
-    mfaVerified: decodedToken.firebase?.sign_in_second_factor === "totp",
+    mfaVerified,
   };
 }
 
@@ -171,7 +185,8 @@ export function adminAccessResponse(
 ) {
   if (
     error?.status === 401 ||
-    error?.status === 403
+    error?.status === 403 ||
+    error?.status === 428
   ) {
     return Response.json(
       {
@@ -179,6 +194,7 @@ export function adminAccessResponse(
 
         message:
           error.message,
+        code: error.code,
       },
       {
         status:
