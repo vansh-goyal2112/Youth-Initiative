@@ -460,7 +460,7 @@ export default function JourneyPage() {
                     href={rec.program.informationUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                    className={playfulSkin.programLink}
                   >
                     <span>View SAIT Program</span>
                     <ExternalLink size={14} />
