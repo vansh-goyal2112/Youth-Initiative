@@ -1,5 +1,5 @@
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
-import { queryCosmosDocuments } from "@/services/cosmosData";
+import { queryCosmosDocuments, readCosmosDocument } from "@/services/cosmosData";
 import { recordAdminAudit } from "@/services/adminAudit";
 import { periodBounds, summarize } from "@/services/engagementAnalytics.mjs";
 
@@ -22,18 +22,23 @@ export async function GET(request) {
     if (format === "csv") await requireAdminPermission(request, "reports.export");
     const {start,end} = periodBounds(period,anchor);
     const today = new Date().toISOString().slice(0,10);
-    const workshops = await queryCosmosDocuments("workshops",
+    // Report periods are based on the actual verified scan timestamp,
+    // not only the scheduled workshop date. This also includes imported workshops without dates.
+    const checkedIn = await queryCosmosDocuments("registrations",
+      "SELECT c.workshopId, c.studentId, c.attendanceStatus, c.status, c.attendedAt, c.completedAt FROM c WHERE c.attendanceStatus = @status AND ((c.attendedAt >= @start AND c.attendedAt < @end) OR (NOT IS_DEFINED(c.attendedAt) AND c.completedAt >= @start AND c.completedAt < @end))",
+      [{name:"@status",value:"verified"},{name:"@start",value:start},{name:"@end",value:end}]);
+    const scheduled = await queryCosmosDocuments("workshops",
       "SELECT c.id, c.title, c.programArea, c.startDate, c.endDate, c.capacity FROM c WHERE (c.startDate >= @start AND c.startDate < @end) OR (c.endDate >= @start AND c.endDate < @end)",
       [{name:"@start",value:start},{name:"@end",value:end}]);
-    const eligibleIds = workshops.filter(w => {
-      const date = String(w.endDate || w.startDate || "").slice(0,10);
-      return date >= start && date < end && date <= today;
-    }).map(w=>w.id);
-    // Query only the workshops in the selected reporting period.
+    const scheduledMap = new Map(scheduled.map(w=>[w.id,w]));
+    const extraIds = [...new Set(checkedIn.map(r=>r.workshopId).filter(id=>id&&!scheduledMap.has(id)))];
+    const extra = await Promise.all(extraIds.map(id=>readCosmosDocument("workshops",id)));
+    const workshops = [...scheduled,...extra.filter(Boolean)];
+    const eligibleIds = [...new Set(workshops.map(w=>w.id))];
     const registrations = eligibleIds.length
       ? await queryCosmosDocuments("registrations",
-          "SELECT c.workshopId, c.studentId, c.attendanceStatus, c.status FROM c WHERE ARRAY_CONTAINS(@ids, c.workshopId) AND IS_DEFINED(c.studentId)",
-          [{name:"@ids",value:eligibleIds}])
+        "SELECT c.workshopId, c.studentId, c.attendanceStatus, c.status, c.attendedAt, c.completedAt FROM c WHERE ARRAY_CONTAINS(@ids, c.workshopId) AND IS_DEFINED(c.studentId)",
+        [{name:"@ids",value:eligibleIds}])
       : [];
     const result = summarize(workshops,registrations,start,end,today);
     await recordAdminAudit({actorUid:admin.uid,action:format==="csv"?"reports.export":"reports.generate",resource:"/api/admin/engagement"});
