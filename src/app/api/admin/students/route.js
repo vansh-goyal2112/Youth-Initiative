@@ -380,16 +380,25 @@ export async function GET(
 
     const students =
       studentDocuments
-        .map(
-          (
-            student
-          ) => ({
-            id:
-              student.id,
-
-            ...student,
-          })
-        )
+        // Explicit allowlist: never expose guardian verification tokens,
+        // authentication metadata, recovery hashes, or internal records.
+        .map((student) => ({
+          id: student.id,
+          youthId: student.youthId,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          fullName: student.fullName,
+          contactEmail: student.contactEmail,
+          dateOfBirth: student.dateOfBirth,
+          learningMode: student.learningMode,
+          interests: student.interests || [],
+          totalXp: student.totalXp || 0,
+          level: student.level || 1,
+          badgeCount: student.badgeCount || 0,
+          completedWorkshopCount: student.completedWorkshopCount || 0,
+          accountStatus: student.accountStatus,
+          createdAt: student.createdAt,
+        }))
         .sort(
           (
             firstStudent,
