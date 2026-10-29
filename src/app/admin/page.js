@@ -14,6 +14,7 @@ const toolGroups = [
   { href: "/admin/workshops", right: "workshops.view", icon: BookOpen, title: "Workshop studio", detail: "Plan engaging experiences, publish sessions and import programs.", caption: "PROGRAMS", tint: "rose" },
   { href: "/admin/attendance", right: "attendance.manage", icon: CalendarCheck2, title: "Live attendance", detail: "Launch check-ins and manage workshop QR sessions.", caption: "ENGAGEMENT", tint: "violet" },
   { href: "/admin/reports", right: "reports.generate", icon: FileText, title: "Student intelligence", detail: "Explore progress, export insights and measure participation.", caption: "INSIGHTS", tint: "emerald" },
+  { href: "/admin/engagement", right: "attendance.view", icon: BarChart3, title: "Engagement analytics", detail: "Rank popular workshops and explore verified attendance by week, month or year.", caption: "ANALYTICS", tint: "blue" },
   { href: "/admin/team", right: "admins.view", icon: ShieldCheck, title: "Team & permissions", detail: "Review requests, assign access and protect program data.", caption: "GOVERNANCE", tint: "amber" },
   { href: "/admin/audit", right: "audit.view", icon: Activity, title: "Audit activity", detail: "Review administrative actions and accountability records.", caption: "SECURITY", tint: "slate" },
 ];
