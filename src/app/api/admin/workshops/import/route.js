@@ -1,3 +1,4 @@
+import { assignWorkshopImage, usedWorkshopImageIds } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
 
 import {
@@ -12,6 +13,7 @@ import {
   isCosmosPreconditionFailed,
   readCosmosDocument,
   replaceCosmosDocument,
+  queryCosmosDocuments,
 } from "@/services/cosmosData";
 
 export const runtime = "nodejs";
@@ -310,7 +312,12 @@ async function saveImportedWorkshop(
       await replaceCosmosDocument(
         "workshops",
         existingWorkshop,
-        workshopData
+        { ...workshopData,
+          image: existingWorkshop.image || workshopData.image || null,
+          imageAssetId: existingWorkshop.imageAssetId || workshopData.imageAssetId || null,
+          imageStatus: existingWorkshop.imageAssetId ? "assigned" : workshopData.imageStatus,
+          createdAt: existingWorkshop.createdAt || workshopData.createdAt,
+        }
       );
 
       return;
@@ -421,6 +428,9 @@ export async function POST(
 
     let importedCount =
       0;
+    const existingImages = await queryCosmosDocuments("workshops", "SELECT c.id, c.image, c.imageAssetId FROM c");
+    const byId = new Map(existingImages.map(w => [w.id,w]));
+    const usedImages = usedWorkshopImageIds(existingImages);
 
     for (
       let startIndex = 0;
@@ -445,9 +455,12 @@ export async function POST(
             admin.uid
           );
 
-        await saveImportedWorkshop(
-          workshopData
-        );
+        const existing = byId.get(workshopData.id);
+        const assignment = existing?.imageAssetId
+          ? {image: existing.image, imageAssetId: existing.imageAssetId, imageStatus:"assigned"}
+          : assignWorkshopImage(workshopData, usedImages);
+        if (assignment.imageAssetId) usedImages.add(assignment.imageAssetId);
+        await saveImportedWorkshop({ ...workshopData, ...assignment });
 
         importedCount += 1;
       }
