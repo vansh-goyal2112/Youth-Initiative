@@ -20,6 +20,9 @@ export async function GET(request) {
     const { uid: studentId, student } =
       await requireActiveStudent(request);
 
+    // Independent Cosmos operations can run concurrently without
+    // changing recommendation inputs or ranking.
+    const programsPromise = getActiveSaitPrograms();
     const registrationDocuments = await queryCosmosDocuments(
       "registrations",
       `
@@ -53,7 +56,7 @@ export async function GET(request) {
     );
 
     const completedWorkshops = completedWorkshopResults.filter(Boolean);
-    const programs = await getActiveSaitPrograms();
+    const programs = await programsPromise;
     const recommendations = recommendSaitPrograms({
       student,
       completedWorkshops,
