@@ -26,7 +26,7 @@ export async function getAdminAudit(limit = 100) {
   return queryCosmosDocuments("admins", `
     SELECT TOP ${boundedLimit} c.id, c.actorUid, c.action,
       c.resource, c.outcome, c.createdAt
-    FROM c WHERE c.role = "audit"
+    FROM c WHERE c.role = @role
     ORDER BY c.createdAt DESC
-  `);
+  `, [{ name: "@role", value: "audit" }]);
 }
