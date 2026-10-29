@@ -69,6 +69,27 @@ export default function JourneyPage() {
 
     async function loadGameProgress() {
       try {
+        // Independent optional data can start while reward reconciliation
+        // runs. Keep the page's existing final loading state and XP
+        // ordering unchanged.
+        const optionalData = (async () => {
+          const results = await Promise.allSettled([
+            studentFetch("/api/registrations").then(async (response) =>
+              response.ok ? (await response.json()).registrations || [] : null
+            ),
+            studentFetch("/api/pathways/recommendations").then(async (response) =>
+              response.ok ? (await response.json()).recommendations || [] : null
+            ),
+          ]);
+          if (cancelled) return;
+          if (results[0].status === "fulfilled" && results[0].value !== null) {
+            setRegistrations(results[0].value);
+          }
+          if (results[1].status === "fulfilled" && results[1].value !== null) {
+            setPathways(results[1].value);
+          }
+        })();
+
         // Reconcile only genuinely verified attendance. A processing
         // transaction is never blindly replayed to avoid double XP.
         try {
@@ -114,31 +135,8 @@ export default function JourneyPage() {
           );
         }
 
-        // Learning journal stamps are based on the same verified
-        // workshop records used by the dashboard.
-        try {
-          const registrationsResponse = await studentFetch("/api/registrations");
-          if (registrationsResponse.ok) {
-            const registrationData = await registrationsResponse.json();
-            if (!cancelled) {
-              setRegistrations(registrationData.registrations || []);
-            }
-          }
-        } catch {
-          // The Adventure Map should remain usable without journal data.
-        }
+        await optionalData;
 
-        try {
-          const pathwayRes = await studentFetch("/api/pathways/recommendations");
-          if (pathwayRes.ok) {
-            const pathwayData = await pathwayRes.json();
-            if (!cancelled && pathwayData?.recommendations) {
-              setPathways(pathwayData.recommendations);
-            }
-          }
-        } catch {
-          // Gracefully omit pathway recommendations if not available
-        }
       } catch (error) {
         if (
           !cancelled
