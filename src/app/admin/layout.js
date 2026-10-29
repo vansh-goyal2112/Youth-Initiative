@@ -14,6 +14,7 @@ import {
   Users,
   ShieldCheck,
   FileText,
+  ClipboardList,
 } from "lucide-react";
 
 import {
@@ -114,6 +115,13 @@ export default function AdminLayout({
               pathname={pathname}
               icon={ShieldCheck}
               label="Team & Permissions"
+            />
+
+            <AdminNavLink
+              href="/admin/audit"
+              pathname={pathname}
+              icon={ClipboardList}
+              label="Activity & Audit"
             />
 
             <AdminNavLink
