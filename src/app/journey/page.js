@@ -68,92 +68,84 @@ export default function JourneyPage() {
       false;
 
     async function loadGameProgress() {
-      try {
-        // Reconcile only genuinely verified attendance. A processing
-        // transaction is never blindly replayed to avoid double XP.
+      setLoading(true);
+      setErrorMessage("");
+
+      // Fetch the essential progress independently of optional panels.
+      // Reward reconciliation must never block navigation to Journey.
+      const progressRequest = studentFetch("/api/gamification");
+
+      // Recover verified rewards in the background, preserving the
+      // existing server-side idempotency and pending-review safeguards.
+      void (async () => {
         try {
           const reconciliation = await studentFetch(
             "/api/gamification/reconcile",
             { method: "POST" }
           );
-          if (reconciliation.ok) {
-            const result = await reconciliation.json();
-            if (!cancelled) {
-              setRewardStatus(
-                result.pendingCount > 0
-                  ? "Some workshop rewards are still processing. Your verified attendance is safe."
-                  : ""
-              );
+          if (!reconciliation.ok) return;
+          const result = await reconciliation.json();
+          if (cancelled) return;
+          setRewardStatus(
+            result.pendingCount > 0
+              ? "Some workshop rewards are still processing. Your verified attendance is safe."
+              : ""
+          );
+          // Reconciliation can award previously missing XP. Refresh the
+          // visible totals only after it completes successfully.
+          const updated = await studentFetch("/api/gamification");
+          if (updated.ok) {
+            const updatedData = await updated.json();
+            if (!cancelled && updatedData.gamification) {
+              setGameData(updatedData.gamification);
             }
           }
         } catch (error) {
-          // The student's journey must stay available even if a
-          // temporary rewards-recovery request cannot finish.
           console.warn("Reward reconciliation unavailable:", error);
         }
+      })();
 
-        const response =
-          await studentFetch(
-            "/api/gamification"
-          );
+      // Journal and pathway data are optional; their failure or latency
+      // must not delay the main Journey view.
+      void (async () => {
+        try {
+          const response = await studentFetch("/api/registrations");
+          if (response.ok) {
+            const data = await response.json();
+            if (!cancelled) setRegistrations(data.registrations || []);
+          }
+        } catch {
+          // Journey remains available without journal data.
+        }
+      })();
 
-        const data =
-          await response.json();
+      void (async () => {
+        try {
+          const response = await studentFetch("/api/pathways/recommendations");
+          if (response.ok) {
+            const data = await response.json();
+            if (!cancelled && data?.recommendations) {
+              setPathways(data.recommendations);
+            }
+          }
+        } catch {
+          // Journey remains available without pathway recommendations.
+        }
+      })();
 
+      try {
+        const response = await progressRequest;
+        const data = await response.json();
         if (!response.ok) {
-          throw new Error(
-            data.message
-          );
+          throw new Error(data.message || "Progress could not be loaded.");
         }
-
-        if (
-          !cancelled
-        ) {
-          setGameData(
-            data.gamification
-          );
-        }
-
-        // Learning journal stamps are based on the same verified
-        // workshop records used by the dashboard.
-        try {
-          const registrationsResponse = await studentFetch("/api/registrations");
-          if (registrationsResponse.ok) {
-            const registrationData = await registrationsResponse.json();
-            if (!cancelled) {
-              setRegistrations(registrationData.registrations || []);
-            }
-          }
-        } catch {
-          // The Adventure Map should remain usable without journal data.
-        }
-
-        try {
-          const pathwayRes = await studentFetch("/api/pathways/recommendations");
-          if (pathwayRes.ok) {
-            const pathwayData = await pathwayRes.json();
-            if (!cancelled && pathwayData?.recommendations) {
-              setPathways(pathwayData.recommendations);
-            }
-          }
-        } catch {
-          // Gracefully omit pathway recommendations if not available
-        }
+        if (!cancelled) setGameData(data.gamification);
       } catch (error) {
-        if (
-          !cancelled
-        ) {
-          setErrorMessage(
-            error.message ||
-              "Progress could not be loaded."
-          );
+        if (!cancelled) {
+          setErrorMessage(error.message || "Progress could not be loaded.");
         }
       } finally {
-        if (
-          !cancelled
-        ) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
