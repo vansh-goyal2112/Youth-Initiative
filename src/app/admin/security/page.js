@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, ShieldCheck, LockKeyhole, Smartphone, Copy } from "lucide-react";
+import { KeyRound, ShieldCheck, LockKeyhole, Smartphone, Copy, CheckCircle2, ArrowRight, ScanLine, ShieldAlert } from "lucide-react";
 import {
   multiFactor, TotpMultiFactorGenerator, signOut,
 } from "firebase/auth";
@@ -57,28 +57,39 @@ export default function AdminSecurityPage() {
       setLoading(false);
     }
   }
-  return <main className="mx-auto max-w-3xl px-4 py-8 md:px-8">
-    <p className="text-xs font-bold uppercase tracking-widest text-orange-600">Account Protection</p>
-    <h1 className="mt-2 text-3xl font-bold text-slate-900">Administrator Security</h1>
-    <p className="mt-3 text-slate-600">Protect your account with an authenticator app such as Microsoft Authenticator or Google Authenticator.</p>
-    <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex items-center gap-3"><span className="rounded-xl bg-orange-50 p-3 text-orange-600"><ShieldCheck size={25}/></span><div><h2 className="text-lg font-bold text-slate-900">Authenticator verification</h2><p className="text-xs text-slate-500">Time-based one-time password (TOTP)</p></div></div>
-      <p className="mt-5 text-sm leading-6 text-slate-600">Setup requires Firebase Authentication with Identity Platform and TOTP MFA enabled for your project. Do not enable an admin-only MFA requirement until employees have enrolled.</p>
-      {error && <p role="alert" className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      {message && <p role="status" className="mt-4 rounded-lg bg-green-50 p-3 text-sm text-green-700">{message}</p>}
-      {!secret ? <button onClick={startEnrollment} disabled={loading} type="button" className="mt-6 flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-3 font-bold text-white disabled:opacity-50"><Smartphone size={19}/>{loading ? "Preparing setup..." : "Set up authenticator"}</button> :
-        <form onSubmit={confirmEnrollment} className="mt-6 space-y-5">
-          <div className="flex flex-col items-center rounded-2xl bg-slate-50 p-6">
-            <img src={qrImage} width="220" height="220" alt="Scan this QR code in your authenticator application" className="rounded-xl border border-slate-200 bg-white p-2"/>
-            <p className="mt-3 text-sm text-slate-600">Scan in your authenticator app, or copy the secret below.</p>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              <code className="break-all rounded-lg bg-white px-3 py-2 text-xs text-slate-900">{secret.secretKey}</code>
-              <button className="rounded-lg border border-slate-300 p-2 text-slate-700" type="button" aria-label="Copy authenticator secret" onClick={()=>navigator.clipboard.writeText(secret.secretKey)}><Copy size={17}/></button>
-            </div>
-          </div>
-          <label className="block text-sm font-semibold text-slate-700"><span className="flex items-center gap-2"><KeyRound size={17}/> Current six-digit code</span><input className="mt-2 w-full rounded-xl border border-slate-300 p-3" value={code} type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} onChange={(e)=>setCode(e.target.value.replace(/[^0-9]/g,"").slice(0,6))} required /></label>
-          <div className="flex flex-wrap gap-3"><button disabled={loading} type="submit" className="flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-3 font-bold text-white disabled:opacity-50"><LockKeyhole size={17}/>{loading ? "Verifying..." : "Activate MFA"}</button><button type="button" className="rounded-xl border border-slate-300 px-5 py-3 text-slate-700" onClick={()=>{setSecret(null);setQrImage("");setCode("");}}>Cancel</button></div>
-        </form>}
-    </section>
+  return <main className="admin-security-redesign mx-auto max-w-5xl px-4 py-8 md:px-8">
+    <div className="admin-security-heading"><p className="admin-section-eyebrow"><ShieldCheck size={16}/> ACCOUNT PROTECTION</p>
+      <h1>Security, <span>built around you.</span></h1>
+      <p>Strengthen your administrator account with a second verification step. Your SAIT identity stays protected.</p>
+    </div>
+    <div className="admin-security-grid">
+      <section className="admin-security-card">
+        <div className="admin-team-panel-heading"><span className="admin-panel-icon"><Smartphone size={23}/></span>
+          <div><h2>Authenticator verification</h2><p>Time-based one-time password (TOTP)</p></div></div>
+        <div className="admin-security-notice"><ShieldAlert size={19}/><p>Authenticator enrollment requires Firebase Authentication with Identity Platform and TOTP enabled. This option is not available until that setup is complete.</p></div>
+        {error && <div className="admin-auth-alert error" role="alert"><ShieldCheck size={19}/><span>{error}</span></div>}
+        {message && <div className="admin-auth-alert success" role="status"><CheckCircle2 size={19}/><span>{message}</span></div>}
+        {!secret ? <div className="admin-security-action"><p>Add your account to Microsoft Authenticator, Google Authenticator, or another compatible app.</p>
+          <button type="button" disabled={loading} onClick={startEnrollment}><Smartphone size={19}/>{loading ? "Preparing setup…" : "Set up authenticator"}<ArrowRight size={18}/></button></div> :
+          <form onSubmit={confirmEnrollment} className="admin-security-enrollment">
+            <div className="admin-security-qr"><img src={qrImage} alt="Scan in your authenticator app" width="220" height="220"/><p>Scan this code with your authenticator app.</p>
+              <div><code>{secret.secretKey}</code><button type="button" aria-label="Copy authenticator secret" onClick={()=>navigator.clipboard.writeText(secret.secretKey)}><Copy size={17}/></button></div></div>
+            <label>Six-digit authenticator code<div className="admin-auth-input-wrap"><KeyRound size={19}/><input value={code} type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} onChange={e=>setCode(e.target.value.replace(/[^0-9]/g,"").slice(0,6))} placeholder="000000" required/></div></label>
+            <div className="admin-security-buttons"><button disabled={loading} type="submit"><LockKeyhole size={18}/>{loading ? "Verifying…" : "Activate MFA"}</button><button type="button" onClick={()=>{setSecret(null);setQrImage("");setCode("");}}>Cancel</button></div>
+          </form>}
+      </section>
+      <aside className="admin-security-aside">
+        <span className="admin-security-aside-icon"><ScanLine size={30}/></span>
+        <p className="admin-panel-kicker">WHY IT MATTERS</p>
+        <h2>Stronger access. Greater peace of mind.</h2>
+        <p>Even if a password is exposed, an authenticator adds another step before someone can access your administrator account.</p>
+        <div className="admin-security-benefits">
+          <div><CheckCircle2 size={18}/> A separate verification step</div>
+          <div><CheckCircle2 size={18}/> Short-lived security codes</div>
+          <div><CheckCircle2 size={18}/> Protection for sensitive operations</div>
+        </div>
+        <div className="admin-security-footnote"><ShieldCheck size={17}/> Never share your verification code or authenticator setup secret.</div>
+      </aside>
+    </div>
   </main>;
 }
