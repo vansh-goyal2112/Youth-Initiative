@@ -9,7 +9,7 @@ export async function POST(request) {
   const used=usedWorkshopImageIds(all);
   let assigned=0,needsImage=0,unchanged=0;
   for (const workshop of all) {
-   if(workshop.imageAssetId){unchanged++;continue;}
+   if(workshop.imageAssetId || workshop.image){unchanged++;continue;}
    const assignment=assignWorkshopImage(workshop,used);
    await replaceCosmosDocument("workshops",workshop,{...assignment,updatedAt:cosmosNow()});
    if(assignment.imageAssetId){used.add(assignment.imageAssetId);assigned++;}else needsImage++;
