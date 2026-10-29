@@ -1,0 +1,40 @@
+/* Confidential report print layout. Browser "Save as PDF" uses this layout. */
+@media print {
+  @page { size: A4; margin: 16mm; }
+  body:has(.admin-report-print) .admin-sidebar,
+  body:has(.admin-report-print) .admin-sidebar-logout,
+  body:has(.admin-report-print) .admin-report-controls,
+  body:has(.admin-report-print) .admin-report-print button {
+    display: none !important;
+  }
+  body:has(.admin-report-print) .admin-shell {
+    display: block !important;
+    background: #fff !important;
+  }
+  body:has(.admin-report-print) .admin-content-shell {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  body:has(.admin-report-print) .admin-report-print {
+    max-width: 100% !important;
+    padding: 0 !important;
+    color: #111827 !important;
+  }
+  body:has(.admin-report-print) .admin-report-print section {
+    border-color: #d1d5db !important;
+    box-shadow: none !important;
+    break-inside: avoid-page;
+  }
+  body:has(.admin-report-print) .admin-report-print dl > div,
+  body:has(.admin-report-print) .admin-report-print .rounded-xl {
+    break-inside: avoid-page;
+  }
+  body:has(.admin-report-print) .admin-report-print h1,
+  body:has(.admin-report-print) .admin-report-print h2,
+  body:has(.admin-report-print) .admin-report-print h3 {
+    break-after: avoid-page;
+  }
+}
