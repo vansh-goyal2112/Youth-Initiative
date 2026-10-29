@@ -37,10 +37,12 @@ export async function GET(request) {
     }
     const student = matches[0];
     const studentId = student.id;
-    const [registrations, badges] = await Promise.all([
+    const [registrations, badges, transactions] = await Promise.all([
       queryCosmosDocuments("registrations", "SELECT * FROM c WHERE c.studentId = @studentId",
         [{ name: "@studentId", value: studentId }]),
       queryCosmosDocuments("studentBadges", "SELECT * FROM c WHERE c.studentId = @studentId",
+        [{ name: "@studentId", value: studentId }]),
+      queryCosmosDocuments("xpTransactions", "SELECT * FROM c WHERE c.studentId = @studentId",
         [{ name: "@studentId", value: studentId }]),
     ]);
     const workshopIds = [...new Set(registrations.map((r) => r.workshopId).filter(Boolean))];
@@ -62,6 +64,8 @@ export async function GET(request) {
         createdAt: student.createdAt || null,
         totalXp: student.totalXp ?? 0,
         level: student.level ?? 1,
+        grade: student.grade || null,
+        activeQuestId: student.activeQuestId || null,
       },
       registrations: registrations.map((item) => ({
         workshopId: item.workshopId,
@@ -72,6 +76,20 @@ export async function GET(request) {
         registeredAt: item.createdAt || null,
         completedAt: item.completedAt || null,
         completionXpAwarded: item.completionXpAwarded ?? false,
+      })),
+      journey: {
+        totalRegistrations: registrations.length,
+        completedWorkshops: registrations.filter((r) => r.status === "completed").length,
+        verifiedAttendance: registrations.filter((r) => r.attendanceStatus === "verified").length,
+        upcomingRegistrations: registrations.filter((r) => r.status === "upcoming").length,
+        skillAreasExplored: [...new Set(registrations.filter((r) => r.status === "completed").map((r) => workshopMap.get(r.workshopId)?.programArea).filter(Boolean))],
+      },
+      xpHistory: transactions.map((item) => ({
+        workshopId: item.workshopId || null,
+        status: item.status || null,
+        amount: item.amount ?? item.xpAmount ?? null,
+        createdAt: item.createdAt || null,
+        completedAt: item.completedAt || null,
       })),
       badges: badges.map((item) => ({
         badgeId: item.badgeId || null,
@@ -86,6 +104,10 @@ export async function GET(request) {
       csvRow(["Section", "Field", "Value"]),
       ...Object.entries(report.student).map(([key, value]) =>
         csvRow(["Student", key, Array.isArray(value) ? value.join("; ") : value])),
+      ...Object.entries(report.journey).map(([key, value]) =>
+        csvRow(["Journey", key, Array.isArray(value) ? value.join("; ") : value])),
+      ...report.xpHistory.flatMap((r, i) =>
+        Object.entries(r).map(([key, value]) => csvRow([`XP transaction ${i + 1}`, key, value]))),
       ...report.registrations.flatMap((r, i) =>
         Object.entries(r).map(([key, value]) => csvRow([`Registration ${i + 1}`, key, value]))),
       ...report.badges.flatMap((r, i) =>
