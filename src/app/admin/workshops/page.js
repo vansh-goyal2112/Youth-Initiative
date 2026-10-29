@@ -11,6 +11,10 @@ import {
   Trash2,
   Upload,
   X,
+  BookOpen,
+  CheckCircle2,
+  Layers3,
+  RefreshCw,
 } from "lucide-react";
 
 import * as XLSX from "xlsx";
@@ -418,56 +422,23 @@ export default function AdminWorkshopsPage() {
 
   return (
     <main className="admin-workshops-page">
-      <div className="admin-workshops-header">
-        <div>
-          <span>ADMIN DASHBOARD</span>
-
-          <h1>Workshop Management</h1>
-
-          <p>
-            Import, create, update and manage Youth
-            Initiative workshops.
-          </p>
-        </div>
-
+      <div className="admin-workshops-intro">
+        <div><p className="admin-section-eyebrow"><BookOpen size={16}/> PROGRAM OPERATIONS</p><h1>Workshop studio<span>.</span></h1>
+          <p>Build inspiring learning experiences. Plan, publish and manage every workshop from one workspace.</p></div>
         <div className="admin-workshop-actions">
-          <label className="admin-import-button">
-            {importing ? (
-              <LoaderCircle
-                size={19}
-                className="button-spinner"
-              />
-            ) : (
-              <Upload size={19} />
-            )}
-
-            {importing
-              ? "Importing..."
-              : "Import Excel"}
-
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              disabled={importing}
-              onChange={
-                handleExcelImport
-              }
-            />
+          <button type="button" className="admin-team-refresh" onClick={loadWorkshops} disabled={loading}><RefreshCw size={17} className={loading?"animate-spin":""}/> Refresh</button>
+          <label className="admin-import-button">{importing ? <LoaderCircle size={19} className="button-spinner"/> : <Upload size={19}/>}
+            {importing ? "Importing…" : "Import Excel"}
+            <input type="file" accept=".xlsx,.xls" disabled={importing} onChange={handleExcelImport}/>
           </label>
-
-          <button
-            type="button"
-            className="admin-create-button"
-            onClick={
-              openCreateForm
-            }
-          >
-            <Plus size={19} />
-            Create Workshop
-          </button>
+          <button type="button" className="admin-create-button" onClick={openCreateForm}><Plus size={19}/> Create workshop</button>
         </div>
       </div>
-
+      <div className="admin-workshops-stats">
+        <div><span className="blue"><Layers3 size={22}/></span><div><strong>{workshops.length}</strong><small>Total workshops</small></div></div>
+        <div><span className="green"><CheckCircle2 size={22}/></span><div><strong>{workshops.filter(w=>w.status==="active").length}</strong><small>Active workshops</small></div></div>
+        <div><span className="rose"><BookOpen size={22}/></span><div><strong>{programAreas.length}</strong><small>Program areas</small></div></div>
+      </div>
       {message && (
         <div className="admin-success-message">
           {message}
@@ -480,13 +451,14 @@ export default function AdminWorkshopsPage() {
         </div>
       )}
 
-      <section className="admin-workshop-filters">
+      <section className="admin-workshop-filters" aria-label="Workshop filters">
         <div className="admin-search-field">
           <Search size={19} />
 
           <input
             type="search"
-            placeholder="Search workshops..."
+            aria-label="Search workshops"
+            placeholder="Search workshops by title, grade or area…"
             value={searchText}
             onChange={(event) =>
               setSearchText(
@@ -497,6 +469,7 @@ export default function AdminWorkshopsPage() {
         </div>
 
         <select
+          aria-label="Filter workshops by program area"
           value={programFilter}
           onChange={(event) =>
             setProgramFilter(
@@ -521,6 +494,7 @@ export default function AdminWorkshopsPage() {
         </select>
 
         <select
+          aria-label="Filter workshops by status"
           value={statusFilter}
           onChange={(event) =>
             setStatusFilter(
