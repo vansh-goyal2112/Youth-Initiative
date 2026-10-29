@@ -1,4 +1,5 @@
 "use client";
+import "./admin-design.css";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -96,7 +97,7 @@ export default function AdminLayout({ children }) {
   </div>;
 
   return <AdminGuard>
-    <div className="min-h-screen bg-[#f5f6fa] text-slate-900 lg:flex">
+    <div className="admin-revamp min-h-screen bg-[#f5f6fa] text-slate-900 lg:flex">
       {mobileOpen && <button type="button" className="fixed inset-0 z-40 bg-slate-950/65 backdrop-blur-[2px] lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close navigation overlay"/>}
       <aside className={`fixed inset-y-0 left-0 z-50 w-[280px] bg-[#141d30] shadow-2xl transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:shrink-0 lg:translate-x-0 lg:shadow-none ${mobileOpen ? "translate-x-0" : "-translate-x-full"} ${collapsed ? "lg:w-[80px]" : "lg:w-[260px]"}`}>{sidebar}</aside>
       <div className="min-w-0 flex-1">
