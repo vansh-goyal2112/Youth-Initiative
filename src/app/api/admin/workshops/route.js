@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 import {
   adminAccessResponse,
-  requireActiveAdmin,
+  requireAdminPermission,
 } from "@/services/adminAccess";
 
 import {
@@ -143,9 +143,7 @@ export async function GET(
   request
 ) {
   try {
-    await requireActiveAdmin(
-      request
-    );
+    await requireAdminPermission(request, "workshops.view");
 
     const workshops =
       await queryCosmosDocuments(
@@ -195,9 +193,7 @@ export async function POST(
 ) {
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "workshops.create");
 
     const workshopData =
       await request.json();
@@ -294,9 +290,7 @@ export async function PUT(
 ) {
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "workshops.edit");
 
     const {
       id,
@@ -412,9 +406,7 @@ export async function DELETE(
   request
 ) {
   try {
-    await requireActiveAdmin(
-      request
-    );
+    await requireAdminPermission(request, "workshops.delete");
 
     const {
       id,
