@@ -187,3 +187,41 @@
     scroll-behavior: auto !important;
   }
 }
+
+
+/* SAIT pathways: student-facing secondary CTA, intentionally not a blue primary button. */
+.programLink {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border: 1px solid #f2b5a9;
+  border-radius: 13px;
+  background: #fff3ef;
+  color: #ac3026 !important;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-decoration: none;
+  box-shadow: none;
+  transition: background-color .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+.programLink:hover {
+  background: #ffe7df;
+  border-color: #df7965;
+  color: #92271f !important;
+  box-shadow: 0 5px 14px #a6423014;
+  transform: translateY(-1px);
+}
+.programLink:focus-visible {
+  outline: 3px solid #e25845;
+  outline-offset: 3px;
+}
+.programLink:active { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .programLink { transition: none; }
+  .programLink:hover { transform: none; }
+}
