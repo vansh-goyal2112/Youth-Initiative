@@ -561,6 +561,7 @@ export default function AdminWorkshopsPage() {
                 <tr>
                   <th>Workshop</th>
                   <th>Program Area</th>
+                  <th>Artwork</th>
                   <th>Grade</th>
                   <th>Mode</th>
                   <th>XP</th>
@@ -586,6 +587,7 @@ export default function AdminWorkshopsPage() {
                       <td>
                         {workshop.programArea}
                       </td>
+                      <td><span className={workshop.image ? "text-emerald-700" : "text-amber-700"}>{workshop.image ? "Assigned" : "Needs image"}</span></td>
 
                       <td>
                         {workshop.grade}
