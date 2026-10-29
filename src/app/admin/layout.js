@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import {
   BookOpen, LayoutDashboard, LogOut, QrCode, Users, ShieldCheck,
-  FileText, ClipboardList, KeyRound, Menu, X, ChevronRight, PanelLeftClose,
+  FileText, ClipboardList, KeyRound, Menu, X, ChevronRight, PanelLeftClose, BarChart3,
 } from "lucide-react";
 import { auth } from "@/services/firebase";
 import AdminGuard from "@/components/admin/AdminGuard";
