@@ -19,6 +19,7 @@ const navigation = [
     { href: "/admin/workshops", label: "Workshops", icon: BookOpen, permission: "workshops.view" },
     { href: "/admin/attendance", label: "Attendance", icon: QrCode, permission: "attendance.manage" },
     { href: "/admin/reports", label: "Student reports", icon: FileText, permission: "reports.generate" },
+    { href: "/admin/engagement", label: "Engagement insights", icon: BarChart3, permission: "attendance.view" },
   ] },
   { title: "Administration", items: [
     { href: "/admin/team", label: "Team & access", icon: ShieldCheck, permission: "admins.view" },
