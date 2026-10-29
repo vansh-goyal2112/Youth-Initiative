@@ -1,16 +1,15 @@
 "use client";
 import { useState } from "react";
+import { adminFetch } from "@/services/adminApi";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+
 import { KeyRound, ShieldCheck, LockKeyhole, Smartphone, Copy, CheckCircle2, ArrowRight, ScanLine, ShieldAlert } from "lucide-react";
-import {
-  multiFactor, TotpMultiFactorGenerator, signOut,
-} from "firebase/auth";
+
 import QRCode from "qrcode";
-import { auth } from "@/services/firebase";
+
 
 export default function AdminSecurityPage() {
-  const router = useRouter();
+
   const [secret, setSecret] = useState(null);
   const [qrImage, setQrImage] = useState("");
   const [code, setCode] = useState("");
@@ -19,44 +18,20 @@ export default function AdminSecurityPage() {
   const [message, setMessage] = useState("");
 
   async function startEnrollment() {
-    setLoading(true);
-    setError("");
+    setLoading(true);setError("");
     try {
-      const user = auth.currentUser;
-      if (!user?.emailVerified) throw new Error("Sign in with a verified SAIT email first.");
-      const session = await multiFactor(user).getSession();
-      const generated = await TotpMultiFactorGenerator.generateSecret(session);
-      const uri = generated.generateQrCodeUrl(user.email, "SAIT Youth Initiative Admin");
-      const image = await QRCode.toDataURL(uri, { width: 220, margin: 2 });
-      setSecret(generated);
-      setQrImage(image);
-    } catch (err) {
-      setError(err.message || "Authenticator setup is unavailable. Firebase Identity Platform MFA must be enabled first.");
-    } finally {
-      setLoading(false);
-    }
+      const r=await adminFetch("/api/admin/mfa",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"start"})});
+      const d=await r.json();if(!r.ok)throw new Error(d.message);
+      setSecret({secretKey:d.manualKey});setQrImage(await QRCode.toDataURL(d.uri,{width:220,margin:2}));
+    }catch(e){setError(e.message||"Setup failed.");}finally{setLoading(false);}
   }
-
-  async function confirmEnrollment(event) {
-    event.preventDefault();
-    if (!secret) return;
-    setLoading(true);
-    setError("");
-    try {
-      if (!/^\d{6}$/.test(code)) throw new Error("Enter the current six-digit authenticator code.");
-      const assertion = TotpMultiFactorGenerator.assertionForEnrollment(secret, code);
-      await multiFactor(auth.currentUser).enroll(assertion, "SAIT Admin Authenticator");
-      setSecret(null);
-      setQrImage("");
-      setCode("");
-      setMessage("Authenticator enrollment succeeded. Sign in again to verify your second factor.");
-      await signOut(auth);
-      router.replace("/admin/login");
-    } catch (err) {
-      setError(err.message || "Authenticator verification failed.");
-    } finally {
-      setLoading(false);
-    }
+  async function confirmEnrollment(event){
+    event.preventDefault();setLoading(true);setError("");
+    try{
+      const r=await adminFetch("/api/admin/mfa",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"enroll",code})});
+      const d=await r.json();if(!r.ok)throw new Error(d.message);
+      setSecret(null);setQrImage("");setCode("");setMessage("Authenticator activated. Keep these recovery codes in a secure location: "+(d.recoveryCodes||[]).join(", "));
+    }catch(e){setError(e.message||"Verification failed.");}finally{setLoading(false);}
   }
   return <main className="admin-security-redesign mx-auto max-w-5xl px-4 py-8 md:px-8">
     <div className="admin-security-heading"><p className="admin-section-eyebrow"><ShieldCheck size={16}/> ACCOUNT PROTECTION</p>
@@ -67,7 +42,7 @@ export default function AdminSecurityPage() {
       <section className="admin-security-card">
         <div className="admin-team-panel-heading"><span className="admin-panel-icon"><Smartphone size={23}/></span>
           <div><h2>Authenticator verification</h2><p>Time-based one-time password (TOTP)</p></div></div>
-        <div className="admin-security-notice"><ShieldAlert size={19}/><p>Authenticator enrollment requires Firebase Authentication with Identity Platform and TOTP enabled. This option is not available until that setup is complete.</p></div>
+        <div className="admin-security-notice"><ShieldAlert size={19}/><p>Application-level authenticator verification protects your admin account without a Firebase paid upgrade.</p></div>
         {error && <div className="admin-auth-alert error" role="alert"><ShieldCheck size={19}/><span>{error}</span></div>}
         {message && <div className="admin-auth-alert success" role="status"><CheckCircle2 size={19}/><span>{message}</span></div>}
         {!secret ? <div className="admin-security-action"><p>Add your account to Microsoft Authenticator, Google Authenticator, or another compatible app.</p>
