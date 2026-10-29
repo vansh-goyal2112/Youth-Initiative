@@ -182,21 +182,14 @@ export async function GET(request) {
   try {
     const {
       uid: studentId,
+      student,
     } =
       await requireActiveStudent(
         request
       );
 
-    /*
-      Load student profile
-      from Cosmos DB.
-    */
-
-    const student =
-      await readCosmosDocument(
-        "students",
-        studentId
-      );
+    // requireActiveStudent already loaded and validated this Cosmos
+    // profile. Reuse it instead of making a second database read.
 
     if (!student) {
       return Response.json(
@@ -245,39 +238,23 @@ export async function GET(request) {
         ]
       );
 
-    const completedWorkshops =
-      [];
+    const completedWorkshops = [];
 
-    /*
-      Load the workshop connected
-      to each completed registration.
-    */
+    // Keep the original ordering, duplicate-registration behaviour and
+    // error propagation. Bound concurrent Cosmos reads to avoid bursts.
+    const workshopIds = completedRegistrations
+      .map((registration) => registration.workshopId)
+      .filter(Boolean);
 
-    for (
-      const registration of
-      completedRegistrations
-    ) {
-      if (
-        !registration.workshopId
-      ) {
-        continue;
-      }
-
-      const workshop =
-        await readCosmosDocument(
-          "workshops",
-          registration.workshopId
-        );
-
-      if (
-        workshop
-      ) {
-        completedWorkshops.push({
-          id:
-            workshop.id,
-
-          ...workshop,
-        });
+    for (let offset = 0; offset < workshopIds.length; offset += 4) {
+      const batch = workshopIds.slice(offset, offset + 4);
+      const workshops = await Promise.all(
+        batch.map((id) => readCosmosDocument("workshops", id))
+      );
+      for (const workshop of workshops) {
+        if (workshop) {
+          completedWorkshops.push({ id: workshop.id, ...workshop });
+        }
       }
     }
 
