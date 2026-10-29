@@ -125,12 +125,13 @@ export default function AdminGuard({
               return;
             }
 
-            if (
-              active
-            ) {
-              setVerifiedPath(
-                pathname
-              );
+            if (active) {
+              const verification = await response.json();
+              if (verification?.admin) {
+                sessionStorage.setItem("adminSession", JSON.stringify(verification.admin));
+                window.dispatchEvent(new Event("admin-session-updated"));
+              }
+              setVerifiedPath(pathname);
             }
           } catch (error) {
             console.error(
