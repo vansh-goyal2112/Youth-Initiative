@@ -15,6 +15,7 @@ export function assignWorkshopImage(workshop,usedImageIds=new Set(),library=WORK
  const ranked=unused.map(asset=>({
   asset,score:asset.tags.reduce((n,tag)=>n+(text.includes(tag)?(tag.includes(" ")?5:3):0),0)
  })).sort((a,b)=>b.score-a.score||a.asset.id.localeCompare(b.asset.id));
+ if (ranked[0].score <= 0) return {image:null,imageAssetId:null,imageStatus:"needs_image"};
  const asset=ranked[0].asset;
  return {image:asset.url,imageAssetId:asset.id,imageStatus:"assigned"};
 }
