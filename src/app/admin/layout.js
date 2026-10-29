@@ -12,6 +12,7 @@ import {
   LogOut,
   QrCode,
   Users,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -98,6 +99,13 @@ export default function AdminLayout({
               pathname={pathname}
               icon={BookOpen}
               label="Workshops"
+            />
+
+            <AdminNavLink
+              href="/admin/team"
+              pathname={pathname}
+              icon={ShieldCheck}
+              label="Team & Permissions"
             />
 
             <AdminNavLink
