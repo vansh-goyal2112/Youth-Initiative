@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   usePathname,
   useRouter,
@@ -33,8 +34,24 @@ export default function AdminLayout({
   const pathname =
     usePathname();
 
-  const router =
-    useRouter();
+  const router = useRouter();
+  const [permissions, setPermissions] = useState([]);
+
+  useEffect(() => {
+    function updatePermissions() {
+      try {
+        const session = JSON.parse(sessionStorage.getItem("adminSession") || "{}");
+        setPermissions(Array.isArray(session.permissions) ? session.permissions : []);
+      } catch {
+        setPermissions([]);
+      }
+    }
+    queueMicrotask(updatePermissions);
+    window.addEventListener("admin-session-updated", updatePermissions);
+    return () => window.removeEventListener("admin-session-updated", updatePermissions);
+  }, []);
+
+  const can = (right) => permissions.includes(right);
 
   async function logoutAdmin() {
     await signOut(auth);
@@ -89,47 +106,47 @@ export default function AdminLayout({
               label="Dashboard"
             />
 
-            <AdminNavLink
+            {can("students.view") && (\n            <AdminNavLink
               href="/admin/students"
               pathname={pathname}
               icon={Users}
               label="Students"
-            />
+            />\n            )}
 
-            <AdminNavLink
+            {can("workshops.view") && (\n            <AdminNavLink
               href="/admin/workshops"
               pathname={pathname}
               icon={BookOpen}
               label="Workshops"
-            />
+            />\n            )}
 
-            <AdminNavLink
+            {can("reports.generate") && (\n            <AdminNavLink
               href="/admin/reports"
               pathname={pathname}
               icon={FileText}
               label="Student Reports"
-            />
+            />\n            )}
 
-            <AdminNavLink
+            {can("admins.view") && (\n            <AdminNavLink
               href="/admin/team"
               pathname={pathname}
               icon={ShieldCheck}
               label="Team & Permissions"
-            />
+            />\n            )}
 
-            <AdminNavLink
+            {can("audit.view") && (\n            <AdminNavLink
               href="/admin/audit"
               pathname={pathname}
               icon={ClipboardList}
               label="Activity & Audit"
-            />
+            />\n            )}
 
-            <AdminNavLink
+            {can("attendance.manage") && (\n            <AdminNavLink
               href="/admin/attendance"
               pathname={pathname}
               icon={QrCode}
               label="Attendance"
-            />
+            />\n            )}
 
           </nav>
 
