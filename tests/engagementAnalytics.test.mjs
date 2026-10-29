@@ -14,12 +14,12 @@ test("counts unique verified attendance per student and workshop, not registrati
     {id:"c",title:"Future",startDate:"2026-11-10",endDate:null,programArea:"STEM"},
   ];
   const registrations=[
-    {workshopId:"a",studentId:"1",attendanceStatus:"verified",status:"completed"},
-    {workshopId:"a",studentId:"1",attendanceStatus:"verified",status:"completed"},
+    {workshopId:"a",studentId:"1",attendanceStatus:"verified",status:"completed",attendedAt:"2026-10-15T12:00:00Z"},
+    {workshopId:"a",studentId:"1",attendanceStatus:"verified",status:"completed",attendedAt:"2026-10-15T12:00:00Z"},
     {workshopId:"a",studentId:"2",attendanceStatus:"pending",status:"registered"},
-    {workshopId:"b",studentId:"3",attendanceStatus:"verified",status:"completed"},
-    {workshopId:"b",studentId:"4",attendanceStatus:"verified",status:"completed"},
-    {workshopId:"c",studentId:"5",attendanceStatus:"verified",status:"completed"},
+    {workshopId:"b",studentId:"3",attendanceStatus:"verified",status:"completed",attendedAt:"2026-10-15T12:00:00Z"},
+    {workshopId:"b",studentId:"4",attendanceStatus:"verified",status:"completed",attendedAt:"2026-10-15T12:00:00Z"},
+    {workshopId:"c",studentId:"5",attendanceStatus:"verified",status:"completed",attendedAt:"2026-11-10T12:00:00Z"},
   ];
   const result=summarize(workshops,registrations,"2026-10-01","2026-11-01","2026-10-29");
   assert.equal(result.summary.workshopsHeld,2);
