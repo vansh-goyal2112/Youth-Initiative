@@ -39,7 +39,7 @@ export async function GET(request) {
                 value: "completed",
               },
             ]
-          );,
+          ),
       getActiveSaitPrograms(),
     ]);
 
