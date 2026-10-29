@@ -93,6 +93,9 @@ export default function JourneyPage() {
           );
           // Reconciliation can award previously missing XP. Refresh the
           // visible totals only after it completes successfully.
+          // Let the initial progress request settle first so its older
+          // response cannot overwrite the post-reconciliation totals.
+          await progressRequest.catch(() => null);
           const updated = await studentFetch("/api/gamification");
           if (updated.ok) {
             const updatedData = await updated.json();
