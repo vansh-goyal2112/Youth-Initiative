@@ -70,7 +70,6 @@ export async function GET(request) {
         !["json","csv"].includes(format)) {
       return Response.json({ message:"Invalid reporting period, date, or export format." }, { status:400 });
     }
-    await requireAdminPermission(request, "reports.generate");
     if (format === "csv") await requireAdminPermission(request, "reports.export");
     const {start,end} = periodBounds(period,anchor);
     const today = new Date().toISOString().slice(0,10);
