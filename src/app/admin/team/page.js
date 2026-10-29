@@ -37,7 +37,22 @@ export default function AdminTeamPage() {
       setLoading(false);
     }
   }
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => {
+    let active = true;
+    adminFetch("/api/admin/team")
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || "Could not load administrators.");
+        if (active) setAdmins(result.admins || []);
+      })
+      .catch((err) => {
+        if (active) setError(err.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   function selectAdmin(admin) {
     setSelectedId(admin.id);
