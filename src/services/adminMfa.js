@@ -21,7 +21,7 @@ export function decryptSecret(value) {
  return Buffer.concat([decipher.update(unb64(data)), decipher.final()]).toString("utf8");
 }
 export function verifyTotp(secret, code, now = Date.now()) {
- if (!/^\\d{6}$/.test(String(code || ""))) return -1;
+ if (!/^\d{6}$/.test(String(code || ""))) return -1;
  for (let offset = -1; offset <= 1; offset++) {
   const step = Math.floor(now / 30000) + offset;
   const message = Buffer.alloc(8); message.writeBigUInt64BE(BigInt(step));
