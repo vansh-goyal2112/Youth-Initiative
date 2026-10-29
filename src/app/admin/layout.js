@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   FileText,
   ClipboardList,
+  KeyRound,
 } from "lucide-react";
 
 import {
@@ -159,6 +160,13 @@ export default function AdminLayout({
               label="Attendance"
             />
             )}
+
+            <AdminNavLink
+              href="/admin/security"
+              pathname={pathname}
+              icon={KeyRound}
+              label="Account Security"
+            />
 
           </nav>
 
