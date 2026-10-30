@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -18,7 +17,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { getWorkshopImage } from "@/utils/getWorkshopImage";
+import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 
 import {
   studentFetch,
@@ -89,9 +88,6 @@ export default function WorkshopDetailsPage() {
     );
   }
 
-  const workshopImage =
-    getWorkshopImage(workshop);
-
   const registrationUrl =
     workshop.registrationUrl ||
     "https://saitdigitalyouth.campbrainregistration.com/";
@@ -113,14 +109,7 @@ export default function WorkshopDetailsPage() {
       <div className="student-content-container workshop-details-layout">
         <section className="workshop-details-main">
           <div className="workshop-details-image-wrapper">
-            <Image
-              src={workshopImage}
-              alt={workshop.title}
-              fill
-              sizes="(max-width: 900px) 100vw, 65vw"
-              className="workshop-details-image"
-              priority
-            />
+            <WorkshopArtwork workshop={workshop} sizes="(max-width: 900px) 100vw, 65vw" className="workshop-details-image" priority />
 
             <span className="workshop-details-mode">
               {workshop.learningMode === "online" ? (
