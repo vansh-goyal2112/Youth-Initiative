@@ -1,4 +1,4 @@
-// Curated Youth Initiative Pexels photo manifest (60 distinct local files).
+// Curated Youth Initiative Pexels photo manifest (59 available local files).
 // Assets must be committed to public/images/workshops/ before deploying.
 export const WORKSHOP_IMAGE_LIBRARY = Object.freeze([
   { id: "photo-01", title: "Art of The Possible: 3D Printing and Modelling", url: "/images/workshops/01_art-of-the-possible-3d-printing-and-modelling.jpg" },
@@ -50,7 +50,6 @@ export const WORKSHOP_IMAGE_LIBRARY = Object.freeze([
   { id: "photo-47", title: "Pre-Employment Heavy Equipment Technician Certificate", url: "/images/workshops/47_pre-employment-heavy-equipment-technician-certificate.jpg" },
   { id: "photo-48", title: "Pre-Employment Pipe Trades Certificate", url: "/images/workshops/48_pre-employment-pipe-trades-certificate.jpg" },
   { id: "photo-49", title: "Pre-Employment Welding Certificate", url: "/images/workshops/49_pre-employment-welding-certificate.jpg" },
-  { id: "photo-50", title: "Aviation Bundle", url: "/images/workshops/50_aviation-bundle.jpg" },
   { id: "photo-51", title: "Hospitality & Tourism Bundle", url: "/images/workshops/51_hospitality-tourism-bundle.jpg" },
   { id: "photo-52", title: "ICT Software & Web Development", url: "/images/workshops/52_ict-software-web-development.jpg" },
   { id: "photo-53", title: "ICT Information Technology Services", url: "/images/workshops/53_ict-information-technology-services.jpg" },
@@ -87,7 +86,7 @@ export function workshopImageKeywords(workshop) {
 export function assignWorkshopImage(workshop, usedImageIds = new Set(), library = WORKSHOP_IMAGE_LIBRARY) {
   const unused = library.filter(asset => !usedImageIds.has(asset.id));
   const none = { image: null, imageAssetId: null, imageStatus: "needs_image" };
-  if (!unused.length) return none;
+  if (!unused.length || normalizeWorkshopTitle(workshop?.title) === "aviation bundle") return none;
 
   // Prefer the precise workshop/photo pairing over broad category similarities.
   const exact = findWorkshopImageByTitle(workshop?.title, unused);
@@ -114,5 +113,8 @@ export function usedWorkshopImageIds(workshops, excludeId) {
 }
 
 export function resolveWorkshopImage(workshop) {
-  return workshop?.image || findWorkshopImageByTitle(workshop?.title)?.url || null;
+  // Avoid broken links from a former reference to the deliberately omitted photo.
+  const image = workshop?.image;
+  if (image && image !== "/images/workshops/50_aviation-bundle.jpg") return image;
+  return findWorkshopImageByTitle(workshop?.title)?.url || null;
 }
