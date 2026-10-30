@@ -4,7 +4,7 @@ import {
   assignWorkshopImage,
   findWorkshopImageByTitle,
   shouldAssignWorkshopImage,
-  usedWorkshopImageIds,
+  workshopImageUsage,
 } from "@/utils/workshopImageAssignment.mjs";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ export async function POST(request) {
   try {
     await requireAdminPermission(request, "workshops.edit");
     const all = await queryCosmosDocuments("workshops", "SELECT * FROM c");
-    const used = usedWorkshopImageIds(all);
+    const used = workshopImageUsage(all);
     let assigned = 0;
     let needsImage = 0;
     let unchanged = 0;
@@ -37,7 +37,7 @@ export async function POST(request) {
         updatedAt: cosmosNow(),
       });
       if (assignment.imageAssetId) {
-        used.add(assignment.imageAssetId);
+        used.set(assignment.imageAssetId, (used.get(assignment.imageAssetId) || 0) + 1);
         assigned++;
       } else {
         needsImage++;
