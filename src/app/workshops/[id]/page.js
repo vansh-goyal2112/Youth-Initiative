@@ -91,7 +91,7 @@ export default function WorkshopDetailsPage() {
 
   const workshopImage =
     workshop.image ||
-    getWorkshopImage(workshop.category);
+    getWorkshopImage(workshop);
 
   const registrationUrl =
     workshop.registrationUrl ||
