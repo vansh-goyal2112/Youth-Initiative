@@ -108,6 +108,21 @@ export function assignWorkshopImage(workshop, usedImageIds = new Set(), library 
   return { image: asset.url, imageAssetId: asset.id, imageStatus: "assigned" };
 }
 
+// Previously auto-assigned placeholders and a known missing asset should be
+// upgraded when a real curated youth photo becomes available.
+// Preserve any other existing image, including manually selected artwork.
+const LEGACY_IMAGE_IDS = new Set(["coding-01", "trades-01", "campus-01", "photo-50"]);
+const LEGACY_IMAGE_URLS = new Set([
+  "/images/landing/youth-coding.png",
+  "/images/landing/youth-trades.png",
+  "/images/landing/youth-campus.png",
+  "/images/workshops/50_aviation-bundle.jpg",
+]);
+export function shouldAssignWorkshopImage(workshop) {
+  if (!workshop?.image && !workshop?.imageAssetId) return true;
+  return LEGACY_IMAGE_IDS.has(workshop?.imageAssetId) || LEGACY_IMAGE_URLS.has(workshop?.image);
+}
+
 export function usedWorkshopImageIds(workshops, excludeId) {
   return new Set((workshops || []).filter(w => w.id !== excludeId && w.imageAssetId).map(w => w.imageAssetId));
 }
