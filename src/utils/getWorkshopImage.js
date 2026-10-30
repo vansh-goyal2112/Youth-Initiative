@@ -1,20 +1,12 @@
-export function getWorkshopImage(category = "") {
-  const normalizedCategory = category.toLowerCase();
+import { resolveWorkshopImage } from "./workshopImageAssignment.mjs";
 
-  if (
-    normalizedCategory.includes("technology") ||
-    normalizedCategory.includes("digital") ||
-    normalizedCategory.includes("coding")
-  ) {
-    return "/images/landing/youth-coding.png";
+// Using the full workshop record keeps the same photo across all student views.
+export function getWorkshopImage(workshop = {}) {
+  if (typeof workshop === "object" && workshop !== null) {
+    const resolved = resolveWorkshopImage(workshop);
+    if (resolved) return resolved;
   }
 
-  if (
-    normalizedCategory.includes("trade") ||
-    normalizedCategory.includes("construction")
-  ) {
-    return "/images/landing/youth-trades.png";
-  }
-
+  // Only a neutral fallback for records without a curated picture.
   return "/images/landing/youth-campus.png";
 }
