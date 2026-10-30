@@ -14,7 +14,7 @@ import { getWorkshopImage } from "@/utils/getWorkshopImage";
 export default function WorkshopCard({ workshop }) {
   const workshopImage =
     workshop.image ||
-    getWorkshopImage(workshop.category);
+    getWorkshopImage(workshop);
 
   const learningMode =
     workshop.learningMode === "online"
