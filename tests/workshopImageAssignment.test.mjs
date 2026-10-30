@@ -4,8 +4,8 @@ import { assignWorkshopImage, usedWorkshopImageIds, WORKSHOP_IMAGE_LIBRARY, find
 
 test("library contains 59 available distinct image assets and paths", () => {
   assert.equal(WORKSHOP_IMAGE_LIBRARY.length, 59);
-  assert.equal(new Set(WORKSHOP_IMAGE_LIBRARY.map(asset => asset.id)).size, 60);
-  assert.equal(new Set(WORKSHOP_IMAGE_LIBRARY.map(asset => asset.url)).size, 60);
+  assert.equal(new Set(WORKSHOP_IMAGE_LIBRARY.map(asset => asset.id)).size, 59);
+  assert.equal(new Set(WORKSHOP_IMAGE_LIBRARY.map(asset => asset.url)).size, 59);
   assert.ok(WORKSHOP_IMAGE_LIBRARY.every(asset => asset.url.startsWith("/images/workshops/")));
 });
 
