@@ -47,9 +47,7 @@ import {
   studentFetch,
 } from "@/services/studentApi";
 
-import {
-  getWorkshopImage,
-} from "@/utils/getWorkshopImage";
+import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 
 export default function DashboardPage() {
   const {
@@ -985,20 +983,10 @@ function NextWorkshopCard({
   const workshop =
     registration.workshop;
 
-  const image =
-    getWorkshopImage(workshop);
-
   return (
     <article className="dashboard-next-workshop">
       <div className="dashboard-next-image">
-        <Image
-          src={image}
-          alt={
-            workshop.title
-          }
-          fill
-          sizes="(max-width: 700px) 100vw, 500px"
-        />
+        <WorkshopArtwork workshop={workshop} sizes="(max-width: 700px) 100vw, 500px" />
 
         <span>
           UPCOMING
@@ -1062,8 +1050,6 @@ function NextWorkshopCard({
 function RecommendedWorkshop({
   workshop,
 }) {
-  const image =
-    getWorkshopImage(workshop);
 
   return (
     <Link
@@ -1071,14 +1057,7 @@ function RecommendedWorkshop({
       className="dashboard-recommendation-card"
     >
       <div className="dashboard-recommendation-image">
-        <Image
-          src={image}
-          alt={
-            workshop.title
-          }
-          fill
-          sizes="(max-width: 700px) 100vw, 350px"
-        />
+        <WorkshopArtwork workshop={workshop} sizes="(max-width: 700px) 100vw, 350px" />
 
         {workshop.recommendationScore >
           0 && (
