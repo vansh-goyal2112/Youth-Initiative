@@ -52,11 +52,20 @@ test("ignores current record when collecting used assets", () => {
   assert.deepEqual([...used],["photo-02"]);
 });
 
-test("omitted Aviation Bundle image never resolves to broken file or repeats another workshop photo", () => {
+test("Aviation Bundle uses the existing youth-aviation photo, not a missing file", () => {
+  const youthAviation = "/images/workshops/36_exploring-aviation-day.jpg";
   assert.equal(findWorkshopImageByTitle("Aviation Bundle"), null);
-  assert.equal(assignWorkshopImage({ title: "Aviation Bundle" }).imageStatus, "needs_image");
-  assert.equal(resolveWorkshopImage({ title: "Aviation Bundle" }), null);
-  assert.equal(resolveWorkshopImage({ title: "Aviation Bundle", image: "/images/workshops/50_aviation-bundle.jpg" }), null);
+  const assigned = assignWorkshopImage({ title: "Aviation Bundle" }, new Set(["photo-36"]));
+  assert.deepEqual(assigned, {
+    image: youthAviation,
+    imageAssetId: "aviation-bundle-shared-36",
+    imageStatus: "assigned",
+  });
+  assert.equal(resolveWorkshopImage({ title: "Aviation Bundle" }), youthAviation);
+  assert.equal(resolveWorkshopImage({ title: "Aviation Bundle", image: "/images/workshops/50_aviation-bundle.jpg" }), youthAviation);
+  assert.equal(resolveWorkshopImage({ title: "Aviation Bundle", image: "/images/landing/youth-campus.png" }), youthAviation);
+  assert.equal(resolveWorkshopImage({ title: "Aviation Bundle", image: "/custom/aviation.webp" }), "/custom/aviation.webp");
+  assert.equal(assignWorkshopImage({ title: "Aviation Bundle" }, new Set(["aviation-bundle-shared-36"])).imageStatus, "needs_image");
 });
 
 test("old automatically assigned pictures are replaced but custom artwork is kept", () => {
@@ -68,9 +77,11 @@ test("old automatically assigned pictures are replaced but custom artwork is kep
   assert.equal(shouldAssignWorkshopImage({image:"/images/custom/my-image.webp"}),false);
 });
 
-test("missing Aviation Bundle artwork never resolves to an old SAIT campus photograph", async () => {
+test("student aviation image remains available before and after backfilling the assignment", async () => {
   const { getWorkshopImage } = await import("../src/utils/getWorkshopImage.js");
-  assert.equal(getWorkshopImage({ title: "Aviation Bundle", imageStatus: "needs_image", image: null }), null);
-  assert.equal(getWorkshopImage({ title: "Aviation Bundle", imageStatus: "needs_image", image: "/images/landing/youth-campus.png" }), null);
+  const aviation = "/images/workshops/36_exploring-aviation-day.jpg";
+  assert.equal(getWorkshopImage({ title: "Aviation Bundle", imageStatus: "needs_image", image: null }), aviation);
+  assert.equal(getWorkshopImage({ title: "Aviation Bundle", imageStatus: "needs_image", image: "/images/landing/youth-campus.png" }), aviation);
+  assert.equal(getWorkshopImage({ title: "Aviation Bundle", imageStatus: "assigned", image: aviation }), aviation);
   assert.equal(getWorkshopImage({ title: "Art of The Possible: Coding" }), "/images/workshops/03_art-of-the-possible-coding.jpg");
 });
