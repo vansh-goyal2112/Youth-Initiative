@@ -146,9 +146,11 @@ export function usedWorkshopImageIds(workshops, excludeId) {
 export function resolveWorkshopImage(workshop) {
   // Avoid broken links from a former reference to the deliberately omitted photo.
   const image = workshop?.image;
-  if (image && image !== "/images/workshops/50_aviation-bundle.jpg") return image;
-  if (normalizeWorkshopTitle(workshop?.title) === "aviation bundle") {
+  const isAviationBundle = normalizeWorkshopTitle(workshop?.title) === "aviation bundle";
+  // Never show a legacy generic image for this aviation program.
+  if (isAviationBundle && (!image || LEGACY_IMAGE_URLS.has(image))) {
     return AVIATION_BUNDLE_FALLBACK_URL;
   }
+  if (image && image !== "/images/workshops/50_aviation-bundle.jpg") return image;
   return findWorkshopImageByTitle(workshop?.title)?.url || null;
 }
