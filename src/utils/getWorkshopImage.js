@@ -1,12 +1,9 @@
 import { resolveWorkshopImage } from "./workshopImageAssignment.mjs";
 
-// Using the full workshop record keeps the same photo across all student views.
+// Returns a real assigned image or null. Missing images are represented by
+// a branded, accessible placeholder instead of an unrelated campus photo.
 export function getWorkshopImage(workshop = {}) {
-  if (typeof workshop === "object" && workshop !== null) {
-    const resolved = resolveWorkshopImage(workshop);
-    if (resolved) return resolved;
-  }
-
-  // Only a neutral fallback for records without a curated picture.
-  return "/images/landing/youth-campus.png";
+  if (!workshop || typeof workshop !== "object") return null;
+  if (workshop.imageStatus === "needs_image") return null;
+  return resolveWorkshopImage(workshop);
 }
