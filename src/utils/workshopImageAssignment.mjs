@@ -69,7 +69,14 @@ export const AVIATION_BUNDLE_FALLBACK_URL =
   "/images/workshops/36_exploring-aviation-day.jpg";
 const AVIATION_BUNDLE_FALLBACK_ID = "aviation-bundle-shared-36";
 
-const STOP_WORDS = new Set(["the","and","for","with","from","into","your","will","that","this","are","art","possible","skills","skill","workshop","workshops","introduction","intro","exploring","explore","fundamentals","foundation","program","programs","bundle","certificate","extra","youth","day","life","pre","employment","of","to","in","a","an","on","at","one","course"]);
+const STOP_WORDS = new Set([
+  "the", "and", "for", "with", "from", "into", "your", "this", "that",
+  "workshop", "workshops", "course", "class", "program", "programs",
+  "skills", "skill", "introduction", "intro", "exploring", "explore",
+  "foundations", "fundamentals", "certificate", "bundle", "art", "possible",
+  "extra", "youth", "day", "life", "pre", "employment", "of", "to",
+  "in", "a", "an", "on", "at", "one", "basic", "basics", "beginner",
+]);
 
 export function normalizeWorkshopTitle(value = "") {
   return String(value).toLowerCase().normalize("NFKD")
@@ -77,51 +84,198 @@ export function normalizeWorkshopTitle(value = "") {
     .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
 }
 
-function tokens(text) {
-  return new Set(normalizeWorkshopTitle(text).split(" ").filter(word => word.length > 2 && !STOP_WORDS.has(word)));
+function tokens(value) {
+  return new Set(normalizeWorkshopTitle(value).split(" ").filter(
+    word => word.length > 2 && !STOP_WORDS.has(word)
+  ));
+}
+
+// Human-readable rules are reusable for ANY new workshop, not limited to the
+// 55 initial workshop titles. Categories/description are also considered.
+const SUBJECTS = [
+  ["3d-printing", "technology", /\b(3d print|3d mod[ea]l|cad|additive manufactur|prototyp)/],
+  ["cybersecurity", "technology", /\b(cyber|hack|security lab|digital safety|penetration test)/],
+  ["coding", "technology", /\b(cod(e|ing)|program(ming)?|software|web develop|javascript|python|app develop)/],
+  ["ai", "technology", /\b(artificial intelligence|machine learning|generative ai|\bai\b)/],
+  ["xr", "technology", /\b(extended reality|virtual reality|augmented reality|mixed reality|\bvr\b|\bar\b)/],
+  ["robotics", "technology", /\b(robot|drone|arduino|raspberry pi|automation)/],
+  ["electronics", "technology", /\b(electronic|circuit|electrical|iot|computer hardware|networking|network services)/],
+  ["design", "creative", /\b(design|graphic|paint|illustrat|digital art|photograph|visual media)/],
+  ["writing", "creative", /\b(writ|poet|literature|storytelling)/],
+  ["public-speaking", "business", /\b(speech|public speak|present|debate|communication)/],
+  ["investment", "business", /\b(invest|finance|stock market|trading|economics)/],
+  ["entrepreneurship", "business", /\b(business|entrepreneur|startup|marketing|management|commerce)/],
+  ["leadership", "business", /\b(leader|teamwork|team building|career development|mentorship)/],
+  ["carpentry", "trades", /\b(carpent|woodwork|woodshop|joinery)/],
+  ["welding", "trades", /\b(weld|metal fabricat|metalwork)/],
+  ["automotive", "trades", /\b(auto service|automotive|car mechanic|vehicle repair)/],
+  ["plumbing", "trades", /\b(plumb|pipe trades|piping)/],
+  ["heavy-equipment", "trades", /\b(heavy equipment|diesel|excavat|machinery mechanic)/],
+  ["civil-engineering", "trades", /\b(civil engineering|construction|structural|building design)/],
+  ["skilled-trades", "trades", /\b(skilled trade|trade school|vocational)/],
+  ["cooking", "culinary", /\b(cook|culinary|kitchen|meal prep|food prep|nutrition)/],
+  ["baking", "culinary", /\b(bak(e|ing)|pastr|bread making|cake decorating)/],
+  ["hospitality", "culinary", /\b(hospitality|hotel|tourism|travel service)/],
+  ["forensics", "science", /\b(forensic|fingerprint|crime scene|investigation lab)/],
+  ["anatomy", "health", /\b(anatom|physiolog|human body|medical terminology)/],
+  ["healthcare", "health", /\b(healthcare|health care|nurs|medical|patient|infection prevention|wellness|first aid)/],
+  ["pharmacy", "health", /\b(pharmac|medication dispens)/],
+  ["aviation", "aviation", /\b(aviation|aircraft|airplane|aeronaut|pilot|flight|aerospace)/],
+  ["energy", "energy", /\b(energy|solar|wind turbine|renewable|sustainab)/],
+  ["farming", "science", /\b(farm|gardening|agricultur|greenhouse|plants)/],
+  ["campus", "campus", /\b(on campus|campus activities|college readiness|orientation)/],
+];
+
+const DOMAIN_HINTS = [
+  ["technology", /\b(tech|digital|computer|ict|engineering innovation)/],
+  ["business", /\b(business|entrepreneur|leadership|finance|management)/],
+  ["trades", /\b(trade|industrial|construction|fabricat)/],
+  ["culinary", /\b(culinary|hospitality|food|kitchen|baking|cooking)/],
+  ["health", /\b(health|medicine|medical|pharmacy|wellness)/],
+  ["science", /\b(science|stem|steam|laboratory|biology)/],
+  ["creative", /\b(creative|art|design|writing|media)/],
+  ["aviation", /\b(aviation|aircraft|pilot|aerospace)/],
+  ["energy", /\b(energy|renewable|sustainab)/],
+  ["campus", /\b(campus|orientation|open house)/],
+];
+
+function analyse(value) {
+  const text = normalizeWorkshopTitle(value);
+  const subjects = new Set();
+  const domains = new Set();
+  for (const [subject, domain, pattern] of SUBJECTS) {
+    if (pattern.test(text)) {
+      subjects.add(subject);
+      domains.add(domain);
+    }
+  }
+  for (const [domain, pattern] of DOMAIN_HINTS) {
+    if (pattern.test(text)) domains.add(domain);
+  }
+  return { text, subjects, domains, words: tokens(text) };
+}
+
+function imageRelevance(workshop, asset) {
+  const title = analyse(workshop?.title);
+  const details = analyse([
+    workshop?.category, workshop?.programArea, workshop?.description,
+  ].filter(Boolean).join(" "));
+  const photo = analyse(asset.title);
+  let score = 0;
+
+  for (const subject of photo.subjects) {
+    if (title.subjects.has(subject)) score += 180;
+    else if (details.subjects.has(subject)) score += 90;
+  }
+  for (const domain of photo.domains) {
+    if (title.domains.has(domain)) score += 30;
+    else if (details.domains.has(domain)) score += 20;
+  }
+  for (const word of photo.words) {
+    if (title.words.has(word)) score += 18;
+    else if (details.words.has(word)) score += 4;
+  }
+  return score;
+}
+
+function stableHash(value) {
+  let hash = 2166136261;
+  for (const char of value) {
+    hash = Math.imul(hash ^ char.charCodeAt(0), 16777619);
+  }
+  return hash >>> 0;
 }
 
 export function findWorkshopImageByTitle(title, library = WORKSHOP_IMAGE_LIBRARY) {
   const name = normalizeWorkshopTitle(title);
-  return library.find(item => normalizeWorkshopTitle(item.title) === name) || null;
+  return library.find(asset => normalizeWorkshopTitle(asset.title) === name) || null;
 }
 
 export function workshopImageKeywords(workshop) {
-  return normalizeWorkshopTitle([workshop?.title,workshop?.category,workshop?.programArea,workshop?.description].filter(Boolean).join(" "));
+  return normalizeWorkshopTitle([
+    workshop?.title, workshop?.category, workshop?.programArea, workshop?.description,
+  ].filter(Boolean).join(" "));
 }
 
-export function assignWorkshopImage(workshop, usedImageIds = new Set(), library = WORKSHOP_IMAGE_LIBRARY) {
-  const unused = library.filter(asset => !usedImageIds.has(asset.id));
-  const none = { image: null, imageAssetId: null, imageStatus: "needs_image" };
-  if (normalizeWorkshopTitle(workshop?.title) === "aviation bundle") {
-    return usedImageIds.has(AVIATION_BUNDLE_FALLBACK_ID)
-      ? none
-      : {
-          image: AVIATION_BUNDLE_FALLBACK_URL,
-          imageAssetId: AVIATION_BUNDLE_FALLBACK_ID,
-          imageStatus: "assigned",
-        };
+// The usage map counts assigned *files*; reusing a picture is unavoidable
+// once the finite library has been exhausted. Older alias IDs count too.
+export function workshopImageUsage(workshops = [], excludeId) {
+  const usage = new Map();
+  for (const workshop of workshops) {
+    if (excludeId && workshop.id === excludeId) continue;
+    let id = WORKSHOP_IMAGE_LIBRARY.find(asset =>
+      asset.id === workshop.imageAssetId || asset.url === workshop.image
+    )?.id;
+    if (!id && workshop.imageAssetId === AVIATION_BUNDLE_FALLBACK_ID) {
+      id = "photo-36";
+    }
+    if (id) usage.set(id, (usage.get(id) || 0) + 1);
   }
-  if (!unused.length) return none;
+  return usage;
+}
 
-  // Prefer the precise workshop/photo pairing over broad category similarities.
-  const exact = findWorkshopImageByTitle(workshop?.title, unused);
-  if (exact) return { image: exact.url, imageAssetId: exact.id, imageStatus: "assigned" };
+function usageOf(used, assetId) {
+  return used instanceof Map
+    ? (used.get(assetId) || 0)
+    : used instanceof Set && used.has(assetId) ? 1 : 0;
+}
 
-  const titleWords = tokens(workshop?.title || "");
-  if (!titleWords.size) return none;
-  const descriptiveWords = tokens([workshop?.category,workshop?.programArea,workshop?.description].filter(Boolean).join(" "));
-  const scored = unused.map(asset => {
-    const assetWords = tokens(asset.title);
-    const titleOverlap = [...titleWords].filter(word => assetWords.has(word)).length;
-    const descriptionOverlap = [...assetWords].filter(word => descriptiveWords.has(word)).length;
-    return { asset, score: titleOverlap * 10 + Math.min(descriptionOverlap, 4) };
-  }).sort((a,b) => b.score - a.score || a.asset.id.localeCompare(b.asset.id));
+export function assignWorkshopImage(
+  workshop,
+  usedImageIds = new Map(),
+  library = WORKSHOP_IMAGE_LIBRARY
+) {
+  const none = { image: null, imageAssetId: null, imageStatus: "needs_image" };
+  if (!Array.isArray(library) || !library.length) return none;
 
-  // A related category alone is not sufficient to show unrelated photography.
-  if (!scored.length || scored[0].score < 10) return none;
-  const asset = scored[0].asset;
-  return { image: asset.url, imageAssetId: asset.id, imageStatus: "assigned" };
+  const name = normalizeWorkshopTitle(workshop?.title);
+  const exact = findWorkshopImageByTitle(name, library);
+
+  // The original Aviation Bundle photo is absent. Prefer its existing youth
+  // aviation picture; sharing that picture is better than unrelated artwork.
+  const preferred = name === "aviation bundle"
+    ? library.find(asset => asset.id === "photo-36")
+    : exact;
+
+  if (preferred) {
+    return { image: preferred.url, imageAssetId: preferred.id, imageStatus: "assigned" };
+  }
+
+  const identity = [
+    workshop?.id || "", name,
+    normalizeWorkshopTitle(workshop?.programArea || ""),
+  ].join("|");
+
+  const ranked = library.map(asset => {
+    const relevance = imageRelevance(workshop, asset);
+    const usages = usageOf(usedImageIds, asset.id);
+    // Give an unused related photo preference over an equally relevant reused
+    // photo, but never choose an unrelated image over a strong topical match.
+    const score = relevance - Math.min(usages, 8) * 12;
+    return {
+      asset, relevance, usages, score,
+      // Pseudorandom tie breaking is deterministic for this workshop.
+      shuffle: stableHash(identity + "|" + asset.id),
+    };
+  });
+
+  // Unknown subjects still get an image. When nothing is related, distribute
+  // assignments evenly before reusing images from the 59-image collection.
+  const bestRelevant = Math.max(...ranked.map(item => item.relevance));
+  const pool = bestRelevant === 0
+    ? ranked.filter(item => item.usages === Math.min(...ranked.map(candidate => candidate.usages)))
+    : ranked;
+
+  pool.sort((a, b) =>
+    b.score - a.score ||
+    a.usages - b.usages ||
+    b.shuffle - a.shuffle ||
+    a.asset.id.localeCompare(b.asset.id)
+  );
+  const chosen = pool[0]?.asset;
+  return chosen
+    ? { image: chosen.url, imageAssetId: chosen.id, imageStatus: "assigned" }
+    : none;
 }
 
 // Previously auto-assigned placeholders and a known missing asset should be
