@@ -67,3 +67,10 @@ test("old automatically assigned pictures are replaced but custom artwork is kep
   assert.equal(shouldAssignWorkshopImage({image:"/images/workshops/03_art-of-the-possible-coding.jpg",imageAssetId:"photo-03"}),false);
   assert.equal(shouldAssignWorkshopImage({image:"/images/custom/my-image.webp"}),false);
 });
+
+test("missing Aviation Bundle artwork never resolves to an old SAIT campus photograph", async () => {
+  const { getWorkshopImage } = await import("../src/utils/getWorkshopImage.js");
+  assert.equal(getWorkshopImage({ title: "Aviation Bundle", imageStatus: "needs_image", image: null }), null);
+  assert.equal(getWorkshopImage({ title: "Aviation Bundle", imageStatus: "needs_image", image: "/images/landing/youth-campus.png" }), null);
+  assert.equal(getWorkshopImage({ title: "Art of The Possible: Coding" }), "/images/workshops/03_art-of-the-possible-coding.jpg");
+});
