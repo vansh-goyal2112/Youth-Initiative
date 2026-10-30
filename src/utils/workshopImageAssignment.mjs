@@ -62,6 +62,13 @@ export const WORKSHOP_IMAGE_LIBRARY = Object.freeze([
   { id: "photo-60", title: "Extra: Entrepreneurship & Teamwork", url: "/images/workshops/60_extra-entrepreneurship-teamwork.jpg" }
 ]);
 
+// The dedicated Aviation Bundle photograph (#50) was not downloaded.
+// Reuse the existing youth-aviation picture for this one workshop only,
+// with a separate assignment ID to keep the 59-file library unchanged.
+export const AVIATION_BUNDLE_FALLBACK_URL =
+  "/images/workshops/36_exploring-aviation-day.jpg";
+const AVIATION_BUNDLE_FALLBACK_ID = "aviation-bundle-shared-36";
+
 const STOP_WORDS = new Set(["the","and","for","with","from","into","your","will","that","this","are","art","possible","skills","skill","workshop","workshops","introduction","intro","exploring","explore","fundamentals","foundation","program","programs","bundle","certificate","extra","youth","day","life","pre","employment","of","to","in","a","an","on","at","one","course"]);
 
 export function normalizeWorkshopTitle(value = "") {
@@ -86,7 +93,16 @@ export function workshopImageKeywords(workshop) {
 export function assignWorkshopImage(workshop, usedImageIds = new Set(), library = WORKSHOP_IMAGE_LIBRARY) {
   const unused = library.filter(asset => !usedImageIds.has(asset.id));
   const none = { image: null, imageAssetId: null, imageStatus: "needs_image" };
-  if (!unused.length || normalizeWorkshopTitle(workshop?.title) === "aviation bundle") return none;
+  if (normalizeWorkshopTitle(workshop?.title) === "aviation bundle") {
+    return usedImageIds.has(AVIATION_BUNDLE_FALLBACK_ID)
+      ? none
+      : {
+          image: AVIATION_BUNDLE_FALLBACK_URL,
+          imageAssetId: AVIATION_BUNDLE_FALLBACK_ID,
+          imageStatus: "assigned",
+        };
+  }
+  if (!unused.length) return none;
 
   // Prefer the precise workshop/photo pairing over broad category similarities.
   const exact = findWorkshopImageByTitle(workshop?.title, unused);
@@ -131,5 +147,8 @@ export function resolveWorkshopImage(workshop) {
   // Avoid broken links from a former reference to the deliberately omitted photo.
   const image = workshop?.image;
   if (image && image !== "/images/workshops/50_aviation-bundle.jpg") return image;
+  if (normalizeWorkshopTitle(workshop?.title) === "aviation bundle") {
+    return AVIATION_BUNDLE_FALLBACK_URL;
+  }
   return findWorkshopImageByTitle(workshop?.title)?.url || null;
 }
