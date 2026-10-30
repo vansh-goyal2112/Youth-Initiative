@@ -90,7 +90,6 @@ export default function WorkshopDetailsPage() {
   }
 
   const workshopImage =
-    workshop.image ||
     getWorkshopImage(workshop);
 
   const registrationUrl =
