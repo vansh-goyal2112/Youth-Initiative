@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { assignWorkshopImage, usedWorkshopImageIds, WORKSHOP_IMAGE_LIBRARY, findWorkshopImageByTitle, resolveWorkshopImage } from "../src/utils/workshopImageAssignment.mjs";
 
-test("library contains 60 distinct image assets and paths", () => {
-  assert.equal(WORKSHOP_IMAGE_LIBRARY.length, 60);
+test("library contains 59 available distinct image assets and paths", () => {
+  assert.equal(WORKSHOP_IMAGE_LIBRARY.length, 59);
   assert.equal(new Set(WORKSHOP_IMAGE_LIBRARY.map(asset => asset.id)).size, 60);
   assert.equal(new Set(WORKSHOP_IMAGE_LIBRARY.map(asset => asset.url)).size, 60);
   assert.ok(WORKSHOP_IMAGE_LIBRARY.every(asset => asset.url.startsWith("/images/workshops/")));
@@ -50,4 +50,11 @@ test("renders the stable original image even before a database backfill", () => 
 test("ignores current record when collecting used assets", () => {
   const used=usedWorkshopImageIds([{id:"one",imageAssetId:"photo-01"},{id:"two",imageAssetId:"photo-02"}],"one");
   assert.deepEqual([...used],["photo-02"]);
+});
+
+test("omitted Aviation Bundle image never resolves to broken file or repeats another workshop photo", () => {
+  assert.equal(findWorkshopImageByTitle("Aviation Bundle"), null);
+  assert.equal(assignWorkshopImage({ title: "Aviation Bundle" }).imageStatus, "needs_image");
+  assert.equal(resolveWorkshopImage({ title: "Aviation Bundle" }), null);
+  assert.equal(resolveWorkshopImage({ title: "Aviation Bundle", image: "/images/workshops/50_aviation-bundle.jpg" }), null);
 });
