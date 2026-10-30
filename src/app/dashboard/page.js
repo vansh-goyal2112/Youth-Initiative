@@ -987,9 +987,7 @@ function NextWorkshopCard({
 
   const image =
     workshop.image ||
-    getWorkshopImage(
-      workshop.category
-    );
+    getWorkshopImage(workshop);
 
   return (
     <article className="dashboard-next-workshop">
@@ -1067,9 +1065,7 @@ function RecommendedWorkshop({
 }) {
   const image =
     workshop.image ||
-    getWorkshopImage(
-      workshop.category
-    );
+    getWorkshopImage(workshop);
 
   return (
     <Link
