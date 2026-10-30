@@ -986,7 +986,6 @@ function NextWorkshopCard({
     registration.workshop;
 
   const image =
-    workshop.image ||
     getWorkshopImage(workshop);
 
   return (
@@ -1064,7 +1063,6 @@ function RecommendedWorkshop({
   workshop,
 }) {
   const image =
-    workshop.image ||
     getWorkshopImage(workshop);
 
   return (
