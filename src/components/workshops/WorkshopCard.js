@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -9,11 +8,9 @@ import {
   Users,
 } from "lucide-react";
 
-import { getWorkshopImage } from "@/utils/getWorkshopImage";
+import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 
 export default function WorkshopCard({ workshop }) {
-  const workshopImage =
-    getWorkshopImage(workshop);
 
   const learningMode =
     workshop.learningMode === "online"
@@ -25,13 +22,7 @@ export default function WorkshopCard({ workshop }) {
   return (
     <article className="student-workshop-card">
       <div className="student-workshop-image-wrapper">
-        <Image
-          src={workshopImage}
-          alt={workshop.title}
-          fill
-          sizes="(max-width: 700px) 100vw, 340px"
-          className="student-workshop-image"
-        />
+        <WorkshopArtwork workshop={workshop} sizes="(max-width: 700px) 100vw, 340px" className="student-workshop-image" />
 
         <span className="workshop-mode-badge">
           {workshop.learningMode === "online" ? (
