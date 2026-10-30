@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assignWorkshopImage, usedWorkshopImageIds, WORKSHOP_IMAGE_LIBRARY, findWorkshopImageByTitle, resolveWorkshopImage } from "../src/utils/workshopImageAssignment.mjs";
+import { assignWorkshopImage, usedWorkshopImageIds, WORKSHOP_IMAGE_LIBRARY, findWorkshopImageByTitle, resolveWorkshopImage, shouldAssignWorkshopImage } from "../src/utils/workshopImageAssignment.mjs";
 
 test("library contains 59 available distinct image assets and paths", () => {
   assert.equal(WORKSHOP_IMAGE_LIBRARY.length, 59);
@@ -57,4 +57,13 @@ test("omitted Aviation Bundle image never resolves to broken file or repeats ano
   assert.equal(assignWorkshopImage({ title: "Aviation Bundle" }).imageStatus, "needs_image");
   assert.equal(resolveWorkshopImage({ title: "Aviation Bundle" }), null);
   assert.equal(resolveWorkshopImage({ title: "Aviation Bundle", image: "/images/workshops/50_aviation-bundle.jpg" }), null);
+});
+
+test("old automatically assigned pictures are replaced but custom artwork is kept", () => {
+  assert.equal(shouldAssignWorkshopImage({image:"/images/landing/youth-coding.png",imageAssetId:"coding-01"}),true);
+  assert.equal(shouldAssignWorkshopImage({image:"/images/landing/youth-campus.png"}),true);
+  assert.equal(shouldAssignWorkshopImage({image:"/images/workshops/50_aviation-bundle.jpg",imageAssetId:"photo-50"}),true);
+  assert.equal(shouldAssignWorkshopImage({image:null,imageAssetId:null}),true);
+  assert.equal(shouldAssignWorkshopImage({image:"/images/workshops/03_art-of-the-possible-coding.jpg",imageAssetId:"photo-03"}),false);
+  assert.equal(shouldAssignWorkshopImage({image:"/images/custom/my-image.webp"}),false);
 });
