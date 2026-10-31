@@ -19,6 +19,15 @@ export default function StudentTasksPage() {
     } catch(e) {setError(e.message);}
   }
   useEffect(()=>{void load();},[]);
+  async function claim(task) {
+    setBusy(true);setError("");setMessage("");
+    try {
+      const response=await studentFetch("/api/feedback",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({registrationId:task.id,answers:task.feedback.answers,comment:task.feedback.comment||""})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.message||"Reward unavailable");
+      setMessage(result.message);await load();
+    }catch(e){setError(e.message);}finally{setBusy(false);}
+  }
   async function submit(event) {
     event.preventDefault(); if(!selected)return;
     setBusy(true);setMessage("");setError("");
@@ -42,15 +51,15 @@ export default function StudentTasksPage() {
     {!data&&!error&&<p className="mt-8">Loading your workshop tasks…</p>}
     {data&&<section className="mt-7 space-y-4">
       <h2 className="text-xl font-bold">Pending ({data.pendingCount})</h2>
-      {data.tasks.filter(t=>!t.feedback).length===0&&<p>You&apos;re all caught up. Nice work! 🎉</p>}
-      {data.tasks.filter(t=>!t.feedback).map(task=><div key={task.id} className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm">
+      {data.tasks.filter(t=>!t.feedback||t.rewardStatus!=="completed").length===0&&<p>You&apos;re all caught up. Nice work! 🎉</p>}
+      {data.tasks.filter(t=>!t.feedback||t.rewardStatus!=="completed").map(task=><div key={task.id} className="rounded-2xl border border-indigo-100 bg-white p-5 shadow-sm">
         <h3 className="font-semibold">{task.title||"Completed Workshop"}</h3>
         <p className="text-sm text-slate-600">Workshop feedback · +20 XP</p>
-        <button type="button" onClick={()=>{setSelected(task);setAnswers({});setComment("");setError("");}}
-          className="mt-3 rounded-xl bg-indigo-700 px-4 py-2 font-semibold text-white">Share Feedback</button>
+        <button type="button" onClick={()=>{if(task.feedback){void claim(task);return;}setSelected(task);setAnswers({});setComment("");setError("");}}
+          className="mt-3 rounded-xl bg-indigo-700 px-4 py-2 font-semibold text-white">{task.feedback?"Check 20 XP reward":"Share Feedback"}</button>
       </div>)}
-      <h2 className="pt-4 text-xl font-bold">Completed ({data.tasks.filter(t=>t.feedback).length})</h2>
-      {data.tasks.filter(t=>t.feedback).map(task=><p key={task.id} className="rounded-lg bg-green-50 p-3 text-green-900">✓ {task.title||"Workshop"} — feedback submitted</p>)}
+      <h2 className="pt-4 text-xl font-bold">Completed ({data.tasks.filter(t=>t.feedback&&t.rewardStatus==="completed").length})</h2>
+      {data.tasks.filter(t=>t.feedback&&t.rewardStatus==="completed").map(task=><p key={task.id} className="rounded-lg bg-green-50 p-3 text-green-900">✓ {task.title||"Workshop"} — feedback submitted</p>)}
     </section>}
     {selected&&data&&<div className="fixed inset-0 z-[100] overflow-y-auto bg-slate-950/70 p-4">
       <form onSubmit={submit} className="mx-auto my-4 max-w-xl rounded-2xl bg-white p-6 shadow-2xl">
