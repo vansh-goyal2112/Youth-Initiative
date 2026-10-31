@@ -1,3 +1,4 @@
+import { workshopCompletionSnapshot } from "@/services/workshopHistory.mjs";
 import {
   processWorkshopCompletion,
 } from "@/services/gamificationAdmin";
@@ -258,6 +259,7 @@ export async function POST(request) {
             completedAt,
 
           completedAt,
+          workshopSnapshot: workshopCompletionSnapshot(workshop, { ...registration, status: "completed", completedAt }, null),
 
           completionXpAwarded:
             false,
