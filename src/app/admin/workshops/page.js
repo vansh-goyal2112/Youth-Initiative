@@ -46,6 +46,7 @@ export default function AdminWorkshopsPage() {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] =
     useState(false);
+  const [importMode, setImportMode] = useState("add");
 
   const [searchText, setSearchText] =
     useState("");
@@ -404,6 +405,8 @@ export default function AdminWorkshopsPage() {
           body: JSON.stringify({
             workshops:
               workshopsToImport,
+            mode: importMode,
+            preview: importMode === "replace",
           }),
         }
       );
@@ -418,7 +421,9 @@ export default function AdminWorkshopsPage() {
       }
 
       setMessage(
-        responseData.message
+        responseData.preview
+          ? `Replacement preview: ${responseData.incoming} incoming; ${responseData.discontinue?.length || 0} current workshops would be discontinued. No changes applied. Full replacement is blocked until history-safe execution is verified.`
+          : responseData.message
       );
 
       await loadWorkshops();
@@ -441,6 +446,10 @@ export default function AdminWorkshopsPage() {
         <div className="admin-workshop-actions">
           <button type="button" className="admin-team-refresh" onClick={handleAssignImages} disabled={saving || importing}><Layers3 size={17}/> Assign artwork</button>
           <button type="button" className="admin-team-refresh" onClick={loadWorkshops} disabled={loading}><RefreshCw size={17} className={loading?"animate-spin":""}/> Refresh</button>
+          <select aria-label="Excel import mode" value={importMode} onChange={event => setImportMode(event.target.value)} disabled={importing}>
+            <option value="add">Add/update spreadsheet</option>
+            <option value="replace">Preview catalogue replacement</option>
+          </select>
           <label className="admin-import-button">{importing ? <LoaderCircle size={19} className="button-spinner"/> : <Upload size={19}/>}
             {importing ? "Importing…" : "Import Excel"}
             <input type="file" accept=".xlsx,.xls" disabled={importing} onChange={handleExcelImport}/>
