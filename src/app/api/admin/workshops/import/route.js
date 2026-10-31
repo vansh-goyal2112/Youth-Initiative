@@ -471,7 +471,7 @@ export async function POST(
           const transaction = await readCosmosDocument(
             "xpTransactions", `${completion.studentId}_${old.id}`
           );
-          if (transaction?.status !== "completed" || completion.completionXpAwarded !== true) {
+          if (transaction?.status !== "completed") {
             return Response.json({ success: false, code: "PENDING_REWARDS",
               message: `Cannot replace catalogue: ${old.title} has student XP pending reconciliation.`
             }, { status: 409 });
