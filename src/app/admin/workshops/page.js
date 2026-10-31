@@ -21,6 +21,21 @@ import * as XLSX from "xlsx";
 
 import { adminFetch } from "@/services/adminApi";
 
+function excelDate(value) {
+  if (value === null || value === undefined || value === "") return "";
+  if (typeof value === "number") {
+    const parsed = XLSX.SSF.parse_date_code(value);
+    if (!parsed) return "";
+    return [parsed.y, String(parsed.m).padStart(2, "0"), String(parsed.d).padStart(2, "0")].join("-");
+  }
+  const text = String(value).trim();
+  const iso = text.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (iso) return iso[1];
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return [parsed.getFullYear(), String(parsed.getMonth() + 1).padStart(2, "0"), String(parsed.getDate()).padStart(2, "0")].join("-");
+}
+
 const emptyWorkshop = {
   title: "",
   programArea: "",
@@ -378,8 +393,8 @@ export default function AdminWorkshopsPage() {
       const workshopsToImport =
         excelRows.map((row) => ({
           offeringYear: String(row["Offering Year"] || row["Year"] || offeringYear).trim(),
-          startDate: row["Start Date"] || "",
-          endDate: row["End Date"] || "",
+          startDate: excelDate(row["Start Date"]),
+          endDate: excelDate(row["End Date"]),
           time: row["Time"] || "",
           programArea:
             row["Program Area"] || "",
