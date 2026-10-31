@@ -212,14 +212,11 @@ function buildImportedWorkshop(
 
     learningMode,
 
-    startDate:
-      null,
+    startDate: workshop.startDate || null,
 
-    endDate:
-      null,
+    endDate: workshop.endDate || null,
 
-    time:
-      "",
+    time: workshop.time || "",
 
     location:
       learningMode ===
@@ -319,6 +316,10 @@ async function saveImportedWorkshop(
         { ...workshopData,
           // Reimports must not erase scheduling, status or manual edits.
           ...existingWorkshop,
+          // Only non-empty scheduling values explicitly included in Excel override previous scheduling.
+          ...(workshopData.startDate ? { startDate: workshopData.startDate } : {}),
+          ...(workshopData.endDate ? { endDate: workshopData.endDate } : {}),
+          ...(workshopData.time ? { time: workshopData.time } : {}),
           image: existingWorkshop.image === "/images/workshops/50_aviation-bundle.jpg" ? null : (existingWorkshop.image || workshopData.image || null),
           imageAssetId: existingWorkshop.imageAssetId === "photo-50" ? null : (existingWorkshop.imageAssetId || workshopData.imageAssetId || null),
           imageStatus: existingWorkshop.imageAssetId === "photo-50" ? "needs_image" : existingWorkshop.imageAssetId ? "assigned" : existingWorkshop.image && existingWorkshop.image !== "/images/workshops/50_aviation-bundle.jpg" ? "custom" : workshopData.imageStatus,
