@@ -1,3 +1,4 @@
+import { recommendYouthWorkshops } from "@/utils/youthWorkshopRecommendations.mjs";
 "use client";
 
 import Link from "next/link";
@@ -256,89 +257,10 @@ export default function DashboardPage() {
     upcomingRegistrations[0] ||
     null;
 
-  const recommendedWorkshops =
-    useMemo(() => {
-      const registeredIds =
-        new Set(
-          registrations.map(
-            (registration) =>
-              registration.workshopId
-          )
-        );
-
-      const interests =
-        student?.interests ||
-        [];
-
-      const normalizedInterests =
-        interests.map(
-          (interest) =>
-            String(
-              interest
-            ).toLowerCase()
-        );
-
-      const scored =
-        workshops
-          .filter(
-            (workshop) =>
-              !registeredIds.has(
-                workshop.id
-              )
-          )
-          .map(
-            (workshop) => {
-              const searchableText =
-                [
-                  workshop.title,
-                  workshop.category,
-                  workshop.programArea,
-                  workshop.description,
-                ]
-                  .filter(
-                    Boolean
-                  )
-                  .join(" ")
-                  .toLowerCase();
-
-              let score = 0;
-
-              normalizedInterests.forEach(
-                (
-                  interest
-                ) => {
-                  if (
-                    searchableText.includes(
-                      interest
-                    )
-                  ) {
-                    score += 1;
-                  }
-                }
-              );
-
-              return {
-                ...workshop,
-                recommendationScore:
-                  score,
-              };
-            }
-          )
-          .sort(
-            (a, b) =>
-              b.recommendationScore -
-              a.recommendationScore
-          );
-
-      return scored.slice(
-        0,
-        3
-      );
-    }, [
-      workshops,
-      registrations,
-      student,
-    ]);
+  const recommendedWorkshops = useMemo(
+    () => recommendYouthWorkshops({workshops,registrations,student}),
+    [workshops,registrations,student]
+  );
 
   if (
     authLoading ||
