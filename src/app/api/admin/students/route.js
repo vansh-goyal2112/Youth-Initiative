@@ -539,6 +539,10 @@ export async function PUT(
         .accountStatus ===
       "inactive";
 
+    if (student.accountStatus === "deleting") {
+      throw apiError("Permanent account deletion is in progress. Only a Super Admin can retry deletion.", 409);
+    }
+
     previousDisabledState =
       authUser.disabled;
 
@@ -792,6 +796,10 @@ export async function DELETE(
       await getStudentAndAuthUser(
         targetStudentId
       );
+
+    if (student.accountStatus === "deleting") {
+      throw apiError("Permanent account deletion is in progress. Only a Super Admin can retry deletion.", 409);
+    }
 
     previousDisabledState =
       authUser.disabled;
