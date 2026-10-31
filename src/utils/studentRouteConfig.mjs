@@ -8,6 +8,7 @@ export const studentPrimaryRoutes = Object.freeze([
   "/journey",
   "/badges",
   "/profile",
+  "/tasks",
   "/edit-profile",
   "/registered-workshops",
   "/completed-workshops",
@@ -31,6 +32,7 @@ export function studentBackDestination(pathname) {
   if (pathname === "/journey" || pathname === "/badges" || pathname === "/profile") {
     return { href: "/dashboard", label: "Back to Home" };
   }
+  if (pathname === "/tasks") return { href: "/profile", label: "Back to Profile" };
   if (pathname === "/edit-profile") return { href: "/profile", label: "Back to Profile" };
   if (pathname === "/registered-workshops") return { href: "/workshops", label: "Back to Workshops" };
   if (pathname === "/completed-workshops" || pathname === "/scan-attendance") {
