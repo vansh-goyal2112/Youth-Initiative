@@ -427,11 +427,14 @@ export async function POST(
       );
     }
 
+    if (mode === "replace" && validWorkshops.some(w => !/^20\\d{2}$/.test(String(w.offeringYear || "")))) {
+      return Response.json({ success: false, message: "Catalogue replacement requires a four-digit offering year for every workshop." }, { status: 400 });
+    }
     const incomingIds = new Set(validWorkshops.map(w => createWorkshopId(w.title, w.programArea, w.offeringYear || "")));
     if (incomingIds.size !== validWorkshops.length) {
       return Response.json({ message: "Duplicate workshop titles and program areas in spreadsheet." }, { status: 400 });
     }
-    const oldCatalog = await queryCosmosDocuments("workshops", "SELECT c.id, c.title, c.status FROM c WHERE c.status != 'deleted'");
+    const oldCatalog = await queryCosmosDocuments("workshops", "SELECT c.id, c.title, c.status FROM c");
     const discontinue = mode === "replace"
       ? oldCatalog.filter(w => !incomingIds.has(w.id))
       : [];
