@@ -21,10 +21,11 @@ export const runtime = "nodejs";
 function createWorkshopId(
   title,
   programArea,
-  offeringYear = ""
+  offeringYear = "",
+  grade = ""
 ) {
   const normalizedText =
-    `${programArea}-${title}-${offeringYear}`
+    `${programArea}-${title}-${grade}-${offeringYear}`
       .toLowerCase()
       .replace(
         /[^a-z0-9]+/g,
@@ -45,7 +46,7 @@ function createWorkshopId(
         "sha256"
       )
       .update(
-        `${programArea}-${title}-${offeringYear}`
+        `${programArea}-${title}-${grade}-${offeringYear}`
       )
       .digest(
         "hex"
@@ -159,7 +160,8 @@ function buildImportedWorkshop(
     createWorkshopId(
       workshop.title,
       workshop.programArea,
-      workshop.offeringYear || ""
+      workshop.offeringYear || "",
+      workshop.grade || ""
     );
 
   const learningMode =
@@ -430,7 +432,7 @@ export async function POST(
     if (mode === "replace" && validWorkshops.some(w => !/^20\d{2}$/.test(String(w.offeringYear || "")))) {
       return Response.json({ success: false, message: "Catalogue replacement requires a four-digit offering year for every workshop." }, { status: 400 });
     }
-    const incomingIds = new Set(validWorkshops.map(w => createWorkshopId(w.title, w.programArea, w.offeringYear || "")));
+    const incomingIds = new Set(validWorkshops.map(w => createWorkshopId(w.title, w.programArea, w.offeringYear || "", w.grade || "")));
     if (incomingIds.size !== validWorkshops.length) {
       return Response.json({ message: "Duplicate workshop titles and program areas in spreadsheet." }, { status: 400 });
     }
@@ -440,7 +442,7 @@ export async function POST(
       : [];
     const planToken = crypto.createHash("sha256").update(JSON.stringify({
       catalogue: oldCatalog.map(w => [w.id, w.title, w.status, w.updatedAt]).sort((a,b)=>a[0].localeCompare(b[0])),
-      incoming: validWorkshops.map(w => [createWorkshopId(w.title,w.programArea,w.offeringYear || ""),w.grade,w.description,w.startDate,w.endDate,w.time]).sort((a,b)=>a[0].localeCompare(b[0])),
+      incoming: validWorkshops.map(w => [createWorkshopId(w.title,w.programArea,w.offeringYear || "",w.grade || ""),w.grade,w.description,w.startDate,w.endDate,w.time]).sort((a,b)=>a[0].localeCompare(b[0])),
     })).digest("hex");
     if (preview) {
       return Response.json({ success: true, preview: true, mode,
