@@ -420,6 +420,33 @@ export default function AdminWorkshopsPage() {
         );
       }
 
+      if (importMode === "replace" && responseData.preview) {
+        const removing = responseData.discontinue || [];
+        const proceed = window.confirm(
+          `Replace current catalogue with ${responseData.incoming} spreadsheet workshops? ${removing.length} existing workshops will be permanently removed from the catalogue. Completed student achievements remain. This action cannot be undone.`
+        );
+        if (!proceed) {
+          setMessage("Catalogue replacement cancelled; no changes made.");
+          return;
+        }
+        const confirmResponse = await adminFetch("/api/admin/workshops/import", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-catalogue-replace-confirm": "REPLACE CATALOGUE",
+          },
+          body: JSON.stringify({
+            workshops: workshopsToImport,
+            mode: "replace",
+            preview: false,
+          }),
+        });
+        const confirmed = await confirmResponse.json();
+        if (!confirmResponse.ok) throw new Error(confirmed.message || "Replacement was incomplete. Check the catalogue.");
+        setMessage(confirmed.message);
+        await loadWorkshops();
+        return;
+      }
       setMessage(
         responseData.preview
           ? `Replacement preview: ${responseData.incoming} incoming; ${responseData.discontinue?.length || 0} current workshops would be discontinued. No changes applied. Full replacement is blocked until history-safe execution is verified.`
