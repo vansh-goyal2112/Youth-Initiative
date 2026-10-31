@@ -341,6 +341,12 @@ export default function ProfilePage() {
             <p>Every workshop, badge, and challenge helps you discover more about yourself.</p>
           </div>
           <div className={styles.actionGrid}>
+            <Link href="/tasks" className={styles.actionCard}>
+              <span className={styles.actionArtwork}><Sparkles size={31} aria-hidden="true"/></span>
+              <strong>My Tasks · Earn 20 XP</strong>
+              <small>Quick workshop feedback and rewards</small>
+              <ChevronRight size={19}/>
+            </Link>
             <Link href="/journey" className={styles.actionCard}>
               <span className={styles.actionArtwork}><Rocket size={31} aria-hidden="true"/></span>
               <strong>Adventure Map</strong>
