@@ -18,7 +18,7 @@
 | Create workshop | Cosmos `workshops`; assigns relevant image | Student catalog and new registrations refer to the same workshop ID. |
 | Edit workshop | Cosmos `workshops` | Existing registrations and attendance refer to the same ID and resolve updated workshop details. Historical XP amounts do **not** retroactively change. |
 | Mark workshop inactive | Cosmos `workshops.status=inactive` | Removed from the active student catalog; keeps registrations, attendance and XP history. |
-| Delete workshop | Cosmos `workshops` document removed only if unreferenced | If any registrations, attendance sessions or XP transactions reference it, deletion is blocked with HTTP 409. Archive instead. This prevents historical data from becoming orphaned. |
+| Remove workshop | Mark the Cosmos workshop `status=deleted` and hide it from admin and student catalogues | Existing workshop document remains available internally for historical student registrations, verified completion, XP, badges and reports; new enrollment is blocked. |
 
 ## Student retention policy
 
