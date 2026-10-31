@@ -361,10 +361,22 @@ export async function PUT(
       "workshops",
       existingWorkshop,
       {
-        // Preserve assigned image when other workshop details change.
         ...buildWorkshopData(
           workshopData
         ),
+        // Reassign only automatically chosen images when topic changes.
+        ...(existingWorkshop.imageStatus === "custom" ||
+          (existingWorkshop.image && !existingWorkshop.imageAssetId)
+          ? {}
+          : (existingWorkshop.title !== workshopData.title ||
+             existingWorkshop.programArea !== workshopData.programArea ||
+             existingWorkshop.category !== (workshopData.category || "General"))
+            ? assignWorkshopImage(
+                { ...workshopData, id },
+                workshopImageUsage(await queryCosmosDocuments("workshops",
+                  "SELECT c.id, c.image, c.imageAssetId FROM c"), id)
+              )
+            : {}),
 
         updatedBy:
           admin.uid,
