@@ -400,6 +400,14 @@ export async function POST(
       );
     }
 
+    if (mode === "replace" && workshops.some(w =>
+      !w || typeof w.title !== "string" || !w.title.trim() ||
+      typeof w.programArea !== "string" || !w.programArea.trim() ||
+      typeof w.grade !== "string" || !w.grade.trim()
+    )) {
+      return Response.json({ success: false, message: "Replacement stopped: spreadsheet includes incomplete workshop rows. Correct the data before trying again." }, { status: 400 });
+    }
+
     const validWorkshops =
       workshops.filter(
         (
