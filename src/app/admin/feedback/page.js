@@ -8,7 +8,7 @@ export default function FeedbackInsightsPage() {
       if(!response.ok)throw new Error(result.message||"Feedback unavailable");setData(result);setError("");
     }catch(e){setError(e.message);}finally{setLoading(false);}
   }
-  useEffect(()=>{void load();},[]);
+  useEffect(()=>{queueMicrotask(()=>{void load();});},[]);
   async function exportCsv(){
     try{const r=await adminFetch("/api/admin/feedback?format=csv");
       if(!r.ok){const d=await r.json();throw new Error(d.message||"Export denied");}
