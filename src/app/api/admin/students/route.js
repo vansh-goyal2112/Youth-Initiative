@@ -417,11 +417,27 @@ export async function GET(
             )
         );
 
-    return Response.json({
-      success:
-        true,
+    // Pending invitations are NOT active accounts. Display only a small
+    // allowlisted summary (never guardian tokens, hashes, DOB or secrets).
+    const pendingDocuments = await queryCosmosDocuments(
+      "pendingRegistrations",
+      `SELECT TOP 100 c.id, c.fullName, c.email, c.status, c.createdAt
+       FROM c
+       WHERE c.status != "account_created"
+       ORDER BY c.createdAt DESC`
+    );
+    const pendingEnrollments = pendingDocuments.map(doc => ({
+      id: doc.id,
+      fullName: doc.fullName || "",
+      email: doc.email || "",
+      status: doc.status || "pending",
+      createdAt: doc.createdAt,
+    }));
 
+    return Response.json({
+      success: true,
       students,
+      pendingEnrollments,
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (
     error
