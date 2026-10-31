@@ -18,8 +18,15 @@ export async function GET(request) {
     const completed=await queryCosmosDocuments("registrations",
       "SELECT * FROM c WHERE c.studentId = @id AND c.status = 'completed' AND c.attendanceStatus = 'verified'",
       [{name:"@id",value:uid}]);
-    const tasks=completed.map(safeTask);
-    return Response.json({success:true,questions:FEEDBACK_QUESTIONS,tasks,pendingCount:tasks.filter(t=>!t.feedback).length}, {headers:{"Cache-Control":"private, no-store"}});
+    const tasks=await Promise.all(completed.map(async registration => {
+      const task=safeTask(registration);
+      if(task.feedback) {
+        const tx=await readCosmosDocument("xpTransactions",`${uid}_feedback_${registration.id}`);
+        task.rewardStatus=tx?.status||"not_started";
+      }
+      return task;
+    }));
+    return Response.json({success:true,questions:FEEDBACK_QUESTIONS,tasks,pendingCount:tasks.filter(t=>!t.feedback||t.rewardStatus!=="completed").length}, {headers:{"Cache-Control":"private, no-store"}});
   } catch(error) {
     return studentAccessResponse(error) || Response.json({success:false,message:"Feedback tasks could not be loaded."},{status:500});
   }
@@ -36,17 +43,23 @@ export async function POST(request) {
     if(!registration || registration.studentId!==uid) return Response.json({success:false,message:"Task not found."},{status:404});
     if(registration.status!=="completed" || registration.attendanceStatus!=="verified")
       return Response.json({success:false,message:"Feedback is available only after verified attendance."},{status:403});
-    if(registration.workshopFeedback) return Response.json({success:true,alreadyCompleted:true,message:"Thank you! Your feedback is already saved."});
+    const transactionId=`${uid}_feedback_${registration.id}`;
+    if(registration.workshopFeedback) {
+      const existingReward=await readCosmosDocument("xpTransactions",transactionId);
+      if(existingReward?.status==="completed") return Response.json({success:true,alreadyCompleted:true,message:"Thank you! Your 20 XP was already awarded."});
+      if(existingReward) return Response.json({success:true,rewardPending:true,message:"Your feedback was saved. Your reward still needs verification."},{status:202});
+    }
 
     // Save feedback only once with optimistic concurrency.
-    const feedback={answers:body.answers,comment:(body.comment||"").trim(),submittedAt:cosmosNow(),workshopTitle:registration.workshopSnapshot?.title||"",workshopCategory:registration.workshopSnapshot?.category||"General"};
-    try {
-      await replaceCosmosDocument("registrations",registration,{workshopFeedback:feedback,updatedAt:cosmosNow()});
-    } catch(error) {
-      if(isCosmosPreconditionFailed(error)) return Response.json({success:false,message:"This task changed. Please refresh."},{status:409});
-      throw error;
+    if(!registration.workshopFeedback) {
+      const feedback={answers:body.answers,comment:(body.comment||"").trim(),submittedAt:cosmosNow(),workshopTitle:registration.workshopSnapshot?.title||"",workshopCategory:registration.workshopSnapshot?.category||"General"};
+      try {
+        await replaceCosmosDocument("registrations",registration,{workshopFeedback:feedback,updatedAt:cosmosNow()});
+      } catch(error) {
+        if(isCosmosPreconditionFailed(error)) return Response.json({success:false,message:"This task changed. Please refresh."},{status:409});
+        throw error;
+      }
     }
-    const transactionId=`${uid}_feedback_${registration.id}`;
     // A deterministic ledger prevents duplicate XP. 'processing' is never replayed
     // automatically: a Cosmos failure could occur after changing the student's balance.
     let reserved;
