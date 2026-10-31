@@ -18,7 +18,7 @@ export default function StudentTasksPage() {
       setData(next);
     } catch(e) {setError(e.message);}
   }
-  useEffect(()=>{void load();},[]);
+  useEffect(()=>{queueMicrotask(()=>{void load();});},[]);
   async function claim(task) {
     setBusy(true);setError("");setMessage("");
     try {
