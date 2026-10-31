@@ -367,7 +367,7 @@ export default function AdminStudentsPage() {
 
       {showEnrollForm && (
         <form onSubmit={enrollStudent} className="admin-student-table-card" style={{ padding: 22, marginBottom: 18 }}>
-          <h2>Start a student's enrollment</h2>
+          <h2>Start a student&apos;s enrollment</h2>
           <p style={{ marginBottom: 16 }}>
             Students must verify their email; students under 18 also need guardian consent.
             An account is created only after verification and activation.
