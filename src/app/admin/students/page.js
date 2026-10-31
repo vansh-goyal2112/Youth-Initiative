@@ -60,20 +60,12 @@ export default function AdminStudentsPage() {
   const [message, setMessage] = useState("");
   const [showEnrollForm, setShowEnrollForm] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
-  const [canPurgeStudent, setCanPurgeStudent] = useState(false);
   const [enrollForm, setEnrollForm] = useState({
     firstName: "", lastName: "", email: "", dateOfBirth: "", parentEmail: "",
   });
 
   useEffect(() => {
     loadStudents();
-    adminFetch("/api/admin/auth/verify", { method: "POST" })
-      .then(response => response.ok ? response.json() : null)
-      .then(data => setCanPurgeStudent(
-        data?.admin?.adminRole === "super_admin" &&
-        data?.admin?.permissions?.includes("students.delete")
-      ))
-      .catch(() => {});
   }, []);
 
   async function loadStudents() {
@@ -311,43 +303,6 @@ export default function AdminStudentsPage() {
     }
   }
 
-  async function permanentlyDeleteStudent(student) {
-    setMessage("");
-    setErrorMessage("");
-    try {
-      const previewResponse = await adminFetch("/api/admin/students/permanent-delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: student.id }),
-      });
-      const preview = await previewResponse.json();
-      if (!previewResponse.ok) throw new Error(preview.message || "Deletion preview unavailable.");
-      const related = Object.entries(preview.documents || {})
-        .map(([name, count]) => name + ": " + count).join(", ");
-      const confirmPhrase = "DELETE " + student.youthId;
-      const entered = window.prompt(
-        "PERMANENT DELETION: " + (student.fullName || student.youthId) +
-        "\nRelated records: " + related +
-        "\nFirebase login, profile and associated data will be deleted. External backups may remain." +
-        "\n\nType exactly: " + confirmPhrase
-      );
-      if (entered !== confirmPhrase) return;
-      setSaving(true);
-      const response = await adminFetch("/api/admin/students/permanent-delete", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: student.id, confirm: confirmPhrase }),
-      });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.message || "Permanent deletion failed.");
-      setMessage(result.message);
-      await loadStudents();
-    } catch (error) {
-      setErrorMessage(error.message || "Permanent deletion failed.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   return (
     <main className="admin-students-page">
@@ -582,13 +537,6 @@ export default function AdminStudentsPage() {
                             <button type="button" title="Reactivate student" aria-label="Reactivate student"
                               disabled={saving} onClick={() => reactivateStudent(student)}>
                               <UserRoundCheck size={17} />
-                            </button>
-                          )}
-                          {canPurgeStudent && (student.accountStatus === "inactive" || student.accountStatus === "deleting") && (
-                            <button type="button" title="Permanently delete student" aria-label="Permanently delete student"
-                              className="delete" disabled={saving}
-                              onClick={() => permanentlyDeleteStudent(student)}>
-                              <Trash2 size={17} />
                             </button>
                           )}
                           <button
