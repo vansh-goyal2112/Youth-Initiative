@@ -1,0 +1,227 @@
+/* Scoped Skill Quest personality layer. All existing global styles are preserved. */
+.journeyShell, .badgeShell, .rewardShell {
+  --quest-red: #d8202c;
+  --quest-ink: #19344c;
+  --quest-muted: #526678;
+}
+.journeyShell {
+  background: #f2f8ff;
+}
+.journeyShell :global(.journey-game-hero) {
+  background:
+    radial-gradient(circle at 88% 17%, #ffbf6b33 0 80px, transparent 81px),
+    radial-gradient(circle at 12% 82%, #80bcff2b 0 110px, transparent 111px),
+    linear-gradient(125deg,#192d51,#36478a 65%,#6c4391);
+  padding: 40px 0 44px;
+}
+.journeyShell :global(.journey-game-label) {
+  font-size: 12px;
+  color: #ffe6a8;
+}
+.journeyShell :global(.journey-player-card) {
+  border: 2px solid #ffffff42;
+  border-radius: 26px;
+  background: #ffffff16;
+  box-shadow: 0 12px 35px #060e321f;
+}
+.journeyShell :global(.journey-level-circle) {
+  background: linear-gradient(145deg,#ff6e5b,#e42835);
+  border-color: #ffffff75;
+  box-shadow: 0 7px 0 #a41a2c,0 20px 35px #0e132d30;
+}
+.journeyShell :global(.journey-xp-display) {
+  border: 1px solid #ffefb355;
+  background: #ffdd9028;
+}
+.journeyShell :global(.journey-player-info > span),
+.journeyShell :global(.journey-level-progress p),
+.journeyShell :global(.journey-xp-display span) {
+  color: #fff8e1;
+  font-size: 12px;
+}
+.journeyShell :global(.journey-level-progress-heading),
+.journeyShell :global(.journey-level-circle span) { font-size: 12px; }
+.journeyShell :global(.journey-game-content) { padding-top: 26px; }
+.journeyShell :global(.journey-game-stats) { gap: 12px; }
+.journeyShell :global(.journey-stat-card) {
+  border: 1px solid #d5e4ee;
+  border-radius: 20px;
+  box-shadow: 0 5px 0 #deebf4;
+  padding: 18px 12px;
+}
+.journeyShell :global(.journey-stat-card span) {
+  color: #445d70;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+.journeyShell :global(.game-section-heading span) { font-size: 12px; }
+.journeyShell :global(.game-section-heading p) { font-size: 13px; }
+.journeyShell :global(.skill-track-card) {
+  border: 2px solid #d9e5f1;
+  border-radius: 20px;
+  box-shadow: 0 6px 0 #e2ecf6;
+}
+.journeyShell :global(.skill-track-card > p),
+.journeyShell :global(.skill-track-footer),
+.journeyShell :global(.skill-track-top > span) { font-size: 12px; }
+.journeyShell :global(.journey-achievement-section) {
+  border-radius: 24px;
+  background: linear-gradient(115deg,#252f65,#5a3c92);
+}
+.journeyShell :global(.journey-achievement-section span),
+.journeyShell :global(.journey-achievement-section p) {
+  font-size: 13px;
+  color: #fff6e3;
+}
+.badgeShell { background: #f3f8ff; }
+.badgeShell :global(.badges-hero) {
+  background:
+    radial-gradient(circle at 15% 15%,#fcb75b33 0 90px,transparent 91px),
+    linear-gradient(120deg,#26365f,#5841a0 65%,#a34d91);
+}
+.badgeShell :global(.badges-label) { color: #ffe5a6; font-size: 12px; }
+.badgeShell :global(.badges-hero p) { color: #f0e9ff; }
+.badgeShell :global(.badges-hero-summary > div) {
+  border: 1px solid #ffffff60;
+  border-radius: 19px;
+  background: #ffffff1c;
+}
+.badgeShell :global(.badges-hero-summary span) {
+  color: #ffffff;
+  font-size: 12px;
+}
+.badgeShell :global(.badge-card) { border-radius: 25px; box-shadow: 0 6px 0 #e6e4f2; }
+.badgeShell :global(.badge-unlocked) {
+  background: linear-gradient(150deg,#fff9d6 0%,#fceaff 60%,#eaf6ff);
+  border-color: #e9c87b;
+  box-shadow: 0 7px 0 #f0dfae;
+}
+.badgeShell :global(.badge-unlocked .badge-medal-ring) {
+  background: linear-gradient(150deg,#ffb84d,#e64b6f 65%,#9163ca);
+  border-color: #ffe6ad;
+}
+.badgeShell :global(.badge-locked .badge-medal-ring) {
+  background: #e9eff6;
+}
+.badgeShell :global(.badge-state-label),
+.badgeShell :global(.badge-card > p),
+.badgeShell :global(.badge-complete-message),
+.badgeShell :global(.badge-progress-heading),
+.badgeShell :global(.badge-progress-area small),
+.badgeShell :global(.badges-section-heading p),
+.badgeShell :global(.badges-next-goal p) {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.badgeShell :global(.badges-section-heading span),
+.badgeShell :global(.badges-next-goal span) { font-size: 12px; }
+.badgeShell :global(.badges-next-goal) {
+  border-radius: 25px;
+  background: linear-gradient(110deg,#223964,#634599);
+}
+.rewardShell {
+  background:
+    radial-gradient(circle at 12% 20%,#b8eaff9a 0 120px,transparent 121px),
+    radial-gradient(circle at 88% 80%,#ffdd9d99 0 130px,transparent 131px),
+    linear-gradient(145deg,#f0f7ff,#fcf3ff);
+}
+.rewardShell :global(.reward-card) {
+  border: 2px solid #e2daf9;
+  border-radius: 30px;
+  box-shadow: 0 10px 0 #dedcf1,0 25px 70px #344b7a16;
+}
+.rewardShell :global(.reward-success-icon) { filter: drop-shadow(0 6px 5px #25a66133); }
+.rewardShell :global(.reward-card h1) {
+  font-size: clamp(36px,6vw,53px);
+  letter-spacing: -1px;
+}
+.rewardShell :global(.reward-label),
+.rewardShell :global(.reward-xp span),
+.rewardShell :global(.reward-progress-summary span),
+.rewardShell :global(.new-badge-section > span),
+.rewardShell :global(.new-badge-card small) { font-size: 12px; }
+.rewardShell :global(.reward-xp) { border-radius: 21px; }
+.rewardShell :global(.new-badge-card) { border-radius: 18px; }
+.rewardShell :global(.reward-actions a) { font-size: 14px; }
+.rewardNotice {
+  margin: 0 0 18px;
+  padding: 14px 17px;
+  border: 1px solid #e5bb63;
+  border-radius: 14px;
+  background: #fff9e6;
+  color: #664e19;
+  font-size: 14px;
+  font-weight: 650;
+}
+.journeyShell :global(a:focus-visible),
+.badgeShell :global(a:focus-visible),
+.rewardShell :global(a:focus-visible) {
+  outline: 3px solid #2465db;
+  outline-offset: 3px;
+}
+@media (max-width: 700px) {
+  .journeyShell :global(.journey-game-hero) { padding: 27px 0 32px; }
+  .journeyShell :global(.journey-player-card) { border-radius: 20px; }
+  .badgeShell :global(.badge-card) { padding: 21px 18px; }
+  .rewardShell :global(.reward-card) {
+    min-height: auto;
+    border-radius: 0;
+    border: 0;
+    box-shadow: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .journeyShell :global(*),
+  .journeyShell :global(*::before),
+  .journeyShell :global(*::after),
+  .badgeShell :global(*),
+  .badgeShell :global(*::before),
+  .badgeShell :global(*::after),
+  .rewardShell :global(*),
+  .rewardShell :global(*::before),
+  .rewardShell :global(*::after) {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+
+/* SAIT pathways: student-facing secondary CTA, intentionally not a blue primary button. */
+.programLink {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 10px 16px;
+  border: 1px solid #f2b5a9;
+  border-radius: 13px;
+  background: #fff3ef;
+  color: #ac3026 !important;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-decoration: none;
+  box-shadow: none;
+  transition: background-color .18s ease,border-color .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+.programLink:hover {
+  background: #ffe7df;
+  border-color: #df7965;
+  color: #92271f !important;
+  box-shadow: 0 5px 14px #a6423014;
+  transform: translateY(-1px);
+}
+.programLink:focus-visible {
+  outline: 3px solid #e25845;
+  outline-offset: 3px;
+}
+.programLink:active { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .programLink { transition: none; }
+  .programLink:hover { transform: none; }
+}

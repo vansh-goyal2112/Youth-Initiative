@@ -1,0 +1,40 @@
+/* Print just the confidential report, never the navigation or filter controls. */
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body:has(.admin-report-print) { background: #fff !important; }
+  body:has(.admin-report-print) .admin-revamp { display: block !important; background: #fff !important; }
+  body:has(.admin-report-print) .admin-revamp > aside,
+  body:has(.admin-report-print) .admin-revamp > div > header,
+  body:has(.admin-report-print) .admin-reports-heading,
+  body:has(.admin-report-print) .admin-report-search-panel,
+  body:has(.admin-report-print) .admin-reports-actions,
+  body:has(.admin-report-print) .admin-reports-empty {
+    display: none !important;
+  }
+  body:has(.admin-report-print) .admin-revamp > div { width: 100% !important; max-width: none !important; }
+  body:has(.admin-report-print) .admin-report-print {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    color: #111827 !important;
+  }
+  body:has(.admin-report-print) .admin-reports-result {
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  body:has(.admin-report-print) .admin-report-section,
+  body:has(.admin-report-print) .admin-reports-stats > div {
+    break-inside: avoid-page;
+    box-shadow: none !important;
+  }
+  body:has(.admin-report-print) .admin-report-print h2,
+  body:has(.admin-report-print) .admin-report-print h3 {
+    break-after: avoid-page;
+  }
+  body:has(.admin-report-print) .admin-reports-two-columns { display: block !important; }
+  body:has(.admin-report-print) .admin-report-details { grid-template-columns: repeat(2, minmax(0,1fr)) !important; }
+  body:has(.admin-report-print) .admin-reports-stats { print-color-adjust: exact; }
+}

@@ -533,6 +533,13 @@ export default function LoginPage() {
                       </Link>
                     </p>
 
+                    <p className="forgot-password-text">
+                      Started registration but didn&apos;t finish?{" "}
+                      <Link href="/resume-registration">
+                        Resume Registration
+                      </Link>
+                    </p>
+
                     <p className="create-account-text">
                       Don&apos;t have an
                       account?{" "}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import playfulSkin from "@/components/gamification/playfulSkin.module.css";
 
 import {
   Award,
@@ -56,7 +57,7 @@ export default function RewardPage() {
 
   if (!rewardData) {
     return (
-      <main className="reward-page">
+      <main className={`reward-page ${playfulSkin.rewardShell}`}>
         <section className="reward-card">
           <h1>
             No New Reward
@@ -76,7 +77,7 @@ export default function RewardPage() {
   } = rewardData;
 
   return (
-    <main className="reward-page">
+    <main className={`reward-page ${playfulSkin.rewardShell}`}>
       <div className="reward-glow reward-glow-one" />
       <div className="reward-glow reward-glow-two" />
 

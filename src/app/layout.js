@@ -1,5 +1,6 @@
 import "./globals.css";
 import AppProviders from "@/components/common/AppProviders";
+import StudentShell from "@/components/common/StudentShell";
 
 export const metadata = {
   title: {
@@ -20,7 +21,6 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
   themeColor: "#e2232a",
 };
 
@@ -28,7 +28,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <StudentShell>{children}</StudentShell>
+        </AppProviders>
       </body>
     </html>
   );

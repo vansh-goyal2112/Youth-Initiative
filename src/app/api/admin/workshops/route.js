@@ -1,14 +1,15 @@
+import { retireWorkshopPermanently } from "@/services/workshopRetirement";
+import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
 
 import {
   adminAccessResponse,
-  requireActiveAdmin,
+  requireAdminPermission,
 } from "@/services/adminAccess";
 
 import {
   cosmosNow,
   createCosmosDocument,
-  deleteCosmosDocument,
   queryCosmosDocuments,
   readCosmosDocument,
   replaceCosmosDocument,
@@ -143,9 +144,7 @@ export async function GET(
   request
 ) {
   try {
-    await requireActiveAdmin(
-      request
-    );
+    await requireAdminPermission(request, "workshops.view");
 
     const workshops =
       await queryCosmosDocuments(
@@ -153,6 +152,7 @@ export async function GET(
         `
           SELECT *
           FROM c
+          WHERE NOT IS_DEFINED(c.status) OR c.status != "deleted"
           ORDER BY c.title
         `
       );
@@ -195,9 +195,7 @@ export async function POST(
 ) {
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "workshops.create");
 
     const workshopData =
       await request.json();
@@ -227,9 +225,14 @@ export async function POST(
     const createdAt =
       cosmosNow();
 
+    const existingImages = await queryCosmosDocuments("workshops", "SELECT c.id, c.image, c.imageAssetId FROM c");
+    const imageAssignment = assignWorkshopImage(
+      { ...workshopData, id: workshopId }, workshopImageUsage(existingImages)
+    );
     await createCosmosDocument(
       "workshops",
       {
+        ...imageAssignment,
         id:
           workshopId,
 
@@ -294,9 +297,7 @@ export async function PUT(
 ) {
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "workshops.edit");
 
     const {
       id,
@@ -343,7 +344,7 @@ export async function PUT(
         id
       );
 
-    if (!existingWorkshop) {
+    if (!existingWorkshop || existingWorkshop.status === "deleted") {
       return Response.json(
         {
           success: false,
@@ -364,6 +365,19 @@ export async function PUT(
         ...buildWorkshopData(
           workshopData
         ),
+        // Reassign only automatically chosen images when topic changes.
+        ...(existingWorkshop.imageStatus === "custom" ||
+          (existingWorkshop.image && !existingWorkshop.imageAssetId)
+          ? {}
+          : (existingWorkshop.title !== workshopData.title ||
+             existingWorkshop.programArea !== workshopData.programArea ||
+             existingWorkshop.category !== (workshopData.category || "General"))
+            ? assignWorkshopImage(
+                { ...workshopData, id },
+                workshopImageUsage(await queryCosmosDocuments("workshops",
+                  "SELECT c.id, c.image, c.imageAssetId FROM c"), id)
+              )
+            : {}),
 
         updatedBy:
           admin.uid,
@@ -412,9 +426,7 @@ export async function DELETE(
   request
 ) {
   try {
-    await requireActiveAdmin(
-      request
-    );
+    await requireAdminPermission(request, "workshops.delete");
 
     const {
       id,
@@ -455,16 +467,13 @@ export async function DELETE(
       );
     }
 
-    await deleteCosmosDocument(
-      "workshops",
-      id
-    );
+    await retireWorkshopPermanently(existingWorkshop);
 
     return Response.json({
       success: true,
 
       message:
-        "Workshop deleted successfully.",
+        "Workshop permanently removed from the catalogue database. Historical student achievements are preserved.",
     });
   } catch (error) {
     const accessResponse =

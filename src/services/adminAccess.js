@@ -1,3 +1,6 @@
+import { isMfaCookieValid } from "@/services/adminMfa";
+import { hasAdminPermission, isSaitEmail, resolveAdminPermissions } from "@/services/adminPermissions";
+import { recordAdminAudit } from "@/services/adminAudit";
 import {
   adminAuth,
 } from "@/services/firebaseAdmin";
@@ -11,7 +14,7 @@ import {
 } from "@/services/cosmosData";
 
 export async function requireActiveAdmin(
-  request
+  request, {skipMfa = false} = {}
 ) {
   /*
     Layer 1:
@@ -88,6 +91,13 @@ export async function requireActiveAdmin(
     throw error;
   }
 
+  // Email ownership is required even if a stale Cosmos admin record exists.
+  if (!decodedToken.email_verified || !isSaitEmail(decodedToken.email)) {
+    const error = new Error("A verified SAIT email is required.");
+    error.status = 403;
+    throw error;
+  }
+
   /*
     Layer 3:
     verify administrator authorization
@@ -113,6 +123,13 @@ export async function requireActiveAdmin(
     throw error;
   }
 
+  if (!isSaitEmail(adminData.email) ||
+      adminData.email.trim().toLowerCase() !== decodedToken.email.trim().toLowerCase()) {
+    const error = new Error("Administrator identity does not match the approved account.");
+    error.status = 403;
+    throw error;
+  }
+
   if (
     adminData.role !==
       "admin" ||
@@ -129,7 +146,27 @@ export async function requireActiveAdmin(
     throw error;
   }
 
+  // An unassigned legacy admin cannot inherit the new privileges.
+  if (resolveAdminPermissions(adminData).length === 0) {
+    const error = new Error("Administrator role assignment is required.");
+    error.status = 403;
+    throw error;
+  }
+
+  const enrolled = !!adminData.mfa?.secret;
+  const authTime = decodedToken.auth_time;
+  const mfaVerified = enrolled
+    ? isMfaCookieValid(request, decodedToken.uid, authTime, adminData.mfa.version)
+    : false;
+  if (enrolled && !mfaVerified && !skipMfa) {
+    const error = new Error("Authenticator code required.");
+    error.status = 428;
+    error.code = "ADMIN_MFA_REQUIRED";
+    throw error;
+  }
   return {
+    authTime,
+    mfaEnrolled: enrolled,
     uid:
       decodedToken.uid,
 
@@ -139,6 +176,7 @@ export async function requireActiveAdmin(
       null,
 
     adminData,
+    mfaVerified,
   };
 }
 
@@ -147,7 +185,8 @@ export function adminAccessResponse(
 ) {
   if (
     error?.status === 401 ||
-    error?.status === 403
+    error?.status === 403 ||
+    error?.status === 428
   ) {
     return Response.json(
       {
@@ -155,6 +194,7 @@ export function adminAccessResponse(
 
         message:
           error.message,
+        code: error.code,
       },
       {
         status:
@@ -164,4 +204,26 @@ export function adminAccessResponse(
   }
 
   return null;
+}
+export async function requireAdminPermission(request, permission) {
+  const admin = await requireActiveAdmin(request);
+  if (process.env.ADMIN_REQUIRE_MFA === "true" && !admin.mfaVerified) {
+    const error = new Error("Authenticator verification required. Open Account Security to enroll and sign in again.");
+    error.status = 403;
+    throw error;
+  }
+  if (!hasAdminPermission(admin.adminData, permission)) {
+    const error = new Error("You do not have permission for this action.");
+    error.status = 403;
+    throw error;
+  }
+  // Fail closed if a privileged state-changing request cannot be audited.
+  if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) {
+    await recordAdminAudit({
+      actorUid: admin.uid,
+      action: permission,
+      resource: new URL(request.url).pathname,
+    });
+  }
+  return admin;
 }

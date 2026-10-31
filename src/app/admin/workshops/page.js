@@ -11,11 +11,30 @@ import {
   Trash2,
   Upload,
   X,
+  BookOpen,
+  CheckCircle2,
+  Layers3,
+  RefreshCw,
 } from "lucide-react";
 
 import * as XLSX from "xlsx";
 
 import { adminFetch } from "@/services/adminApi";
+
+function excelDate(value) {
+  if (value === null || value === undefined || value === "") return "";
+  if (typeof value === "number") {
+    const parsed = XLSX.SSF.parse_date_code(value);
+    if (!parsed) return "";
+    return [parsed.y, String(parsed.m).padStart(2, "0"), String(parsed.d).padStart(2, "0")].join("-");
+  }
+  const text = String(value).trim();
+  const iso = text.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (iso) return iso[1];
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return [parsed.getFullYear(), String(parsed.getMonth() + 1).padStart(2, "0"), String(parsed.getDate()).padStart(2, "0")].join("-");
+}
 
 const emptyWorkshop = {
   title: "",
@@ -42,6 +61,8 @@ export default function AdminWorkshopsPage() {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] =
     useState(false);
+  const [importMode, setImportMode] = useState("add");
+  const [offeringYear, setOfferingYear] = useState(String(new Date().getFullYear()));
 
   const [searchText, setSearchText] =
     useState("");
@@ -319,6 +340,19 @@ export default function AdminWorkshopsPage() {
     }
   }
 
+  async function handleAssignImages() {
+    try {
+      setSaving(true); setMessage(""); setErrorMessage("");
+      const response = await adminFetch("/api/admin/workshops/assign-images", { method: "POST" });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Image assignment failed.");
+      setMessage(`Images assigned: ${result.assigned}. Waiting for new artwork: ${result.needsImage}. Already assigned: ${result.unchanged}.`);
+      await loadWorkshops();
+    } catch (error) {
+      setErrorMessage(error.message || "Image assignment failed.");
+    } finally { setSaving(false); }
+  }
+
   async function handleExcelImport(event) {
     const selectedFile =
       event.target.files?.[0];
@@ -358,20 +392,24 @@ export default function AdminWorkshopsPage() {
 
       const workshopsToImport =
         excelRows.map((row) => ({
+          offeringYear: String(row["Offering Year"] || row["Year"] || offeringYear).trim(),
+          startDate: excelDate(row["Start Date"]),
+          endDate: excelDate(row["End Date"]),
+          time: row["Time"] || "",
           programArea:
-            row["Program Area"] || "",
+            String(row["Program Area"] || "").trim(),
 
           title:
-            row["Course Name"] || "",
+            String(row["Course Name"] || "").trim(),
 
           grade:
-            row["Grade"] || "",
+            String(row["Grade"] || "").trim(),
 
           description:
-            row["Course Description"] || "",
+            String(row["Course Description"] || "").trim(),
 
           informationUrl:
-            row["Link"] || "",
+            String(row["Link"] || "").trim(),
         }));
 
       const response = await adminFetch(
@@ -387,6 +425,8 @@ export default function AdminWorkshopsPage() {
           body: JSON.stringify({
             workshops:
               workshopsToImport,
+            mode: importMode,
+            preview: importMode === "replace",
           }),
         }
       );
@@ -400,8 +440,38 @@ export default function AdminWorkshopsPage() {
         );
       }
 
+      if (importMode === "replace" && responseData.preview) {
+        const removing = responseData.discontinue || [];
+        const proceed = window.confirm(
+          `Replace current catalogue with ${responseData.incoming} spreadsheet workshops? ${removing.length} existing workshops will be permanently removed from the catalogue. Completed student achievements remain. This action cannot be undone.`
+        );
+        if (!proceed) {
+          setMessage("Catalogue replacement cancelled; no changes made.");
+          return;
+        }
+        const confirmResponse = await adminFetch("/api/admin/workshops/import", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-catalogue-replace-confirm": "REPLACE CATALOGUE",
+          },
+          body: JSON.stringify({
+            workshops: workshopsToImport,
+            mode: "replace",
+            preview: false,
+            previewToken: responseData.planToken,
+          }),
+        });
+        const confirmed = await confirmResponse.json();
+        if (!confirmResponse.ok) throw new Error(confirmed.message || "Replacement was incomplete. Check the catalogue.");
+        setMessage(confirmed.message);
+        await loadWorkshops();
+        return;
+      }
       setMessage(
-        responseData.message
+        responseData.preview
+          ? `Replacement preview: ${responseData.incoming} incoming; ${responseData.discontinue?.length || 0} current workshops would be discontinued. No changes applied. Full replacement is blocked until history-safe execution is verified.`
+          : responseData.message
       );
 
       await loadWorkshops();
@@ -418,56 +488,29 @@ export default function AdminWorkshopsPage() {
 
   return (
     <main className="admin-workshops-page">
-      <div className="admin-workshops-header">
-        <div>
-          <span>ADMIN DASHBOARD</span>
-
-          <h1>Workshop Management</h1>
-
-          <p>
-            Import, create, update and manage Youth
-            Initiative workshops.
-          </p>
-        </div>
-
+      <div className="admin-workshops-intro">
+        <div><p className="admin-section-eyebrow"><BookOpen size={16}/> PROGRAM OPERATIONS</p><h1>Workshop studio<span>.</span></h1>
+          <p>Build inspiring learning experiences. Plan, publish and manage every workshop from one workspace.</p></div>
         <div className="admin-workshop-actions">
-          <label className="admin-import-button">
-            {importing ? (
-              <LoaderCircle
-                size={19}
-                className="button-spinner"
-              />
-            ) : (
-              <Upload size={19} />
-            )}
-
-            {importing
-              ? "Importing..."
-              : "Import Excel"}
-
-            <input
-              type="file"
-              accept=".xlsx,.xls"
-              disabled={importing}
-              onChange={
-                handleExcelImport
-              }
-            />
+          <button type="button" className="admin-team-refresh" onClick={handleAssignImages} disabled={saving || importing}><Layers3 size={17}/> Assign artwork</button>
+          <button type="button" className="admin-team-refresh" onClick={loadWorkshops} disabled={loading}><RefreshCw size={17} className={loading?"animate-spin":""}/> Refresh</button>
+          <input aria-label="Workshop offering year" type="number" min="2000" max="2100" value={offeringYear} onChange={event => setOfferingYear(event.target.value)} style={{width: 100}} title="Year associated with imported workshop offerings" />
+          <select aria-label="Excel import mode" value={importMode} onChange={event => setImportMode(event.target.value)} disabled={importing}>
+            <option value="add">Add/update spreadsheet</option>
+            <option value="replace">Preview catalogue replacement</option>
+          </select>
+          <label className="admin-import-button">{importing ? <LoaderCircle size={19} className="button-spinner"/> : <Upload size={19}/>}
+            {importing ? "Importing…" : "Import Excel"}
+            <input type="file" accept=".xlsx,.xls" disabled={importing} onChange={handleExcelImport}/>
           </label>
-
-          <button
-            type="button"
-            className="admin-create-button"
-            onClick={
-              openCreateForm
-            }
-          >
-            <Plus size={19} />
-            Create Workshop
-          </button>
+          <button type="button" className="admin-create-button" onClick={openCreateForm}><Plus size={19}/> Create workshop</button>
         </div>
       </div>
-
+      <div className="admin-workshops-stats">
+        <div><span className="blue"><Layers3 size={22}/></span><div><strong>{workshops.length}</strong><small>Total workshops</small></div></div>
+        <div><span className="green"><CheckCircle2 size={22}/></span><div><strong>{workshops.filter(w=>w.status==="active").length}</strong><small>Active workshops</small></div></div>
+        <div><span className="rose"><BookOpen size={22}/></span><div><strong>{programAreas.length}</strong><small>Program areas</small></div></div>
+      </div>
       {message && (
         <div className="admin-success-message">
           {message}
@@ -480,13 +523,14 @@ export default function AdminWorkshopsPage() {
         </div>
       )}
 
-      <section className="admin-workshop-filters">
+      <section className="admin-workshop-filters" aria-label="Workshop filters">
         <div className="admin-search-field">
           <Search size={19} />
 
           <input
             type="search"
-            placeholder="Search workshops..."
+            aria-label="Search workshops"
+            placeholder="Search workshops by title, grade or area…"
             value={searchText}
             onChange={(event) =>
               setSearchText(
@@ -497,6 +541,7 @@ export default function AdminWorkshopsPage() {
         </div>
 
         <select
+          aria-label="Filter workshops by program area"
           value={programFilter}
           onChange={(event) =>
             setProgramFilter(
@@ -521,6 +566,7 @@ export default function AdminWorkshopsPage() {
         </select>
 
         <select
+          aria-label="Filter workshops by status"
           value={statusFilter}
           onChange={(event) =>
             setStatusFilter(
@@ -573,6 +619,7 @@ export default function AdminWorkshopsPage() {
                 <tr>
                   <th>Workshop</th>
                   <th>Program Area</th>
+                  <th>Artwork</th>
                   <th>Grade</th>
                   <th>Mode</th>
                   <th>XP</th>
@@ -598,6 +645,7 @@ export default function AdminWorkshopsPage() {
                       <td>
                         {workshop.programArea}
                       </td>
+                      <td><span className={workshop.image ? "text-emerald-700" : "text-amber-700"}>{workshop.image ? "Assigned" : "Needs image"}</span></td>
 
                       <td>
                         {workshop.grade}

@@ -1,320 +1,115 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-
-import {
-  LoaderCircle,
-  QrCode,
-} from "lucide-react";
-
-import {
-  adminFetch,
-} from "@/services/adminApi";
+import { LoaderCircle, QrCode, CalendarCheck2, Timer, ShieldCheck, CheckCircle2, ArrowRight, BookOpen, ScanLine, RefreshCw, Clock3, BarChart3, ArrowUpRight } from "lucide-react";
+import { adminFetch } from "@/services/adminApi";
 
 export default function AdminAttendancePage() {
-  const [workshops, setWorkshops] =
-    useState([]);
-
-  const [workshopId, setWorkshopId] =
-    useState("");
-
-  const [duration, setDuration] =
-    useState(15);
-
-  const [qrImage, setQrImage] =
-    useState("");
-
-  const [expiresAt, setExpiresAt] =
-    useState("");
-
-  const [loading, setLoading] =
-    useState(false);
-
-  const [
-    errorMessage,
-    setErrorMessage,
-  ] = useState("");
+  const [workshops, setWorkshops] = useState([]);
+  const [workshopId, setWorkshopId] = useState("");
+  const [duration, setDuration] = useState(15);
+  const [qrImage, setQrImage] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [loadingWorkshops, setLoadingWorkshops] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
-    async function loadWorkshops() {
-      try {
-        const response =
-          await adminFetch(
-            "/api/admin/workshops"
-          );
-
-        const data =
-          await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message ||
-              "Could not load workshops."
-          );
-        }
-
-        setWorkshops(
-          data.workshops || []
-        );
-      } catch (error) {
-        console.error(
-          "Load workshops error:",
-          error
-        );
-
-        setErrorMessage(
-          error.message ||
-            "Could not load workshops."
-        );
-      }
-    }
-
-    loadWorkshops();
+    let alive = true;
+    adminFetch("/api/admin/workshops")
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Could not load workshops.");
+        if (alive) setWorkshops(Array.isArray(data.workshops) ? data.workshops : []);
+      })
+      .catch(error => { if (alive) setErrorMessage(error.message || "Could not load workshops."); })
+      .finally(() => { if (alive) setLoadingWorkshops(false); });
+    return () => { alive = false; };
   }, []);
 
   async function generateQr() {
+    if (!workshopId) { setErrorMessage("Choose a workshop to create an attendance session."); return; }
     try {
-      if (!workshopId) {
-        setErrorMessage(
-          "Please select a workshop."
-        );
-
-        return;
-      }
-
       setLoading(true);
       setErrorMessage("");
+      setSuccessMessage("");
       setQrImage("");
-
-      const response =
-        await adminFetch(
-          "/api/admin/attendance",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              workshopId,
-
-              durationMinutes:
-                Number(duration),
-            }),
-          }
-        );
-
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "QR code could not be generated."
-        );
-      }
-
-      const qrPayload =
-        JSON.stringify({
-          attendanceSessionId:
-            data.attendanceSessionId,
-
-          code:
-            data.code,
-        });
-
-      const generatedQrImage =
-        await QRCode.toDataURL(
-          qrPayload,
-          {
-            width: 380,
-            margin: 2,
-          }
-        );
-
-      setQrImage(
-        generatedQrImage
-      );
-
-      setExpiresAt(
-        data.expiresAt
-      );
+      setExpiresAt("");
+      const response = await adminFetch("/api/admin/attendance", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workshopId, durationMinutes: Number(duration) }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to create attendance session.");
+      const qrPayload = JSON.stringify({ attendanceSessionId: data.attendanceSessionId, code: data.code });
+      const image = await QRCode.toDataURL(qrPayload, { width: 440, margin: 2, color: { dark: "#15233d", light: "#ffffff" } });
+      setQrImage(image);
+      setExpiresAt(data.expiresAt);
+      setSuccessMessage("Your attendance session is ready. Display this QR to students.");
     } catch (error) {
-      console.error(
-        "Generate attendance QR error:",
-        error
-      );
-
-      setErrorMessage(
-        error.message ||
-          "QR code could not be generated."
-      );
-    } finally {
-      setLoading(false);
-    }
+      setErrorMessage(error.message || "QR code could not be generated.");
+    } finally { setLoading(false); }
   }
 
-  return (
-    <main className="admin-attendance-page">
-      <section className="admin-attendance-card">
-        <div className="admin-attendance-heading">
-          <QrCode size={42} />
-
-          <span>
-            ATTENDANCE MANAGEMENT
-          </span>
-
-          <h1>
-            Generate Attendance QR
-          </h1>
-
-          <p>
-            Select a workshop and create a temporary
-            QR code for students to mark attendance.
-          </p>
+  const workshop = workshops.find(item => item.id === workshopId);
+  return <main className="admin-attendance-page admin-attendance-redesign">
+    <div className="admin-attendance-intro">
+      <span className="admin-section-eyebrow"><ScanLine size={15}/> ENGAGEMENT OPERATIONS</span>
+      <h1>Attendance <span>studio.</span></h1>
+      <p>Create a secure, time-limited check-in for your next workshop. One scan connects the experience to a student’s learning journey.</p>
+      <Link href="/admin/engagement" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:border-rose-300 hover:text-rose-700"><BarChart3 size={17}/> View workshop engagement <ArrowUpRight size={16}/></Link>
+    </div>
+    <div className="admin-attendance-grid">
+      <section className="admin-attendance-settings" aria-label="Attendance session settings">
+        <div className="admin-panel-top">
+          <span className="admin-panel-icon"><CalendarCheck2 size={22}/></span>
+          <div><span className="admin-panel-kicker">STEP 01</span><h2>Set up check-in</h2></div>
         </div>
-
-        {errorMessage && (
-          <div className="attendance-error">
-            {errorMessage}
-          </div>
-        )}
-
-        <div className="admin-attendance-form">
-          <label>
-            Workshop
-
-            <select
-              value={workshopId}
-              onChange={(event) =>
-                setWorkshopId(
-                  event.target.value
-                )
-              }
-            >
-              <option value="">
-                Select workshop
-              </option>
-
-              {workshops.map(
-                (workshop) => (
-                  <option
-                    key={
-                      workshop.id
-                    }
-                    value={
-                      workshop.id
-                    }
-                  >
-                    {
-                      workshop.title
-                    }
-                  </option>
-                )
-              )}
+        <p className="admin-panel-subtext">Choose the experience and how long students can scan the code.</p>
+        <div className="admin-attendance-fields">
+          <label><span><BookOpen size={16}/> Workshop</span>
+            <select disabled={loadingWorkshops || loading} value={workshopId} onChange={event => {setWorkshopId(event.target.value);setSuccessMessage("");setQrImage("");}}>
+              <option value="">{loadingWorkshops ? "Loading workshops…" : "Choose a workshop"}</option>
+              {workshops.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
             </select>
           </label>
-
-          <label>
-            QR Valid For
-
-            <select
-              value={duration}
-              onChange={(event) =>
-                setDuration(
-                  event.target.value
-                )
-              }
-            >
-              <option value="5">
-                5 minutes
-              </option>
-
-              <option value="10">
-                10 minutes
-              </option>
-
-              <option value="15">
-                15 minutes
-              </option>
-
-              <option value="30">
-                30 minutes
-              </option>
+          <label><span><Timer size={16}/> Check-in window</span>
+            <select value={duration} disabled={loading} onChange={event => {setDuration(event.target.value);setQrImage("");setSuccessMessage("");}}>
+              {[5,10,15,30].map(minutes => <option value={minutes} key={minutes}>{minutes} minutes</option>)}
             </select>
           </label>
-
-          <button
-            type="button"
-            disabled={
-              !workshopId ||
-              loading
-            }
-            onClick={
-              generateQr
-            }
-          >
-            {loading ? (
-              <>
-                <LoaderCircle
-                  size={19}
-                  className="button-spinner"
-                />
-
-                Generating QR...
-              </>
-            ) : (
-              <>
-                <QrCode
-                  size={19}
-                />
-
-                Generate QR Code
-              </>
-            )}
-          </button>
         </div>
-
-        {qrImage && (
-          <div className="attendance-qr-result">
-            <h2>
-              Attendance QR Code
-            </h2>
-
-            <p>
-              Students can now scan this code from
-              the attendance scanner.
-            </p>
-
-            <Image
-              src={qrImage}
-              alt="Workshop attendance QR code"
-              width={380}
-              height={380}
-              unoptimized
-            />
-
-            <div className="attendance-qr-active">
-              QR Code Active
-            </div>
-
-            {expiresAt && (
-              <p>
-                Expires at{" "}
-                <strong>
-                  {new Date(
-                    expiresAt
-                  ).toLocaleTimeString()}
-                </strong>
-              </p>
-            )}
-          </div>
-        )}
+        {workshop && <div className="admin-attendance-workshop"><CheckCircle2 size={18}/><span>Selected: <strong>{workshop.title}</strong></span></div>}
+        {errorMessage && <div className="admin-auth-alert error mt-5" role="alert"><ShieldCheck size={19}/><span>{errorMessage}</span></div>}
+        <button type="button" disabled={loading || !workshopId} className="admin-attendance-generate" onClick={generateQr}>
+          {loading ? <><LoaderCircle size={19} className="animate-spin"/> Creating session…</> : <><QrCode size={19}/> {qrImage ? "Create new session" : "Generate check-in QR"} <ArrowRight size={19}/></>}
+        </button>
+        <div className="admin-attendance-info"><ShieldCheck size={18}/><p>Only authorized administrators can generate a session. Codes expire automatically after the selected window.</p></div>
       </section>
-    </main>
-  );
+      <section className="admin-attendance-preview" aria-label="Attendance QR preview">
+        <div className="admin-panel-top">
+          <span className="admin-panel-icon violet"><QrCode size={22}/></span>
+          <div><span className="admin-panel-kicker">STEP 02</span><h2>Student scan view</h2></div>
+        </div>
+        <div className={`admin-attendance-preview-body ${qrImage ? "has-qr" : ""}`}>
+          {qrImage ? <>
+            <div className="admin-attendance-qr-frame"><Image src={qrImage} width={440} height={440} alt="QR code for current workshop attendance session" unoptimized/></div>
+            <div className="admin-attendance-active-badge"><span/> Check-in session created</div>
+            {workshop && <p className="admin-attendance-session-title">{workshop.title}</p>}
+            {expiresAt && <div className="admin-attendance-expiry"><Clock3 size={17}/> Code expires at <strong>{new Date(expiresAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</strong></div>}
+            {successMessage && <p className="admin-attendance-confirmation" role="status">{successMessage}</p>}
+          </> : <>
+            <div className="admin-attendance-placeholder"><ScanLine size={64}/></div>
+            <h3>Your QR will appear here</h3>
+            <p>Select a workshop and generate a code to begin attendance. Show the code on a screen so students can scan it.</p>
+            <span><RefreshCw size={15}/> Dynamic, temporary check-in</span>
+          </>}
+        </div>
+      </section>
+    </div>
+  </main>;
 }

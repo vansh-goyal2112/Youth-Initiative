@@ -4,7 +4,7 @@ import {
 
 import {
   adminAccessResponse,
-  requireActiveAdmin,
+  requireAdminPermission,
 } from "@/services/adminAccess";
 
 import {
@@ -367,9 +367,7 @@ export async function GET(
   request
 ) {
   try {
-    await requireActiveAdmin(
-      request
-    );
+    await requireAdminPermission(request, "students.view");
 
     const studentDocuments =
       await queryCosmosDocuments(
@@ -382,16 +380,25 @@ export async function GET(
 
     const students =
       studentDocuments
-        .map(
-          (
-            student
-          ) => ({
-            id:
-              student.id,
-
-            ...student,
-          })
-        )
+        // Explicit allowlist: never expose guardian verification tokens,
+        // authentication metadata, recovery hashes, or internal records.
+        .map((student) => ({
+          id: student.id,
+          youthId: student.youthId,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          fullName: student.fullName,
+          contactEmail: student.contactEmail,
+          dateOfBirth: student.dateOfBirth,
+          learningMode: student.learningMode,
+          interests: student.interests || [],
+          totalXp: student.totalXp || 0,
+          level: student.level || 1,
+          badgeCount: student.badgeCount || 0,
+          completedWorkshopCount: student.completedWorkshopCount || 0,
+          accountStatus: student.accountStatus,
+          createdAt: student.createdAt,
+        }))
         .sort(
           (
             firstStudent,
@@ -410,12 +417,28 @@ export async function GET(
             )
         );
 
-    return Response.json({
-      success:
-        true,
+    // Pending invitations are NOT active accounts. Display only a small
+    // allowlisted summary (never guardian tokens, hashes, DOB or secrets).
+    const pendingDocuments = await queryCosmosDocuments(
+      "pendingRegistrations",
+      `SELECT TOP 100 c.id, c.fullName, c.email, c.status, c.createdAt
+       FROM c
+       WHERE c.status != "account_created"
+       ORDER BY c.createdAt DESC`
+    );
+    const pendingEnrollments = pendingDocuments.map(doc => ({
+      id: doc.id,
+      fullName: doc.fullName || "",
+      email: doc.email || "",
+      status: doc.status || "pending",
+      createdAt: doc.createdAt,
+    }));
 
+    return Response.json({
+      success: true,
       students,
-    });
+      pendingEnrollments,
+    }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (
     error
   ) {
@@ -472,9 +495,7 @@ export async function PUT(
 
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "students.edit");
 
     const requestBody =
       await request.json();
@@ -518,23 +539,49 @@ export async function PUT(
         .accountStatus ===
       "inactive";
 
+    if (student.accountStatus === "deleting") {
+      throw apiError("Permanent account deletion is in progress. Only a Super Admin can retry deletion.", 409);
+    }
+
     previousDisabledState =
       authUser.disabled;
 
-    if (
-      authUser.disabled !==
-      desiredDisabledState
-    ) {
-      await adminAuth.updateUser(
-        targetStudentId,
-        {
-          disabled:
-            desiredDisabledState,
-        }
-      );
+    // Student data is canonical in Cosmos. Only Firebase displayName mirrors
+    // the profile name; the Firebase login email is an internal Youth ID and
+    // must NOT be replaced with the parent/student contact email.
+    const displayName = validatedData.firstName + " " + validatedData.lastName;
+    const previousDisplayName = authUser.displayName || "";
+    const displayNameChanged = previousDisplayName !== displayName;
 
-      authStateChanged =
-        true;
+    const duplicateEmail = await queryCosmosDocuments(
+      "students",
+      "SELECT TOP 1 c.id FROM c WHERE c.contactEmail = @email AND c.id != @id",
+      [
+        { name: "@email", value: validatedData.contactEmail },
+        { name: "@id", value: targetStudentId },
+      ]
+    );
+    if (duplicateEmail.length) {
+      throw apiError("Another student already uses this contact email.", 409);
+    }
+
+    try {
+      if (displayNameChanged) {
+        await adminAuth.updateUser(targetStudentId, { displayName });
+      }
+      if (authUser.disabled !== desiredDisabledState) {
+        await adminAuth.updateUser(targetStudentId, { disabled: desiredDisabledState });
+        authStateChanged = true;
+      }
+    } catch (firebaseError) {
+      if (displayNameChanged) {
+        try {
+          await adminAuth.updateUser(targetStudentId, { displayName: previousDisplayName });
+        } catch (rollbackError) {
+          console.error("Firebase display name rollback failed:", rollbackError?.message);
+        }
+      }
+      throw firebaseError;
     }
 
     /*
@@ -625,26 +672,14 @@ export async function PUT(
         restore the previous Auth state.
       */
 
-      if (
-        authStateChanged &&
-        previousDisabledState !==
-          null
-      ) {
+      if (authStateChanged || displayNameChanged) {
         try {
-          await adminAuth.updateUser(
-            targetStudentId,
-            {
-              disabled:
-                previousDisabledState,
-            }
-          );
-        } catch (
-          rollbackError
-        ) {
-          console.error(
-            "Student Auth rollback failed:",
-            rollbackError?.message
-          );
+          await adminAuth.updateUser(targetStudentId, {
+            ...(authStateChanged ? { disabled: previousDisabledState } : {}),
+            ...(displayNameChanged ? { displayName: previousDisplayName } : {}),
+          });
+        } catch (rollbackError) {
+          console.error("Student Firebase rollback failed:", rollbackError?.message);
         }
       }
 
@@ -734,9 +769,7 @@ export async function DELETE(
 
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "students.deactivate");
 
     const requestBody =
       await request.json();
@@ -763,6 +796,10 @@ export async function DELETE(
       await getStudentAndAuthUser(
         targetStudentId
       );
+
+    if (student.accountStatus === "deleting") {
+      throw apiError("Permanent account deletion is in progress. Only a Super Admin can retry deletion.", 409);
+    }
 
     previousDisabledState =
       authUser.disabled;
