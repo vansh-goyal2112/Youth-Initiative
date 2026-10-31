@@ -4,7 +4,7 @@ import {FEEDBACK_QUESTIONS} from "@/services/workshopFeedback.mjs";
 export const runtime="nodejs";
 export async function GET(request) {
   try {
-    await requireAdminPermission(request,"reports.view");
+    await requireAdminPermission(request,"reports.generate");
     const url=new URL(request.url);
     const workshopId=url.searchParams.get("workshopId")||"";
     const format=url.searchParams.get("format")||"json";
