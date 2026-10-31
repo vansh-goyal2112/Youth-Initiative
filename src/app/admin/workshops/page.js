@@ -397,19 +397,19 @@ export default function AdminWorkshopsPage() {
           endDate: excelDate(row["End Date"]),
           time: row["Time"] || "",
           programArea:
-            row["Program Area"] || "",
+            String(row["Program Area"] || "").trim(),
 
           title:
-            row["Course Name"] || "",
+            String(row["Course Name"] || "").trim(),
 
           grade:
-            row["Grade"] || "",
+            String(row["Grade"] || "").trim(),
 
           description:
-            row["Course Description"] || "",
+            String(row["Course Description"] || "").trim(),
 
           informationUrl:
-            row["Link"] || "",
+            String(row["Link"] || "").trim(),
         }));
 
       const response = await adminFetch(
