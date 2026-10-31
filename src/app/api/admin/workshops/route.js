@@ -10,7 +10,6 @@ import {
 import {
   cosmosNow,
   createCosmosDocument,
-  deleteCosmosDocument,
   queryCosmosDocuments,
   readCosmosDocument,
   replaceCosmosDocument,
