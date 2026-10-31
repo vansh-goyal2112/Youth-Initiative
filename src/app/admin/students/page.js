@@ -20,7 +20,6 @@ import {
   UserRoundCheck,
   ShieldCheck,
   Plus,
-  Trash2,
 } from "lucide-react";
 
 import {
