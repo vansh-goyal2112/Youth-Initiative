@@ -19,7 +19,7 @@ export default function FeedbackInsightsPage() {
     <header className="mb-7 flex flex-wrap items-center justify-between gap-4"><div>
       <p className="text-xs font-bold uppercase tracking-widest text-indigo-600">Youth Initiative · Student Voice</p>
       <h1 className="mt-2 text-3xl font-extrabold">Workshop Feedback</h1>
-      <p className="mt-2 text-slate-600">Anonymous summaries of student feedback. No student identities are shown.</p>
+      <p className="mt-2 text-slate-600">Aggregated feedback results. Student accounts are not displayed; please avoid including personal information in suggestions.</p>
     </div><div className="flex gap-3"><button onClick={load} className="rounded-lg border p-3">Refresh</button>
       <button onClick={exportCsv} className="rounded-lg bg-indigo-700 p-3 text-white">Export CSV</button></div></header>
     {error&&<p role="alert" className="mb-6 rounded-lg bg-red-50 p-4 text-red-800">{error}</p>}
