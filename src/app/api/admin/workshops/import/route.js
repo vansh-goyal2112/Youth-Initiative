@@ -426,11 +426,12 @@ export async function POST(
         note: "Replacement requires an explicit second confirmation. Historical achievements are retained." });
     }
     if (mode === "replace") {
-      // Do not silently erase a catalogue. Replacement must use the separate
-      // preview-and-confirm endpoint until its coordinated transaction is verified.
-      return Response.json({ success: false, code: "REPLACEMENT_REQUIRES_CONFIRMATION",
-        message: "Replacement preview is available, but applying full replacement is disabled until the history-safe multi-record operation is verified." }, { status: 409 });
+      const confirmation = request.headers.get("x-catalogue-replace-confirm");
+      if (confirmation !== "REPLACE CATALOGUE") {
+        return Response.json({ success: false, message: "Explicit catalogue replacement confirmation is required." }, { status: 400 });
+      }
     }
+
     /*
       Keep the same grouping size
       that the Firestore version
@@ -490,12 +491,26 @@ export async function POST(
       }
     }
 
+    let removedCount = 0;
+    if (mode === "replace") {
+      // Import first; on any failure the existing catalogue is still intact.
+      // For each discontinuation, use the same history-safe deletion path.
+      const { retireWorkshopPermanently } = await import("@/services/workshopRetirement");
+      for (const prior of discontinue) {
+        const current = await readCosmosDocument("workshops", prior.id);
+        if (!current) continue;
+        await retireWorkshopPermanently(current);
+        removedCount++;
+      }
+    }
+
     return Response.json({
       success:
         true,
 
       message:
-        `${importedCount} workshops imported successfully.`,
+        mode === "replace" ? `Catalogue updated: ${importedCount} imported, ${removedCount} discontinued.` : `${importedCount} workshops imported successfully.`,
+      removedCount,
 
       importedCount,
     });
