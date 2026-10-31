@@ -1,3 +1,4 @@
+import { workshopCompletionSnapshot } from "@/services/workshopHistory.mjs";
 import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
 
@@ -9,6 +10,7 @@ import {
 import {
   cosmosNow,
   createCosmosDocument,
+  deleteCosmosDocument,
   queryCosmosDocuments,
   readCosmosDocument,
   replaceCosmosDocument,
@@ -466,20 +468,67 @@ export async function DELETE(
       );
     }
 
-    // A historical workshop must remain readable by student progress APIs.
-    // Tombstoning removes it from discovery and future enrollment while
-    // preserving registrations, verified attendance, XP and badge history.
-    await replaceCosmosDocument("workshops", existingWorkshop, {
-      status: "deleted",
-      deletedAt: cosmosNow(),
-      updatedAt: cosmosNow(),
-    });
+    // First persist independent historical records. If any write fails,
+    // stop without deleting the catalogue record.
+    const completed = await queryCosmosDocuments(
+      "registrations",
+      "SELECT * FROM c WHERE c.workshopId = @workshopId AND c.status = 'completed'",
+      [{ name: "@workshopId", value: id }]
+    );
+    for (const registration of completed) {
+      const transaction = await readCosmosDocument(
+        "xpTransactions", `${registration.studentId}_${id}`
+      );
+      const snapshot = registration.workshopSnapshot ||
+        workshopCompletionSnapshot(existingWorkshop, registration, transaction);
+      if (!registration.workshopSnapshot) {
+        await replaceCosmosDocument("registrations", registration, {
+          workshopSnapshot: snapshot, updatedAt: cosmosNow(),
+        });
+      }
+    }
+    // Uncompleted registrations / QR sessions must not be left usable.
+    const pending = await queryCosmosDocuments(
+      "registrations",
+      "SELECT * FROM c WHERE c.workshopId = @workshopId AND c.status != 'completed'",
+      [{ name: "@workshopId", value: id }]
+    );
+    for (const registration of pending) {
+      if (registration.status !== "cancelled") {
+        await replaceCosmosDocument("registrations", registration, {
+          status: "cancelled", cancelledReason: "workshop_discontinued",
+          updatedAt: cosmosNow(),
+        });
+      }
+    }
+    const sessions = await queryCosmosDocuments(
+      "attendanceSessions",
+      "SELECT * FROM c WHERE c.workshopId = @workshopId AND c.active = true",
+      [{ name: "@workshopId", value: id }]
+    );
+    for (const session of sessions) {
+      await replaceCosmosDocument("attendanceSessions", session, {
+        active: false, updatedAt: cosmosNow(),
+      });
+    }
+    // Disallow physical deletion if any completed record lacks its snapshot.
+    const verify = await queryCosmosDocuments(
+      "registrations",
+      "SELECT c.id, c.workshopSnapshot FROM c WHERE c.workshopId = @workshopId AND c.status = 'completed'",
+      [{ name: "@workshopId", value: id }]
+    );
+    if (verify.some(row => !row.workshopSnapshot?.id)) {
+      return Response.json({ success: false,
+        message: "Historical completion preservation did not finish. Workshop was not deleted."
+      }, { status: 409 });
+    }
+    await deleteCosmosDocument("workshops", id);
 
     return Response.json({
       success: true,
 
       message:
-        "Workshop removed from the catalogue. Historical student achievements are preserved.",
+        "Workshop permanently removed from the catalogue database. Historical student achievements are preserved.",
     });
   } catch (error) {
     const accessResponse =
