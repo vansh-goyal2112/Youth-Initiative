@@ -30,6 +30,7 @@ import {
 export default function AdminStudentsPage() {
   const [students, setStudents] =
     useState([]);
+  const [pendingEnrollments, setPendingEnrollments] = useState([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -98,6 +99,7 @@ export default function AdminStudentsPage() {
       setStudents(
         data.students || []
       );
+      setPendingEnrollments(data.pendingEnrollments || []);
     } catch (error) {
       setErrorMessage(
         error.message ||
@@ -418,6 +420,30 @@ export default function AdminStudentsPage() {
         <select className="admin-students-filter" aria-label="Filter by account status" value={statusFilter} onChange={event=>setStatusFilter(event.target.value)}><option value="all">All account statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
         <div className="admin-students-results">{filteredStudents.length} results</div>
       </div>
+      {pendingEnrollments.length > 0 && (
+        <section className="admin-student-table-card" style={{ marginBottom: 20, padding: 18 }}>
+          <h2 style={{ marginBottom: 10 }}>Awaiting student activation ({pendingEnrollments.length})</h2>
+          <p style={{ marginBottom: 12 }}>
+            These are pending registrations, not active student accounts.
+            Verification and, for minors, guardian consent must finish before
+            they appear in the student directory.
+          </p>
+          <div className="admin-table-scroll">
+            <table className="admin-student-table">
+              <thead><tr><th>Student</th><th>Email</th><th>Registration status</th></tr></thead>
+              <tbody>
+                {pendingEnrollments.map(item => (
+                  <tr key={item.id}>
+                    <td>{item.fullName}</td>
+                    <td>{item.email}</td>
+                    <td>{(item.status || "pending").replaceAll("_", " ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
       <section className="admin-student-table-card">
         {loading ? (
           <div className="admin-student-state">
