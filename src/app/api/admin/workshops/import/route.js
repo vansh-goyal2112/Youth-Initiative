@@ -313,10 +313,13 @@ async function saveImportedWorkshop(
         "workshops",
         existingWorkshop,
         { ...workshopData,
+          // Reimports must not erase scheduling, status or manual edits.
+          ...existingWorkshop,
           image: existingWorkshop.image === "/images/workshops/50_aviation-bundle.jpg" ? null : (existingWorkshop.image || workshopData.image || null),
           imageAssetId: existingWorkshop.imageAssetId === "photo-50" ? null : (existingWorkshop.imageAssetId || workshopData.imageAssetId || null),
           imageStatus: existingWorkshop.imageAssetId === "photo-50" ? "needs_image" : existingWorkshop.imageAssetId ? "assigned" : existingWorkshop.image && existingWorkshop.image !== "/images/workshops/50_aviation-bundle.jpg" ? "custom" : workshopData.imageStatus,
           createdAt: existingWorkshop.createdAt || workshopData.createdAt,
+          updatedAt: cosmosNow(),
         }
       );
 
