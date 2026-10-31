@@ -14,14 +14,16 @@ export async function retireWorkshopPermanently(existingWorkshop) {
       const transaction = await readCosmosDocument(
         "xpTransactions", `${registration.studentId}_${id}`
       );
-      if (!transaction || transaction.status !== "completed" || registration.completionXpAwarded !== true) {
+      if (!transaction || transaction.status !== "completed") {
         throw new Error("Finalize pending student XP awards before workshop removal.");
       }
       const snapshot = registration.workshopSnapshot ||
         workshopCompletionSnapshot(existingWorkshop, registration, transaction);
-      if (!registration.workshopSnapshot) {
+      if (!registration.workshopSnapshot || registration.completionXpAwarded !== true) {
         await replaceCosmosDocument("registrations", registration, {
-          workshopSnapshot: snapshot, updatedAt: cosmosNow(),
+          workshopSnapshot: snapshot,
+          completionXpAwarded: true, // Existing completed ledger proves the XP was already awarded.
+          updatedAt: cosmosNow(),
         });
       }
     }
