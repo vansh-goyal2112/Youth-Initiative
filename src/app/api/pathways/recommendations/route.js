@@ -49,7 +49,7 @@ export async function GET(request) {
           return null;
         }
 
-        return readCosmosDocument(
+        return registration.workshopSnapshot || readCosmosDocument(
           "workshops",
           registration.workshopId
         );
