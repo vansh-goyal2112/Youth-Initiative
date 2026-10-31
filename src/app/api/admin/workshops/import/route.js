@@ -375,7 +375,7 @@ export async function POST(
     const admin =
       await requireAdminPermission(request, "workshops.import");
 
-    const { workshops, mode = "add", preview = false } = await request.json();
+    const { workshops, mode = "add", preview = false, previewToken = null } = await request.json();
     if (!["add", "replace"].includes(mode)) return Response.json({ message: "Invalid import mode." }, { status: 400 });
 
     if (
@@ -434,17 +434,24 @@ export async function POST(
     if (incomingIds.size !== validWorkshops.length) {
       return Response.json({ message: "Duplicate workshop titles and program areas in spreadsheet." }, { status: 400 });
     }
-    const oldCatalog = await queryCosmosDocuments("workshops", "SELECT c.id, c.title, c.status FROM c");
+    const oldCatalog = await queryCosmosDocuments("workshops", "SELECT c.id, c.title, c.status, c.updatedAt FROM c");
     const discontinue = mode === "replace"
       ? oldCatalog.filter(w => !incomingIds.has(w.id))
       : [];
+    const planToken = crypto.createHash("sha256").update(JSON.stringify({
+      catalogue: oldCatalog.map(w => [w.id, w.title, w.status, w.updatedAt]).sort((a,b)=>a[0].localeCompare(b[0])),
+      incoming: validWorkshops.map(w => [createWorkshopId(w.title,w.programArea,w.offeringYear || ""),w.grade,w.description,w.startDate,w.endDate,w.time]).sort((a,b)=>a[0].localeCompare(b[0])),
+    })).digest("hex");
     if (preview) {
       return Response.json({ success: true, preview: true, mode,
-        incoming: validWorkshops.length, existing: oldCatalog.length,
+        incoming: validWorkshops.length, existing: oldCatalog.length, planToken,
         discontinue: discontinue.map(w => ({ id: w.id, title: w.title })),
         note: "Replacement requires an explicit second confirmation. Historical achievements are retained." });
     }
     if (mode === "replace") {
+      if (previewToken !== planToken) {
+        return Response.json({ success: false, code: "CATALOGUE_PREVIEW_STALE", message: "Catalogue or Excel content changed since preview. Preview again before replacing." }, { status: 409 });
+      }
       const confirmation = request.headers.get("x-catalogue-replace-confirm");
       if (confirmation !== "REPLACE CATALOGUE") {
         return Response.json({ success: false, message: "Explicit catalogue replacement confirmation is required." }, { status: 400 });
