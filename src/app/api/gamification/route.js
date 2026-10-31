@@ -242,19 +242,16 @@ export async function GET(request) {
 
     // Keep the original ordering, duplicate-registration behaviour and
     // error propagation. Bound concurrent Cosmos reads to avoid bursts.
-    const workshopIds = completedRegistrations
-      .map((registration) => registration.workshopId)
-      .filter(Boolean);
-
-    for (let offset = 0; offset < workshopIds.length; offset += 4) {
-      const batch = workshopIds.slice(offset, offset + 4);
-      const workshops = await Promise.all(
-        batch.map((id) => readCosmosDocument("workshops", id))
-      );
+    for (let offset = 0; offset < completedRegistrations.length; offset += 4) {
+      const batch = completedRegistrations.slice(offset, offset + 4);
+      const workshops = await Promise.all(batch.map(async registration =>
+        registration.workshopSnapshot ||
+        (registration.workshopId
+          ? await readCosmosDocument("workshops", registration.workshopId)
+          : null)
+      ));
       for (const workshop of workshops) {
-        if (workshop) {
-          completedWorkshops.push({ id: workshop.id, ...workshop });
-        }
+        if (workshop) completedWorkshops.push({ id: workshop.id, ...workshop });
       }
     }
 
