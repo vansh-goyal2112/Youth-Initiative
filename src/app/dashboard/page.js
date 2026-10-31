@@ -1,6 +1,6 @@
-import { recommendYouthWorkshops } from "@/utils/youthWorkshopRecommendations.mjs";
 "use client";
 
+import { recommendYouthWorkshops } from "@/utils/youthWorkshopRecommendations.mjs";
 import Link from "next/link";
 import UpcomingAdventures from "@/components/gamification/UpcomingAdventures";
 import SkillQuestHub from "@/components/gamification/SkillQuestHub";
