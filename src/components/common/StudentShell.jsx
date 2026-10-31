@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import StudentAnnouncements from "@/components/common/StudentAnnouncements";
 import StudentHeader, { StudentBottomNavigation } from "@/components/common/StudentHeader";
 import styles from "./studentShell.module.css";
 import { isStudentRoute, studentBackDestination } from "@/utils/studentRouteConfig.mjs";
@@ -14,7 +15,7 @@ import { isStudentRoute, studentBackDestination } from "@/utils/studentRouteConf
  */
 export default function StudentShell({ children }) {
   const pathname = usePathname() || "";
-  const { student } = useAuth();
+  const { student, user } = useAuth();
 
   if (!isStudentRoute(pathname)) {
     return children;
@@ -40,7 +41,10 @@ export default function StudentShell({ children }) {
         <span className={styles.starThree}>✦</span>
       </div>
 
-      <div className={styles.pageContent}>{children}</div>
+      <div className={styles.pageContent}>
+        {user && <StudentAnnouncements userId={user.uid} />}
+        {children}
+      </div>
       <StudentBottomNavigation />
     </div>
   );
