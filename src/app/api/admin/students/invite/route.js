@@ -31,9 +31,11 @@ export async function POST(request) {
       status: "pending_activation",
       nextStep: result.nextStep,
       emailSent: result.emailSent,
-      message: result.nextStep === "verify_email"
-        ? "Registration initiated. The student must verify their email and activate their account before appearing in the student directory."
-        : "Registration initiated. The guardian must approve consent and the student must activate the account before appearing in the student directory.",
+      message: result.emailSent === false
+        ? "Registration is pending, but the verification/consent email could not be delivered. The student can securely request a resend through Resume Registration."
+        : result.nextStep === "verify_email"
+          ? "Registration initiated. The student must verify their email and activate their account before appearing in the student directory."
+          : "Registration initiated. The guardian must approve consent and the student must activate the account before appearing in the student directory.",
     }, { status: 201, headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     const access = adminAccessResponse(error);
