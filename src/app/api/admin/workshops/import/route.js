@@ -427,7 +427,7 @@ export async function POST(
       );
     }
 
-    if (mode === "replace" && validWorkshops.some(w => !/^20\\d{2}$/.test(String(w.offeringYear || "")))) {
+    if (mode === "replace" && validWorkshops.some(w => !/^20\d{2}$/.test(String(w.offeringYear || "")))) {
       return Response.json({ success: false, message: "Catalogue replacement requires a four-digit offering year for every workshop." }, { status: 400 });
     }
     const incomingIds = new Set(validWorkshops.map(w => createWorkshopId(w.title, w.programArea, w.offeringYear || "")));
