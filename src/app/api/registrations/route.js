@@ -48,12 +48,10 @@ export async function GET(request) {
           async (
             registration
           ) => {
-            const workshop =
-              registration.workshopId
-                ? await readCosmosDocument(
-                    "workshops",
-                    registration.workshopId
-                  )
+            const workshop = registration.status === "completed" && registration.workshopSnapshot
+              ? registration.workshopSnapshot
+              : registration.workshopId
+                ? await readCosmosDocument("workshops", registration.workshopId)
                 : null;
 
             return {
