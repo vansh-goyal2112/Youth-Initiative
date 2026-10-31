@@ -28,7 +28,7 @@ export default function FeedbackInsightsPage() {
       {!data.workshops.length&&<p>No feedback has been submitted yet.</p>}
       {data.workshops.map(w=><section key={w.id} className="mb-6 rounded-2xl border bg-white p-6 shadow-sm">
         <h2 className="text-xl font-bold">{w.title} {w.offeringYear&&<span className="text-sm font-normal">· {w.offeringYear}</span>}</h2>
-        <p className="mt-1 text-sm text-slate-600">{w.responses} responses</p>
+        <p className="mt-1 text-sm text-slate-600">{w.responses} responses · {w.averageRating===null?"No ratings yet":`⭐ ${w.averageRating}/5 average enjoyment`}</p>
         {data.questions.map(q=><div key={q.id} className="mt-4">
           <h3 className="font-semibold">{q.label}</h3>
           <div className="mt-2 flex flex-wrap gap-2">{Object.entries(w.answers[q.id]||{}).map(([answer,count])=>
