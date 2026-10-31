@@ -479,6 +479,9 @@ export async function DELETE(
       const transaction = await readCosmosDocument(
         "xpTransactions", `${registration.studentId}_${id}`
       );
+      if (!transaction || transaction.status !== "completed" || registration.completionXpAwarded !== true) {
+        return Response.json({ success: false, code: "WORKSHOP_REWARD_PENDING", message: "Finalize pending student XP awards before permanently deleting this workshop." }, { status: 409 });
+      }
       const snapshot = registration.workshopSnapshot ||
         workshopCompletionSnapshot(existingWorkshop, registration, transaction);
       if (!registration.workshopSnapshot) {
