@@ -454,6 +454,32 @@ export async function DELETE(
       );
     }
 
+    // Registrations, QR attendance, and XP records reference the workshop ID.
+    // Deleting a referenced workshop would orphan historical student activity.
+    // Instead, set its status to inactive in Edit Workshop to archive it.
+    const dependentContainers = [
+      ["registrations", "student registrations"],
+      ["attendanceSessions", "attendance sessions"],
+      ["xpTransactions", "student XP transactions"],
+    ];
+    for (const [container, description] of dependentContainers) {
+      const dependencies = await queryCosmosDocuments(
+        container,
+        "SELECT TOP 1 c.id FROM c WHERE c.workshopId = @id",
+        [{ name: "@id", value: id }]
+      );
+      if (dependencies.length) {
+        return Response.json(
+          {
+            success: false,
+            code: "WORKSHOP_HAS_HISTORY",
+            message: `This workshop has ${description}. Set its status to Inactive instead of deleting it, so students keep their attendance and XP history.`,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
     await deleteCosmosDocument(
       "workshops",
       id
