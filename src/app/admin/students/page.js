@@ -569,10 +569,7 @@ export default function AdminStudentsPage() {
                             type="button"
                             title="Deactivate student" aria-label="Deactivate student"
                             className="delete"
-                            disabled={
-                              student.accountStatus ===
-                              "inactive"
-                            }
+                            disabled={student.accountStatus !== "active"}
                             onClick={() =>
                               deactivateStudent(
                                 student
