@@ -378,6 +378,9 @@ export default function AdminWorkshopsPage() {
       const workshopsToImport =
         excelRows.map((row) => ({
           offeringYear: String(row["Offering Year"] || row["Year"] || offeringYear).trim(),
+          startDate: row["Start Date"] || "",
+          endDate: row["End Date"] || "",
+          time: row["Time"] || "",
           programArea:
             row["Program Area"] || "",
 
