@@ -526,20 +526,42 @@ export async function PUT(
     previousDisabledState =
       authUser.disabled;
 
-    if (
-      authUser.disabled !==
-      desiredDisabledState
-    ) {
-      await adminAuth.updateUser(
-        targetStudentId,
-        {
-          disabled:
-            desiredDisabledState,
-        }
-      );
+    // Student data is canonical in Cosmos. Only Firebase displayName mirrors
+    // the profile name; the Firebase login email is an internal Youth ID and
+    // must NOT be replaced with the parent/student contact email.
+    const displayName = validatedData.firstName + " " + validatedData.lastName;
+    const previousDisplayName = authUser.displayName || "";
+    const displayNameChanged = previousDisplayName !== displayName;
 
-      authStateChanged =
-        true;
+    const duplicateEmail = await queryCosmosDocuments(
+      "students",
+      "SELECT TOP 1 c.id FROM c WHERE c.contactEmail = @email AND c.id != @id",
+      [
+        { name: "@email", value: validatedData.contactEmail },
+        { name: "@id", value: targetStudentId },
+      ]
+    );
+    if (duplicateEmail.length) {
+      throw apiError("Another student already uses this contact email.", 409);
+    }
+
+    try {
+      if (displayNameChanged) {
+        await adminAuth.updateUser(targetStudentId, { displayName });
+      }
+      if (authUser.disabled !== desiredDisabledState) {
+        await adminAuth.updateUser(targetStudentId, { disabled: desiredDisabledState });
+        authStateChanged = true;
+      }
+    } catch (firebaseError) {
+      if (displayNameChanged) {
+        try {
+          await adminAuth.updateUser(targetStudentId, { displayName: previousDisplayName });
+        } catch (rollbackError) {
+          console.error("Firebase display name rollback failed:", rollbackError?.message);
+        }
+      }
+      throw firebaseError;
     }
 
     /*
@@ -630,26 +652,14 @@ export async function PUT(
         restore the previous Auth state.
       */
 
-      if (
-        authStateChanged &&
-        previousDisabledState !==
-          null
-      ) {
+      if (authStateChanged || displayNameChanged) {
         try {
-          await adminAuth.updateUser(
-            targetStudentId,
-            {
-              disabled:
-                previousDisabledState,
-            }
-          );
-        } catch (
-          rollbackError
-        ) {
-          console.error(
-            "Student Auth rollback failed:",
-            rollbackError?.message
-          );
+          await adminAuth.updateUser(targetStudentId, {
+            ...(authStateChanged ? { disabled: previousDisabledState } : {}),
+            ...(displayNameChanged ? { displayName: previousDisplayName } : {}),
+          });
+        } catch (rollbackError) {
+          console.error("Student Firebase rollback failed:", rollbackError?.message);
         }
       }
 
