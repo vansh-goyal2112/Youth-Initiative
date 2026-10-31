@@ -9,7 +9,6 @@ import {
 import {
   cosmosNow,
   createCosmosDocument,
-  deleteCosmosDocument,
   queryCosmosDocuments,
   readCosmosDocument,
   replaceCosmosDocument,
@@ -152,6 +151,7 @@ export async function GET(
         `
           SELECT *
           FROM c
+          WHERE NOT IS_DEFINED(c.status) OR c.status != "deleted"
           ORDER BY c.title
         `
       );
@@ -343,7 +343,7 @@ export async function PUT(
         id
       );
 
-    if (!existingWorkshop) {
+    if (!existingWorkshop || existingWorkshop.status === "deleted") {
       return Response.json(
         {
           success: false,
@@ -466,42 +466,20 @@ export async function DELETE(
       );
     }
 
-    // Registrations, QR attendance, and XP records reference the workshop ID.
-    // Deleting a referenced workshop would orphan historical student activity.
-    // Instead, set its status to inactive in Edit Workshop to archive it.
-    const dependentContainers = [
-      ["registrations", "student registrations"],
-      ["attendanceSessions", "attendance sessions"],
-      ["xpTransactions", "student XP transactions"],
-    ];
-    for (const [container, description] of dependentContainers) {
-      const dependencies = await queryCosmosDocuments(
-        container,
-        "SELECT TOP 1 c.id FROM c WHERE c.workshopId = @id",
-        [{ name: "@id", value: id }]
-      );
-      if (dependencies.length) {
-        return Response.json(
-          {
-            success: false,
-            code: "WORKSHOP_HAS_HISTORY",
-            message: `This workshop has ${description}. Set its status to Inactive instead of deleting it, so students keep their attendance and XP history.`,
-          },
-          { status: 409 }
-        );
-      }
-    }
-
-    await deleteCosmosDocument(
-      "workshops",
-      id
-    );
+    // A historical workshop must remain readable by student progress APIs.
+    // Tombstoning removes it from discovery and future enrollment while
+    // preserving registrations, verified attendance, XP and badge history.
+    await replaceCosmosDocument("workshops", existingWorkshop, {
+      status: "deleted",
+      deletedAt: cosmosNow(),
+      updatedAt: cosmosNow(),
+    });
 
     return Response.json({
       success: true,
 
       message:
-        "Workshop deleted successfully.",
+        "Workshop removed from the catalogue. Historical student achievements are preserved.",
     });
   } catch (error) {
     const accessResponse =
