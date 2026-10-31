@@ -19,6 +19,8 @@ import {
   RefreshCw,
   UserRoundCheck,
   ShieldCheck,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 import {
@@ -54,11 +56,23 @@ export default function AdminStudentsPage() {
     setErrorMessage,
   ] = useState("");
 
-  const [message, setMessage] =
-    useState("");
+  const [message, setMessage] = useState("");
+  const [showEnrollForm, setShowEnrollForm] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [canPurgeStudent, setCanPurgeStudent] = useState(false);
+  const [enrollForm, setEnrollForm] = useState({
+    firstName: "", lastName: "", email: "", dateOfBirth: "", parentEmail: "",
+  });
 
   useEffect(() => {
     loadStudents();
+    adminFetch("/api/admin/auth/verify", { method: "POST" })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => setCanPurgeStudent(
+        data?.admin?.adminRole === "super_admin" &&
+        data?.admin?.permissions?.includes("students.delete")
+      ))
+      .catch(() => {});
   }, []);
 
   async function loadStudents() {
@@ -241,13 +255,147 @@ export default function AdminStudentsPage() {
     }
   }
 
+
+  async function enrollStudent(event) {
+    event.preventDefault();
+    try {
+      setEnrolling(true);
+      setMessage("");
+      setErrorMessage("");
+      const response = await adminFetch("/api/admin/students/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(enrollForm),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Enrollment could not be started.");
+      setMessage(data.message);
+      setShowEnrollForm(false);
+      setEnrollForm({ firstName: "", lastName: "", email: "", dateOfBirth: "", parentEmail: "" });
+      await loadStudents();
+    } catch (error) {
+      setErrorMessage(error.message || "Enrollment could not be started.");
+    } finally {
+      setEnrolling(false);
+    }
+  }
+
+  async function reactivateStudent(student) {
+    if (!window.confirm("Reactivate " + (student.fullName || student.youthId) + "?")) return;
+    try {
+      setSaving(true);
+      setErrorMessage("");
+      const response = await adminFetch("/api/admin/students", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: student.id,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          contactEmail: student.contactEmail,
+          learningMode: student.learningMode || "",
+          interests: student.interests || [],
+          accountStatus: "active",
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Reactivation failed.");
+      setMessage("Student account reactivated in Firebase Authentication and Cosmos DB.");
+      await loadStudents();
+    } catch (error) {
+      setErrorMessage(error.message || "Reactivation failed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function permanentlyDeleteStudent(student) {
+    setMessage("");
+    setErrorMessage("");
+    try {
+      const previewResponse = await adminFetch("/api/admin/students/permanent-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: student.id }),
+      });
+      const preview = await previewResponse.json();
+      if (!previewResponse.ok) throw new Error(preview.message || "Deletion preview unavailable.");
+      const related = Object.entries(preview.documents || {})
+        .map(([name, count]) => name + ": " + count).join(", ");
+      const confirmPhrase = "DELETE " + student.youthId;
+      const entered = window.prompt(
+        "PERMANENT DELETION: " + (student.fullName || student.youthId) +
+        "\nRelated records: " + related +
+        "\nFirebase login, profile and associated data will be deleted. External backups may remain." +
+        "\n\nType exactly: " + confirmPhrase
+      );
+      if (entered !== confirmPhrase) return;
+      setSaving(true);
+      const response = await adminFetch("/api/admin/students/permanent-delete", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: student.id, confirm: confirmPhrase }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "Permanent deletion failed.");
+      setMessage(result.message);
+      await loadStudents();
+    } catch (error) {
+      setErrorMessage(error.message || "Permanent deletion failed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <main className="admin-students-page">
       <div className="admin-students-intro">
         <div><p className="admin-section-eyebrow"><Users size={16}/> STUDENT OPERATIONS</p><h1>Student directory<span>.</span></h1>
           <p>Get a complete view of your youth community. Find profiles, support students, and explore their learning journeys.</p></div>
-        <button className="admin-team-refresh" type="button" disabled={loading} onClick={loadStudents}><RefreshCw size={18} className={loading?"animate-spin":""}/> Refresh students</button>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <button className="admin-team-refresh" type="button" disabled={loading || enrolling}
+            onClick={() => setShowEnrollForm(current => !current)}>
+            <Plus size={18} /> Start student registration
+          </button>
+          <button className="admin-team-refresh" type="button" disabled={loading} onClick={loadStudents}>
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} /> Refresh students
+          </button>
+        </div>
       </div>
+
+      {showEnrollForm && (
+        <form onSubmit={enrollStudent} className="admin-student-table-card" style={{ padding: 22, marginBottom: 18 }}>
+          <h2>Start a student's enrollment</h2>
+          <p style={{ marginBottom: 16 }}>
+            Students must verify their email; students under 18 also need guardian consent.
+            An account is created only after verification and activation.
+          </p>
+          <div className="admin-form-two-columns">
+            {[
+              ["First name", "firstName", "text"],
+              ["Last name", "lastName", "text"],
+              ["Student email", "email", "email"],
+              ["Date of birth", "dateOfBirth", "date"],
+              ["Guardian email (required if under 18)", "parentEmail", "email"],
+            ].map(([label, name, type]) => (
+              <label key={name} className="admin-form-field">
+                <span>{label}</span>
+                <input type={type} value={enrollForm[name]} required={name !== "parentEmail"}
+                  onChange={event => setEnrollForm(current => ({
+                    ...current, [name]: event.target.value,
+                  }))}
+                />
+              </label>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+            <button type="submit" className="admin-team-refresh" disabled={enrolling}>
+              {enrolling ? "Starting registration…" : "Send verification / guardian consent"}
+            </button>
+            <button type="button" className="admin-team-refresh" onClick={() => setShowEnrollForm(false)}>Cancel</button>
+          </div>
+        </form>
+      )}
       <div className="admin-students-stats">
         <div><span className="blue"><Users size={22}/></span><div><strong>{students.length}</strong><small>Total students</small></div></div>
         <div><span className="green"><UserRoundCheck size={22}/></span><div><strong>{students.filter(s => (s.accountStatus || "active") === "active").length}</strong><small>Active accounts</small></div></div>
@@ -403,6 +551,20 @@ export default function AdminStudentsPage() {
                             />
                           </button>
 
+
+                          {student.accountStatus === "inactive" && (
+                            <button type="button" title="Reactivate student" aria-label="Reactivate student"
+                              disabled={saving} onClick={() => reactivateStudent(student)}>
+                              <UserRoundCheck size={17} />
+                            </button>
+                          )}
+                          {canPurgeStudent && (student.accountStatus === "inactive" || student.accountStatus === "deleting") && (
+                            <button type="button" title="Permanently delete student" aria-label="Permanently delete student"
+                              className="delete" disabled={saving}
+                              onClick={() => permanentlyDeleteStudent(student)}>
+                              <Trash2 size={17} />
+                            </button>
+                          )}
                           <button
                             type="button"
                             title="Deactivate student" aria-label="Deactivate student"
