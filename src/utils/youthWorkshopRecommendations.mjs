@@ -1,4 +1,5 @@
 export function recommendYouthWorkshops({workshops=[],registrations=[],student={}}) {
+  student = student || {};
   const joined=new Set(registrations.filter(r=>r.status!=="cancelled").map(r=>r.workshopId));
   const history=registrations.filter(r=>r.status==="completed").map(r=>r.workshopSnapshot||r.workshop).filter(Boolean);
   const interests=(student.interests||[]).map(i=>String(i).toLowerCase());
