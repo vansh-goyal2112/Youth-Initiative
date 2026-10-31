@@ -359,10 +359,8 @@ export async function POST(
     const admin =
       await requireAdminPermission(request, "workshops.import");
 
-    const {
-      workshops,
-    } =
-      await request.json();
+    const { workshops, mode = "add", preview = false } = await request.json();
+    if (!["add", "replace"].includes(mode)) return Response.json({ message: "Invalid import mode." }, { status: 400 });
 
     if (
       !Array.isArray(
@@ -413,6 +411,26 @@ export async function POST(
       );
     }
 
+    const incomingIds = new Set(validWorkshops.map(w => createWorkshopId(w.title, w.programArea)));
+    if (incomingIds.size !== validWorkshops.length) {
+      return Response.json({ message: "Duplicate workshop titles and program areas in spreadsheet." }, { status: 400 });
+    }
+    const oldCatalog = await queryCosmosDocuments("workshops", "SELECT c.id, c.title, c.status FROM c WHERE c.status != 'deleted'");
+    const discontinue = mode === "replace"
+      ? oldCatalog.filter(w => !incomingIds.has(w.id))
+      : [];
+    if (preview) {
+      return Response.json({ success: true, preview: true, mode,
+        incoming: validWorkshops.length, existing: oldCatalog.length,
+        discontinue: discontinue.map(w => ({ id: w.id, title: w.title })),
+        note: "Replacement requires an explicit second confirmation. Historical achievements are retained." });
+    }
+    if (mode === "replace") {
+      // Do not silently erase a catalogue. Replacement must use the separate
+      // preview-and-confirm endpoint until its coordinated transaction is verified.
+      return Response.json({ success: false, code: "REPLACEMENT_REQUIRES_CONFIRMATION",
+        message: "Replacement preview is available, but applying full replacement is disabled until the history-safe multi-record operation is verified." }, { status: 409 });
+    }
     /*
       Keep the same grouping size
       that the Firestore version
