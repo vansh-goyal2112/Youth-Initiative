@@ -47,6 +47,7 @@ export default function AdminWorkshopsPage() {
   const [importing, setImporting] =
     useState(false);
   const [importMode, setImportMode] = useState("add");
+  const [offeringYear, setOfferingYear] = useState(String(new Date().getFullYear()));
 
   const [searchText, setSearchText] =
     useState("");
@@ -376,6 +377,7 @@ export default function AdminWorkshopsPage() {
 
       const workshopsToImport =
         excelRows.map((row) => ({
+          offeringYear: String(row["Offering Year"] || row["Year"] || offeringYear).trim(),
           programArea:
             row["Program Area"] || "",
 
@@ -473,6 +475,7 @@ export default function AdminWorkshopsPage() {
         <div className="admin-workshop-actions">
           <button type="button" className="admin-team-refresh" onClick={handleAssignImages} disabled={saving || importing}><Layers3 size={17}/> Assign artwork</button>
           <button type="button" className="admin-team-refresh" onClick={loadWorkshops} disabled={loading}><RefreshCw size={17} className={loading?"animate-spin":""}/> Refresh</button>
+          <input aria-label="Workshop offering year" type="number" min="2000" max="2100" value={offeringYear} onChange={event => setOfferingYear(event.target.value)} style={{width: 100}} title="Year associated with imported workshop offerings" />
           <select aria-label="Excel import mode" value={importMode} onChange={event => setImportMode(event.target.value)} disabled={importing}>
             <option value="add">Add/update spreadsheet</option>
             <option value="replace">Preview catalogue replacement</option>
