@@ -248,7 +248,7 @@ function buildImportedWorkshop(
 }
 
 async function saveImportedWorkshop(
-  workshopData
+  workshopData, overwriteExcelFields = false
 ) {
   /*
     Firestore previously used:
@@ -316,6 +316,17 @@ async function saveImportedWorkshop(
         { ...workshopData,
           // Reimports must not erase scheduling, status or manual edits.
           ...existingWorkshop,
+          // Explicit catalogue replacement treats supplied Excel content as authoritative.
+          ...(overwriteExcelFields ? {
+            title: workshopData.title,
+            programArea: workshopData.programArea,
+            category: workshopData.category,
+            grade: workshopData.grade,
+            description: workshopData.description,
+            informationUrl: workshopData.informationUrl,
+            offeringYear: workshopData.offeringYear,
+            status: "active",
+          } : {}),
           // Only non-empty scheduling values explicitly included in Excel override previous scheduling.
           ...(workshopData.startDate ? { startDate: workshopData.startDate } : {}),
           ...(workshopData.endDate ? { endDate: workshopData.endDate } : {}),
@@ -511,7 +522,7 @@ export async function POST(
         if (assignment.imageAssetId && !validExistingImage) {
           usedImages.set(assignment.imageAssetId, (usedImages.get(assignment.imageAssetId) || 0) + 1);
         }
-        await saveImportedWorkshop({ ...workshopData, ...assignment });
+        await saveImportedWorkshop({ ...workshopData, ...assignment }, mode === "replace");
 
         importedCount += 1;
       }
