@@ -436,6 +436,27 @@ export async function POST(
       }
     }
 
+    if (mode === "replace") {
+      // Preflight every discontinued workshop before changing the catalogue.
+      // A pending or incomplete XP award must stop the entire replacement.
+      for (const old of discontinue) {
+        const completions = await queryCosmosDocuments(
+          "registrations",
+          "SELECT * FROM c WHERE c.workshopId = @id AND c.status = 'completed'",
+          [{ name: "@id", value: old.id }]
+        );
+        for (const completion of completions) {
+          const transaction = await readCosmosDocument(
+            "xpTransactions", `${completion.studentId}_${old.id}`
+          );
+          if (transaction?.status !== "completed" || completion.completionXpAwarded !== true) {
+            return Response.json({ success: false, code: "PENDING_REWARDS",
+              message: `Cannot replace catalogue: ${old.title} has student XP pending reconciliation.`
+            }, { status: 409 });
+          }
+        }
+      }
+    }
     /*
       Keep the same grouping size
       that the Firestore version
