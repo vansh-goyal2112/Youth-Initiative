@@ -10,7 +10,7 @@ export default function StudentAnnouncements({userId}) {
     if(!userId)return;
     let mounted=true;
     const dismissKey="youth-announcement-dismissed:"+userId;
-    try{if(sessionStorage.getItem(dismissKey))setHidden(true);}catch{}
+    try{if(sessionStorage.getItem(dismissKey))queueMicrotask(()=>setHidden(true));}catch{}
     Promise.allSettled([
       studentFetch("/api/workshops",{cache:"no-store"}),
       studentFetch("/api/registrations",{cache:"no-store"}),
