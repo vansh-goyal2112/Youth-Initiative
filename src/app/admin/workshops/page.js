@@ -444,6 +444,7 @@ export default function AdminWorkshopsPage() {
             workshops: workshopsToImport,
             mode: "replace",
             preview: false,
+            previewToken: responseData.planToken,
           }),
         });
         const confirmed = await confirmResponse.json();
