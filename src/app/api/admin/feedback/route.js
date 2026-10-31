@@ -17,7 +17,7 @@ export async function GET(request) {
     const grouped=new Map();
     for(const row of rows) {
       const key=row.workshopId;
-      const item=grouped.get(key)||{id:key,title:row.workshopSnapshot?.title||"Workshop",offeringYear:row.workshopSnapshot?.offeringYear||null,responses:0,answers:{},comments:[]};
+      const item=grouped.get(key)||{id:key,title:row.workshopSnapshot?.title||"Workshop",offeringYear:row.workshopSnapshot?.offeringYear||null,responses:0,answers:{},comments:[],ratingTotal:0,ratingCount:0};
       item.responses++;
       for(const question of FEEDBACK_QUESTIONS) {
         const answer=row.workshopFeedback.answers?.[question.id];
@@ -25,11 +25,13 @@ export async function GET(request) {
         item.answers[question.id]??={};
         item.answers[question.id][answer]=(item.answers[question.id][answer]||0)+1;
       }
+      const stars=Number(String(row.workshopFeedback.answers?.enjoyment||"").match(/\((\d)\/5\)/)?.[1]||0);
+      if(stars){item.ratingTotal+=stars;item.ratingCount++;}
       const note=row.workshopFeedback.comment;
       if(typeof note==="string"&&note.trim())item.comments.push(note.trim());
       grouped.set(key,item);
     }
-    const workshops=Array.from(grouped.values()).sort((a,b)=>b.responses-a.responses);
+    const workshops=Array.from(grouped.values()).map(item=>({...item,averageRating:item.ratingCount?Number((item.ratingTotal/item.ratingCount).toFixed(1)):null})).sort((a,b)=>b.responses-a.responses);
     if(format==="csv") {
       function csv(value) {
         const safe=String(value??"").replace(/[\r\n]/g," ");
