@@ -10,6 +10,7 @@ export function workshopCompletionSnapshot(workshop, registration, transaction) 
     id: workshop.id,
     title: workshop.title,
     programArea: workshop.programArea || "",
+    offeringYear: workshop.offeringYear || (registration.completedAt ? new Date(registration.completedAt).getUTCFullYear() : null),
     category: workshop.category || "General",
     grade: workshop.grade || "",
     learningMode: workshop.learningMode || null,
