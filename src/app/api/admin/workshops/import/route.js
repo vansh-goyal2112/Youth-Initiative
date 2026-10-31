@@ -20,10 +20,11 @@ export const runtime = "nodejs";
 
 function createWorkshopId(
   title,
-  programArea
+  programArea,
+  offeringYear = ""
 ) {
   const normalizedText =
-    `${programArea}-${title}`
+    `${programArea}-${title}-${offeringYear}`
       .toLowerCase()
       .replace(
         /[^a-z0-9]+/g,
@@ -44,7 +45,7 @@ function createWorkshopId(
         "sha256"
       )
       .update(
-        `${programArea}-${title}`
+        `${programArea}-${title}-${offeringYear}`
       )
       .digest(
         "hex"
@@ -157,7 +158,8 @@ function buildImportedWorkshop(
   const workshopId =
     createWorkshopId(
       workshop.title,
-      workshop.programArea
+      workshop.programArea,
+      workshop.offeringYear || ""
     );
 
   const learningMode =
@@ -175,6 +177,8 @@ function buildImportedWorkshop(
   return {
     id:
       workshopId,
+
+    offeringYear: workshop.offeringYear || null,
 
     title:
       workshop.title.trim(),
@@ -411,7 +415,7 @@ export async function POST(
       );
     }
 
-    const incomingIds = new Set(validWorkshops.map(w => createWorkshopId(w.title, w.programArea)));
+    const incomingIds = new Set(validWorkshops.map(w => createWorkshopId(w.title, w.programArea, w.offeringYear || "")));
     if (incomingIds.size !== validWorkshops.length) {
       return Response.json({ message: "Duplicate workshop titles and program areas in spreadsheet." }, { status: 400 });
     }
