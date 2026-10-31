@@ -33,10 +33,11 @@ export async function POST(request) {
 
     const completedRegistrations = await queryCosmosDocuments(
       "registrations",
-      `SELECT TOP ${MAX_RECOVERIES_PER_REQUEST + 1} * FROM c
+      `SELECT * FROM c
        WHERE c.studentId = @studentId
          AND c.status = @status
-         AND c.attendanceStatus = @attendanceStatus`,
+         AND c.attendanceStatus = @attendanceStatus
+         AND (NOT IS_DEFINED(c.completionXpAwarded) OR c.completionXpAwarded != true)`,
       [
         { name: "@studentId", value: studentId },
         { name: "@status", value: "completed" },
@@ -47,10 +48,9 @@ export async function POST(request) {
     queryDurationMs = performance.now() - startedAt - authDurationMs;
     const results = [];
 
-    for (const registration of completedRegistrations.slice(
-      0,
-      MAX_RECOVERIES_PER_REQUEST
-    )) {
+    let handled = 0;
+    let moreToReview = false;
+    for (const registration of completedRegistrations) {
       const workshopId = registration.workshopId;
       const transactionId = `${studentId}_${workshopId}`;
 
@@ -77,6 +77,12 @@ export async function POST(request) {
           });
           continue;
         }
+
+        if (handled >= MAX_RECOVERIES_PER_REQUEST) {
+          moreToReview = true;
+          continue;
+        }
+        handled++;
 
         if (action === "award") {
           const workshop = await readCosmosDocument(
@@ -163,7 +169,7 @@ export async function POST(request) {
         authMs: Math.round(authDurationMs),
         registrationQueryMs: Math.round(queryDurationMs),
         processingMs: Math.round(performance.now() - startedAt - authDurationMs - queryDurationMs),
-        checked: Math.min(completedRegistrations.length, MAX_RECOVERIES_PER_REQUEST),
+        checked: completedRegistrations.length,
       });
     }
 
@@ -171,7 +177,7 @@ export async function POST(request) {
       success: true,
       results,
       pendingCount: results.filter((result) => result.status === "pending").length,
-      moreToReview: completedRegistrations.length > MAX_RECOVERIES_PER_REQUEST,
+      moreToReview,
     });
   } catch (error) {
     const accessResponse = studentAccessResponse(error);
