@@ -62,11 +62,13 @@ The existing configuration is required:
 
 - `COSMOS_ENDPOINT`
 - `COSMOS_DATABASE_NAME` (optional; defaults to `YouthInitiative`)
-- `COSMOS_KEY` (optional; key-based authentication, if configured)
+- `COSMOS_KEY` (optional; when set, uses Cosmos DB key authentication instead
+  of Azure identity)
 - `AZURE_MANAGED_IDENTITY_CLIENT_ID` in production when using the configured
   user-assigned managed identity
-- Local runs use `DefaultAzureCredential` (for example, an authenticated Azure
-  CLI session). Prefer identity-based access over storing a Cosmos key.
+- If `COSMOS_KEY` is not set, local runs use `DefaultAzureCredential` (for
+  example, an authenticated Azure CLI session). Prefer identity-based access
+  over storing a Cosmos key.
 
 ## Scraper
 
@@ -147,8 +149,8 @@ npm test
 ```
 
 The Azure deployment workflow runs this test suite and lint. It does not scrape
-SAIT pages or write to Cosmos DB; ingestion remains a controlled, manually run
-operation requiring Cosmos data-plane permissions.
+SAIT pages or write to Cosmos DB; ingestion runs in its own scheduled workflow
+(see below).
 
 ## Ingestion command (workshops + programs)
 
@@ -157,8 +159,10 @@ npm run ingest:sait -- --dry-run --output tmp/review.json   # review only, no Az
 npm run ingest:sait                                         # upload to Cosmos DB
 ```
 
-Options: `--only programs|workshops`, `--limit <n>`, `--output <file>`. It is
-not part of CI/CD. Workshops go to the existing `workshops` container (same
+Options: `--only programs|workshops`, `--limit <n>`, `--output <file>`. It runs
+automatically every Monday (and on demand) through
+`.github/workflows/ingest-sait.yml`, authenticating with the `COSMOS_KEY`
+GitHub repository secret. Workshops go to the existing `workshops` container (same
 schema and ID convention as the Excel import); programs go to `saitPrograms`.
 Partition keys are read from each container's definition. A scraped workshop
 whose official page is already stored under another ID is left untouched, and
@@ -185,5 +189,23 @@ grade is not known, the offering remains visible with an eligibility notice
 and a link to SAIT for confirmation. The report lists discovered, validated,
 inserted, updated, unchanged, already present, skipped and failed counts; exit
 code is 1 on any failure and 2 on bad setup.
-The command needs `COSMOS_ENDPOINT` and an identity with the Cosmos DB data
-role (e.g. "Cosmos DB Built-in Data Contributor") on the account.
+The command needs `COSMOS_ENDPOINT` and either a valid `COSMOS_KEY` or an
+identity with the Cosmos DB data role (e.g. "Cosmos DB Built-in Data
+Contributor") on the account. To avoid saving the key in PowerShell history,
+prompt for it securely before running ingestion:
+
+```powershell
+$env:COSMOS_ENDPOINT = "https://youth-initiative-cosmos-vg.documents.azure.com:443/"
+$env:COSMOS_DATABASE_NAME = "YouthInitiative"
+$secureKey = Read-Host "Cosmos DB primary key" -AsSecureString
+$env:COSMOS_KEY = [System.Net.NetworkCredential]::new("", $secureKey).Password
+try {
+  npm run ingest:sait -- --output tmp/report.json
+} finally {
+  Remove-Item Env:COSMOS_KEY
+}
+```
+
+Use the account's primary key from Azure Portal > Cosmos DB account > Keys.
+Do not paste it into source files, chat, or a command-line literal. Rotate the
+key if it is exposed.

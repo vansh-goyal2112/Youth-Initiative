@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
   group: ingest-sait
@@ -42,19 +41,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Login to Azure
-        uses: azure/login@v3
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Dry run
         if: ${{ inputs.dry_run }}
         run: npm run ingest:sait -- --dry-run --output tmp/review.json
 
       - name: Ingest programs and workshops
         if: ${{ !inputs.dry_run }}
+        env:
+          COSMOS_KEY: ${{ secrets.COSMOS_KEY }}
         run: npm run ingest:sait -- --output tmp/report.json
 
       - name: Upload report

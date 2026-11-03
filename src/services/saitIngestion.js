@@ -42,7 +42,9 @@ export function describeCosmosError(error, containerName) {
   if (code === 401 || code === 403) {
     return {
       fatal: true,
-      message: `Cosmos DB rejected the credentials (HTTP ${code}). The identity needs a data-plane role (e.g. Cosmos DB Built-in Data Contributor) on the account.`,
+      message: process.env.COSMOS_KEY
+        ? `Cosmos DB rejected the COSMOS_KEY (HTTP ${code}): ${error?.message || "no details"}. Check it is the full PRIMARY KEY for this account and that key (local) authentication is enabled.`
+        : `Cosmos DB rejected the credentials (HTTP ${code}). The identity needs a data-plane role (e.g. Cosmos DB Built-in Data Contributor) on the account.`,
     };
   }
 

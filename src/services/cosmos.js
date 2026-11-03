@@ -67,12 +67,15 @@ function getCosmosClient() {
   } =
     getCosmosConfiguration();
 
-  cosmosClient =
-    new CosmosClient({
-      endpoint,
-      aadCredentials:
-        createAzureCredential(),
-    });
+  const key = process.env.COSMOS_KEY;
+  cosmosClient = new CosmosClient(
+    key
+      ? { endpoint, key }
+      : {
+          endpoint,
+          aadCredentials: createAzureCredential(),
+        }
+  );
 
   return cosmosClient;
 }
