@@ -1,7 +1,32 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 import { BookOpen, Plane } from "lucide-react";
 import { getWorkshopImage } from "@/utils/getWorkshopImage";
 import styles from "./WorkshopArtwork.module.css";
+
+// Workshop images may be local assets or URLs imported from SAIT.
+// External images bypass the Next image optimizer so an unconfigured
+// remote host cannot produce /_next/image 400 errors in Azure.
+function imageSource(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+
+  const source = value.trim();
+  if (source.startsWith("/") && !source.startsWith("//")) {
+    return { src: source, remote: false };
+  }
+
+  try {
+    const url = new URL(source.startsWith("//") ? `https:${source}` : source);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    // An HTTPS deployment cannot display HTTP images (mixed content).
+    if (url.protocol === "http:") url.protocol = "https:";
+    return { src: url.toString(), remote: true };
+  } catch {
+    return null;
+  }
+}
 
 // The same photo/placeholder is used on cards, details and the dashboard.
 export default function WorkshopArtwork({
@@ -10,16 +35,20 @@ export default function WorkshopArtwork({
   priority = false,
   className,
 }) {
-  const image = getWorkshopImage(workshop);
-  if (image) {
+  const [failedSrc, setFailedSrc] = useState(null);
+  const source = imageSource(getWorkshopImage(workshop));
+
+  if (source && failedSrc !== source.src) {
     return (
       <Image
-        src={image}
+        src={source.src}
         alt={workshop?.title || "Youth workshop"}
         fill
         sizes={sizes}
         priority={priority}
+        unoptimized={source.remote}
         className={className}
+        onError={() => setFailedSrc(source.src)}
       />
     );
   }
