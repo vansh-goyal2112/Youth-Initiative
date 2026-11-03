@@ -12,6 +12,9 @@ export const PROGRAM_RECOMMENDATION_WEIGHTS = Object.freeze({
   learningMode: 15,
 });
 
+// Bonus above the base 100 that ranks programs sharing the same category.
+export const INTEREST_KEYWORD_BONUS = 10;
+
 export const SAIT_INTEREST_PATHWAY_MAPPINGS = Object.freeze({
   "artificial intelligence": {
     category: "Technology",
@@ -143,6 +146,34 @@ function getRecommendationReasons(
     reasons.push(
       `Connects your ${subjectInterestMatch.interest} interest with ${subjectInterestMatch.subject}`
     );
+  }
+
+  // Differentiates programs that share a category: a title hit counts fully,
+  // a description-only hit counts half, scaled by the share of interests hit.
+  const keywordWeight = INTEREST_KEYWORD_BONUS;
+
+  if (keywordWeight > 0 && interests.length > 0) {
+    const titleText = String(program.title || "");
+    const bodyText = [program.description, ...(program.subjects || [])]
+      .filter((value) => typeof value === "string")
+      .join(" ");
+    let keywordPoints = 0;
+    let firstHit = null;
+
+    for (const interest of interests) {
+      if (textIncludesTerm(titleText, interest)) {
+        keywordPoints += 1;
+        firstHit = firstHit || interest;
+      } else if (textIncludesTerm(bodyText, interest)) {
+        keywordPoints += 0.5;
+        firstHit = firstHit || interest;
+      }
+    }
+
+    if (keywordPoints > 0) {
+      score += (keywordWeight * keywordPoints) / interests.length;
+      reasons.push(`Program content mentions your ${firstHit} interest`);
+    }
   }
 
   const categoryWorkshop = completedWorkshops.find((workshop) =>
