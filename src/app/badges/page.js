@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import playfulSkin from "@/components/gamification/playfulSkin.module.css";
 
 import {
   useEffect,
@@ -354,7 +355,7 @@ export default function BadgesPage() {
     ).length;
 
   return (
-    <main className="badges-page">
+    <main className={`badges-page ${playfulSkin.badgeShell}`}>
       <section className="badges-hero">
         <div className="student-content-container badges-hero-content">
           <div>
@@ -555,7 +556,14 @@ export default function BadgesPage() {
                         </strong>
                       </div>
 
-                      <div className="badge-progress-track">
+                      <div
+                        className="badge-progress-track"
+                        role="progressbar"
+                        aria-label={`${badge.name} progress`}
+                        aria-valuemin={0}
+                        aria-valuemax={progress.target}
+                        aria-valuenow={progress.current}
+                      >
                         <div
                           className="badge-progress-value"
                           style={{

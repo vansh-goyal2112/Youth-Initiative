@@ -106,6 +106,13 @@ export default function ScanAttendancePage() {
         );
       }
 
+      // Attendance is confirmed even when the award is still pending.
+      // The Journey page can reconcile the reward safely.
+      if (data.rewardPending || !data.reward) {
+        router.push("/journey");
+        return;
+      }
+
       sessionStorage.setItem(
         "latestReward",
         JSON.stringify({

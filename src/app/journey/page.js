@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import AdventureTrail from "@/components/gamification/AdventureTrail";
+import JournalStamps from "@/components/gamification/JournalStamps";
+import playfulSkin from "@/components/gamification/playfulSkin.module.css";
 import {
   useEffect,
   useState,
@@ -9,16 +12,11 @@ import {
 import {
   Award,
   BookOpen,
-  Check,
   Compass,
   Cpu,
-  Flame,
-  Hammer,
   Home,
   LoaderCircle,
-  Lock,
   Map,
-  Rocket,
   Sparkles,
   Star,
   Trophy,
@@ -48,17 +46,15 @@ export default function JourneyPage() {
   const [pathways, setPathways] =
     useState([]);
 
-  const [pathwaysLoading, setPathwaysLoading] =
-    useState(true);
-
-  const [pathwaysError, setPathwaysError] =
-    useState("");
+  const [registrations, setRegistrations] = useState([]);
 
   const [loading, setLoading] =
     useState(true);
 
   const [errorMessage, setErrorMessage] =
     useState("");
+
+  const [rewardStatus, setRewardStatus] = useState("");
 
   useEffect(() => {
     if (
@@ -72,77 +68,87 @@ export default function JourneyPage() {
       false;
 
     async function loadGameProgress() {
-      try {
-        const response =
-          await studentFetch(
-            "/api/gamification"
-          );
+      setLoading(true);
+      setErrorMessage("");
 
-        const data =
-          await response.json();
+      // The first gamification request is the critical page data.
+      // Optional panels and reward repair must not block navigation.
+      const progressRequest = studentFetch("/api/gamification");
+      let finishInitialProgress;
+      const initialProgressSettled = new Promise((resolve) => {
+        finishInitialProgress = resolve;
+      });
 
-        if (!response.ok) {
-          throw new Error(
-            data.message
-          );
-        }
-
-        if (
-          !cancelled
-        ) {
-          setGameData(
-            data.gamification
-          );
-        }
-
+      void (async () => {
         try {
-          const pathwayResponse = await studentFetch(
-            "/api/pathways/recommendations"
-          );
-          const pathwayData = await pathwayResponse.json();
+          const response = await studentFetch("/api/registrations");
+          if (!response.ok) return;
+          const data = await response.json();
+          if (!cancelled) setRegistrations(data.registrations || []);
+        } catch {
+          // Journal remains optional.
+        }
+      })();
 
-          if (
-            !pathwayResponse.ok ||
-            pathwayData?.success !== true ||
-            !Array.isArray(pathwayData.recommendations)
-          ) {
-            throw new Error(
-              pathwayData?.message ||
-                "SAIT program recommendations could not be loaded."
-            );
+      void (async () => {
+        try {
+          const response = await studentFetch("/api/pathways/recommendations");
+          if (!response.ok) return;
+          const data = await response.json();
+          if (!cancelled && data?.recommendations) {
+            setPathways(data.recommendations);
           }
+        } catch {
+          // Recommendations remain optional.
+        }
+      })();
 
-          if (!cancelled) {
-            setPathways(pathwayData.recommendations);
-            setPathwaysError("");
+      void (async () => {
+        try {
+          // Preserve the existing authenticated XP repair and its
+          // server-side safeguards. It runs without blocking the page.
+          const response = await studentFetch(
+            "/api/gamification/reconcile",
+            { method: "POST" }
+          );
+          if (!response.ok) return;
+          const result = await response.json();
+          if (cancelled) return;
+          setRewardStatus(
+            result.pendingCount > 0
+              ? "Some workshop rewards are still processing. Your verified attendance is safe."
+              : ""
+          );
+
+          // Wait for the original snapshot to settle before refreshing:
+          // an older in-flight response must not overwrite repaired XP.
+          await initialProgressSettled;
+          if (cancelled) return;
+          const refreshed = await studentFetch("/api/gamification");
+          if (!refreshed.ok) return;
+          const updated = await refreshed.json();
+          if (!cancelled && updated?.gamification) {
+            setGameData(updated.gamification);
           }
         } catch (error) {
-          if (!cancelled) {
-            setPathwaysError(
-              error.message ||
-                "SAIT program recommendations could not be loaded."
-            );
-          }
-        } finally {
-          if (!cancelled) {
-            setPathwaysLoading(false);
-          }
+          console.warn("Reward reconciliation unavailable:", error);
         }
+      })();
+
+      try {
+        const response = await progressRequest;
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || "Progress could not be loaded.");
+        }
+        if (!cancelled) setGameData(data.gamification);
       } catch (error) {
-        if (
-          !cancelled
-        ) {
-          setErrorMessage(
-            error.message ||
-              "Progress could not be loaded."
-          );
+        if (!cancelled) {
+          setErrorMessage(error.message || "Progress could not be loaded.");
         }
       } finally {
-        if (
-          !cancelled
-        ) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
+        finishInitialProgress();
       }
     }
 
@@ -204,7 +210,7 @@ export default function JourneyPage() {
   }
 
   return (
-    <main className="journey-game-page">
+    <main className={`journey-game-page ${playfulSkin.journeyShell}`}>
 
       <section className="journey-game-hero">
         <div className="journey-game-glow journey-game-glow-one" />
@@ -296,6 +302,18 @@ export default function JourneyPage() {
 
 
       <section className="student-content-container journey-game-content">
+        {rewardStatus && (
+          <p role="status" className={playfulSkin.rewardNotice}>
+            {rewardStatus}
+          </p>
+        )}
+
+        <AdventureTrail
+          quests={gameData.quests || []}
+          totalXp={gameData.totalXp}
+        />
+
+        <JournalStamps registrations={registrations} />
 
         <div className="journey-game-stats">
 
@@ -393,114 +411,65 @@ export default function JourneyPage() {
         </section>
 
 
-        <section className="quest-section">
-
-          <div className="game-section-heading">
-
-            <div>
-              <span>
-                ACTIVE CHALLENGES
-              </span>
-
-              <h2>
-                Skill Quests
-              </h2>
-            </div>
-
-            <p>
-              Complete challenges as you
-              explore more of SAIT.
-            </p>
-
-          </div>
-
-          <div className="quest-grid">
-
-            {gameData.quests.map(
-              (quest) => (
-                <QuestCard
-                  key={quest.id}
-                  quest={quest}
-                />
-              )
-            )}
-
-          </div>
-
-        </section>
-
-        <section className="quest-section">
+        {/* FUTURE SAIT PATHWAYS SECTION */}
+        {pathways.length > 0 && (
+          <section className="quest-section">
             <div className="game-section-heading">
               <div>
                 <span>FUTURE PATHWAYS</span>
                 <h2>Recommended SAIT Programs</h2>
               </div>
               <p>
-                Possible future learning pathways matched to your interests and completed workshops. These are suggestions, not admission or career guarantees.
+                Possible post-secondary pathways after Grade 12 tailored to your interests and completed workshops.
               </p>
             </div>
 
-            {pathwaysLoading ? (
-              <p className="mt-3 flex items-center gap-2 text-sm text-slate-600">
-                <LoaderCircle className="button-spinner" size={18} />
-                Loading SAIT program recommendations...
-              </p>
-            ) : pathwaysError ? (
-              <p className="mt-3 text-sm text-red-700" role="alert">
-                {pathwaysError}
-              </p>
-            ) : pathways.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-600">
-                No program matches yet. Add interests or complete a workshop to
-                help us find relevant SAIT pathways.
-              </p>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
-                {pathways.map((rec) => (
-                  <div
-                    key={rec.program.id}
-                    className="bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <Sparkles size={12} />
-                          {rec.score}% MATCH
-                        </span>
-                        <GraduationCap size={18} className="text-slate-400" />
-                      </div>
-
-                      <h3 className="text-base font-bold text-slate-800 line-clamp-2 mb-2">
-                        {rec.program.title}
-                      </h3>
-
-                      <div className="space-y-1.5 mb-4">
-                        {rec.reasons?.map((reason, idx) => (
-                          <p
-                            key={idx}
-                            className="text-xs text-slate-600 flex items-start gap-1.5"
-                          >
-                            <span className="text-emerald-500 font-bold mt-0.5">•</span>
-                            <span>{reason}</span>
-                          </p>
-                        ))}
-                      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+              {pathways.map((rec) => (
+                <div
+                  key={rec.program.id}
+                  className="bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <Sparkles size={12} />
+                        {rec.score}% MATCH
+                      </span>
+                      <GraduationCap size={18} className="text-slate-400" />
                     </div>
 
-                    <a
-                      href={rec.program.informationUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
-                    >
-                      <span>View SAIT Program</span>
-                      <ExternalLink size={14} />
-                    </a>
+                    <h3 className="text-base font-bold text-slate-800 line-clamp-2 mb-2">
+                      {rec.program.title}
+                    </h3>
+
+                    <div className="space-y-1.5 mb-4">
+                      {rec.reasons?.map((reason, idx) => (
+                        <p
+                          key={idx}
+                          className="text-xs text-slate-600 flex items-start gap-1.5"
+                        >
+                          <span className="text-emerald-500 font-bold mt-0.5">•</span>
+                          <span>{reason}</span>
+                        </p>
+                      ))}
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  <a
+                    href={rec.program.informationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={playfulSkin.programLink}
+                  >
+                    <span>View SAIT Program</span>
+                    <ExternalLink size={14} />
+                  </a>
+                </div>
+              ))}
+            </div>
           </section>
+        )}
 
         <section className="journey-achievement-section">
 
@@ -646,87 +615,3 @@ function SkillTrackCard({
 }
 
 
-function QuestCard({
-  quest,
-}) {
-  const Icon =
-    quest.icon === "rocket"
-      ? Rocket
-      : quest.icon === "hammer"
-        ? Hammer
-        : quest.icon === "compass"
-          ? Compass
-          : quest.icon === "cpu"
-            ? Cpu
-            : Trophy;
-
-  const progress =
-    Math.min(
-      100,
-      Math.round(
-        (quest.current /
-          quest.target) *
-          100
-      )
-    );
-
-  return (
-    <article
-      className={`quest-card ${
-        quest.completed
-          ? "completed"
-          : ""
-      }`}
-    >
-
-      <div className="quest-icon">
-        {quest.completed ? (
-          <Check size={24} />
-        ) : (
-          <Icon size={24} />
-        )}
-      </div>
-
-      <div className="quest-content">
-
-        <div className="quest-title-row">
-          <h3>
-            {quest.title}
-          </h3>
-
-          <span>
-            +{quest.reward} XP
-          </span>
-        </div>
-
-        <p>
-          {quest.description}
-        </p>
-
-        <div className="quest-progress-track">
-          <div
-            style={{
-              width:
-                `${progress}%`,
-            }}
-          />
-        </div>
-
-        <div className="quest-footer">
-          <span>
-            {quest.current} /{" "}
-            {quest.target}
-          </span>
-
-          <span>
-            {quest.completed
-              ? "Quest Complete"
-              : `${progress}%`}
-          </span>
-        </div>
-
-      </div>
-
-    </article>
-  );
-}

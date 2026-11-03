@@ -1,8 +1,9 @@
+import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
 
 import {
   adminAccessResponse,
-  requireActiveAdmin,
+  requireAdminPermission,
 } from "@/services/adminAccess";
 
 import {
@@ -12,16 +13,19 @@ import {
   isCosmosPreconditionFailed,
   readCosmosDocument,
   replaceCosmosDocument,
+  queryCosmosDocuments,
 } from "@/services/cosmosData";
 
 export const runtime = "nodejs";
 
 function createWorkshopId(
   title,
-  programArea
+  programArea,
+  offeringYear = "",
+  grade = ""
 ) {
   const normalizedText =
-    `${programArea}-${title}`
+    `${programArea}-${title}-${grade}-${offeringYear}`
       .toLowerCase()
       .replace(
         /[^a-z0-9]+/g,
@@ -42,7 +46,7 @@ function createWorkshopId(
         "sha256"
       )
       .update(
-        `${programArea}-${title}`
+        `${programArea}-${title}-${grade}-${offeringYear}`
       )
       .digest(
         "hex"
@@ -155,7 +159,9 @@ function buildImportedWorkshop(
   const workshopId =
     createWorkshopId(
       workshop.title,
-      workshop.programArea
+      workshop.programArea,
+      workshop.offeringYear || "",
+      workshop.grade || ""
     );
 
   const learningMode =
@@ -173,6 +179,8 @@ function buildImportedWorkshop(
   return {
     id:
       workshopId,
+
+    offeringYear: workshop.offeringYear || null,
 
     title:
       workshop.title.trim(),
@@ -206,14 +214,11 @@ function buildImportedWorkshop(
 
     learningMode,
 
-    startDate:
-      null,
+    startDate: workshop.startDate || null,
 
-    endDate:
-      null,
+    endDate: workshop.endDate || null,
 
-    time:
-      "",
+    time: workshop.time || "",
 
     location:
       learningMode ===
@@ -245,7 +250,7 @@ function buildImportedWorkshop(
 }
 
 async function saveImportedWorkshop(
-  workshopData
+  workshopData, overwriteExcelFields = false
 ) {
   /*
     Firestore previously used:
@@ -310,7 +315,30 @@ async function saveImportedWorkshop(
       await replaceCosmosDocument(
         "workshops",
         existingWorkshop,
-        workshopData
+        { ...workshopData,
+          // Reimports must not erase scheduling, status or manual edits.
+          ...existingWorkshop,
+          // Explicit catalogue replacement treats supplied Excel content as authoritative.
+          ...(overwriteExcelFields ? {
+            title: workshopData.title,
+            programArea: workshopData.programArea,
+            category: workshopData.category,
+            grade: workshopData.grade,
+            description: workshopData.description,
+            informationUrl: workshopData.informationUrl,
+            offeringYear: workshopData.offeringYear,
+            status: "active",
+          } : {}),
+          // Only non-empty scheduling values explicitly included in Excel override previous scheduling.
+          ...(workshopData.startDate ? { startDate: workshopData.startDate } : {}),
+          ...(workshopData.endDate ? { endDate: workshopData.endDate } : {}),
+          ...(workshopData.time ? { time: workshopData.time } : {}),
+          image: existingWorkshop.image === "/images/workshops/50_aviation-bundle.jpg" ? null : (existingWorkshop.image || workshopData.image || null),
+          imageAssetId: existingWorkshop.imageAssetId === "photo-50" ? null : (existingWorkshop.imageAssetId || workshopData.imageAssetId || null),
+          imageStatus: existingWorkshop.imageAssetId === "photo-50" ? "needs_image" : existingWorkshop.imageAssetId ? "assigned" : existingWorkshop.image && existingWorkshop.image !== "/images/workshops/50_aviation-bundle.jpg" ? "custom" : workshopData.imageStatus,
+          createdAt: existingWorkshop.createdAt || workshopData.createdAt,
+          updatedAt: cosmosNow(),
+        }
       );
 
       return;
@@ -347,14 +375,10 @@ export async function POST(
 ) {
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "workshops.import");
 
-    const {
-      workshops,
-    } =
-      await request.json();
+    const { workshops, mode = "add", preview = false, previewToken = null } = await request.json();
+    if (!["add", "replace"].includes(mode)) return Response.json({ message: "Invalid import mode." }, { status: 400 });
 
     if (
       !Array.isArray(
@@ -374,6 +398,14 @@ export async function POST(
             400,
         }
       );
+    }
+
+    if (mode === "replace" && workshops.some(w =>
+      !w || typeof w.title !== "string" || !w.title.trim() ||
+      typeof w.programArea !== "string" || !w.programArea.trim() ||
+      typeof w.grade !== "string" || !w.grade.trim()
+    )) {
+      return Response.json({ success: false, message: "Replacement stopped: spreadsheet includes incomplete workshop rows. Correct the data before trying again." }, { status: 400 });
     }
 
     const validWorkshops =
@@ -405,6 +437,58 @@ export async function POST(
       );
     }
 
+    if (mode === "replace" && validWorkshops.some(w => !/^20\d{2}$/.test(String(w.offeringYear || "")))) {
+      return Response.json({ success: false, message: "Catalogue replacement requires a four-digit offering year for every workshop." }, { status: 400 });
+    }
+    const incomingIds = new Set(validWorkshops.map(w => createWorkshopId(w.title, w.programArea, w.offeringYear || "", w.grade || "")));
+    if (incomingIds.size !== validWorkshops.length) {
+      return Response.json({ message: "Duplicate workshop titles and program areas in spreadsheet." }, { status: 400 });
+    }
+    const oldCatalog = await queryCosmosDocuments("workshops", "SELECT c.id, c.title, c.status, c.updatedAt FROM c");
+    const discontinue = mode === "replace"
+      ? oldCatalog.filter(w => !incomingIds.has(w.id))
+      : [];
+    const planToken = crypto.createHash("sha256").update(JSON.stringify({
+      catalogue: oldCatalog.map(w => [w.id, w.title, w.status, w.updatedAt]).sort((a,b)=>a[0].localeCompare(b[0])),
+      incoming: validWorkshops.map(w => [createWorkshopId(w.title,w.programArea,w.offeringYear || "",w.grade || ""),w.grade,w.description,w.startDate,w.endDate,w.time]).sort((a,b)=>a[0].localeCompare(b[0])),
+    })).digest("hex");
+    if (preview) {
+      return Response.json({ success: true, preview: true, mode,
+        incoming: validWorkshops.length, existing: oldCatalog.length, planToken,
+        discontinue: discontinue.map(w => ({ id: w.id, title: w.title })),
+        note: "Replacement requires an explicit second confirmation. Historical achievements are retained." });
+    }
+    if (mode === "replace") {
+      if (previewToken !== planToken) {
+        return Response.json({ success: false, code: "CATALOGUE_PREVIEW_STALE", message: "Catalogue or Excel content changed since preview. Preview again before replacing." }, { status: 409 });
+      }
+      const confirmation = request.headers.get("x-catalogue-replace-confirm");
+      if (confirmation !== "REPLACE CATALOGUE") {
+        return Response.json({ success: false, message: "Explicit catalogue replacement confirmation is required." }, { status: 400 });
+      }
+    }
+
+    if (mode === "replace") {
+      // Preflight every discontinued workshop before changing the catalogue.
+      // A pending or incomplete XP award must stop the entire replacement.
+      for (const old of discontinue) {
+        const completions = await queryCosmosDocuments(
+          "registrations",
+          "SELECT * FROM c WHERE c.workshopId = @id AND c.status = 'completed'",
+          [{ name: "@id", value: old.id }]
+        );
+        for (const completion of completions) {
+          const transaction = await readCosmosDocument(
+            "xpTransactions", `${completion.studentId}_${old.id}`
+          );
+          if (transaction?.status !== "completed") {
+            return Response.json({ success: false, code: "PENDING_REWARDS",
+              message: `Cannot replace catalogue: ${old.title} has student XP pending reconciliation.`
+            }, { status: 409 });
+          }
+        }
+      }
+    }
     /*
       Keep the same grouping size
       that the Firestore version
@@ -423,6 +507,9 @@ export async function POST(
 
     let importedCount =
       0;
+    const existingImages = await queryCosmosDocuments("workshops", "SELECT c.id, c.image, c.imageAssetId FROM c");
+    const byId = new Map(existingImages.map(w => [w.id,w]));
+    const usedImages = workshopImageUsage(existingImages);
 
     for (
       let startIndex = 0;
@@ -447,11 +534,30 @@ export async function POST(
             admin.uid
           );
 
-        await saveImportedWorkshop(
-          workshopData
-        );
+        const existing = byId.get(workshopData.id);
+        const validExistingImage = existing?.image && existing.image !== "/images/workshops/50_aviation-bundle.jpg";
+        const assignment = validExistingImage
+          ? {image: existing.image, imageAssetId: existing.imageAssetId || null, imageStatus: existing.imageAssetId ? "assigned" : "custom"}
+          : assignWorkshopImage(workshopData, usedImages);
+        if (assignment.imageAssetId && !validExistingImage) {
+          usedImages.set(assignment.imageAssetId, (usedImages.get(assignment.imageAssetId) || 0) + 1);
+        }
+        await saveImportedWorkshop({ ...workshopData, ...assignment }, mode === "replace");
 
         importedCount += 1;
+      }
+    }
+
+    let removedCount = 0;
+    if (mode === "replace") {
+      // Import first; on any failure the existing catalogue is still intact.
+      // For each discontinuation, use the same history-safe deletion path.
+      const { retireWorkshopPermanently } = await import("@/services/workshopRetirement");
+      for (const prior of discontinue) {
+        const current = await readCosmosDocument("workshops", prior.id);
+        if (!current) continue;
+        await retireWorkshopPermanently(current);
+        removedCount++;
       }
     }
 
@@ -460,7 +566,8 @@ export async function POST(
         true,
 
       message:
-        `${importedCount} workshops imported successfully.`,
+        mode === "replace" ? `Catalogue updated: ${importedCount} imported, ${removedCount} discontinued.` : `${importedCount} workshops imported successfully.`,
+      removedCount,
 
       importedCount,
     });

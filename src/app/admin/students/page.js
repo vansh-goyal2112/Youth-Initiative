@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 
 import {
   useEffect,
@@ -13,7 +14,12 @@ import {
   Search,
   UserRound,
   UserX,
+  Users,
   X,
+  RefreshCw,
+  UserRoundCheck,
+  ShieldCheck,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -23,12 +29,14 @@ import {
 export default function AdminStudentsPage() {
   const [students, setStudents] =
     useState([]);
+  const [pendingEnrollments, setPendingEnrollments] = useState([]);
 
   const [loading, setLoading] =
     useState(true);
 
   const [searchText, setSearchText] =
     useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const [
     selectedStudent,
@@ -48,8 +56,12 @@ export default function AdminStudentsPage() {
     setErrorMessage,
   ] = useState("");
 
-  const [message, setMessage] =
-    useState("");
+  const [message, setMessage] = useState("");
+  const [showEnrollForm, setShowEnrollForm] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const [enrollForm, setEnrollForm] = useState({
+    firstName: "", lastName: "", email: "", dateOfBirth: "", parentEmail: "",
+  });
 
   useEffect(() => {
     loadStudents();
@@ -78,6 +90,7 @@ export default function AdminStudentsPage() {
       setStudents(
         data.students || []
       );
+      setPendingEnrollments(data.pendingEnrollments || []);
     } catch (error) {
       setErrorMessage(
         error.message ||
@@ -95,13 +108,9 @@ export default function AdminStudentsPage() {
           .trim()
           .toLowerCase();
 
-      if (!search) {
-        return students;
-      }
-
       return students.filter(
         (student) => {
-          return [
+          return (statusFilter === "all" || (student.accountStatus || "active") === statusFilter) && (!search || [
             student.firstName,
             student.lastName,
             student.fullName,
@@ -113,12 +122,13 @@ export default function AdminStudentsPage() {
               String(value)
                 .toLowerCase()
                 .includes(search)
-            );
+            ));
         }
       );
     }, [
       students,
       searchText,
+      statusFilter,
     ]);
 
   async function saveStudent(
@@ -238,35 +248,115 @@ export default function AdminStudentsPage() {
     }
   }
 
+
+  async function enrollStudent(event) {
+    event.preventDefault();
+    try {
+      setEnrolling(true);
+      setMessage("");
+      setErrorMessage("");
+      const response = await adminFetch("/api/admin/students/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(enrollForm),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Enrollment could not be started.");
+      setMessage(data.message);
+      setShowEnrollForm(false);
+      setEnrollForm({ firstName: "", lastName: "", email: "", dateOfBirth: "", parentEmail: "" });
+      await loadStudents();
+    } catch (error) {
+      setErrorMessage(error.message || "Enrollment could not be started.");
+    } finally {
+      setEnrolling(false);
+    }
+  }
+
+  async function reactivateStudent(student) {
+    if (!window.confirm("Reactivate " + (student.fullName || student.youthId) + "?")) return;
+    try {
+      setSaving(true);
+      setErrorMessage("");
+      const response = await adminFetch("/api/admin/students", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: student.id,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          contactEmail: student.contactEmail,
+          learningMode: student.learningMode || "",
+          interests: student.interests || [],
+          accountStatus: "active",
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Reactivation failed.");
+      setMessage("Student account reactivated in Firebase Authentication and Cosmos DB.");
+      await loadStudents();
+    } catch (error) {
+      setErrorMessage(error.message || "Reactivation failed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+
   return (
     <main className="admin-students-page">
-      <div className="admin-page-heading">
-        <div>
-          <span>
-            ADMIN DASHBOARD
-          </span>
-
-          <h1>
-            Student Management
-          </h1>
-
-          <p>
-            View and manage Youth
-            Initiative student accounts.
-          </p>
-        </div>
-
-        <div className="admin-student-count">
-          <strong>
-            {students.length}
-          </strong>
-
-          <span>
-            Students
-          </span>
+      <div className="admin-students-intro">
+        <div><p className="admin-section-eyebrow"><Users size={16}/> STUDENT OPERATIONS</p><h1>Student directory<span>.</span></h1>
+          <p>Get a complete view of your youth community. Find profiles, support students, and explore their learning journeys.</p></div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <button className="admin-team-refresh" type="button" disabled={loading || enrolling}
+            onClick={() => setShowEnrollForm(current => !current)}>
+            <Plus size={18} /> Start student registration
+          </button>
+          <button className="admin-team-refresh" type="button" disabled={loading} onClick={loadStudents}>
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} /> Refresh students
+          </button>
         </div>
       </div>
 
+      {showEnrollForm && (
+        <form onSubmit={enrollStudent} className="admin-student-table-card" style={{ padding: 22, marginBottom: 18 }}>
+          <h2>Start a student&apos;s enrollment</h2>
+          <p style={{ marginBottom: 16 }}>
+            Students must verify their email; students under 18 also need guardian consent.
+            An account is created only after verification and activation.
+          </p>
+          <div className="admin-form-two-columns">
+            {[
+              ["First name", "firstName", "text"],
+              ["Last name", "lastName", "text"],
+              ["Student email", "email", "email"],
+              ["Date of birth", "dateOfBirth", "date"],
+              ["Guardian email (required if under 18)", "parentEmail", "email"],
+            ].map(([label, name, type]) => (
+              <label key={name} className="admin-form-field">
+                <span>{label}</span>
+                <input type={type} value={enrollForm[name]} required={name !== "parentEmail"}
+                  onChange={event => setEnrollForm(current => ({
+                    ...current, [name]: event.target.value,
+                  }))}
+                />
+              </label>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+            <button type="submit" className="admin-team-refresh" disabled={enrolling}>
+              {enrolling ? "Starting registration…" : "Send verification / guardian consent"}
+            </button>
+            <button type="button" className="admin-team-refresh" onClick={() => setShowEnrollForm(false)}>Cancel</button>
+          </div>
+        </form>
+      )}
+      <div className="admin-students-stats">
+        <div><span className="blue"><Users size={22}/></span><div><strong>{students.length}</strong><small>Total students</small></div></div>
+        <div><span className="green"><UserRoundCheck size={22}/></span><div><strong>{students.filter(s => (s.accountStatus || "active") === "active").length}</strong><small>Active accounts</small></div></div>
+        <div><span className="rose"><ShieldCheck size={22}/></span><div><strong>{students.filter(s => s.accountStatus === "inactive").length}</strong><small>Inactive accounts</small></div></div>
+      </div>
       {message && (
         <div className="admin-success-message">
           {message}
@@ -279,21 +369,35 @@ export default function AdminStudentsPage() {
         </div>
       )}
 
-      <div className="admin-student-search">
-        <Search size={19} />
-
-        <input
-          type="search"
-          placeholder="Search by name, Youth ID or email..."
-          value={searchText}
-          onChange={(event) =>
-            setSearchText(
-              event.target.value
-            )
-          }
-        />
+      <div className="admin-students-toolbar">
+        <div className="admin-student-search"><Search size={19}/><input type="search" aria-label="Search students" placeholder="Search by name, Youth ID or email…" value={searchText} onChange={event=>setSearchText(event.target.value)}/></div>
+        <select className="admin-students-filter" aria-label="Filter by account status" value={statusFilter} onChange={event=>setStatusFilter(event.target.value)}><option value="all">All account statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+        <div className="admin-students-results">{filteredStudents.length} results</div>
       </div>
-
+      {pendingEnrollments.length > 0 && (
+        <section className="admin-student-table-card" style={{ marginBottom: 20, padding: 18 }}>
+          <h2 style={{ marginBottom: 10 }}>Awaiting student activation ({pendingEnrollments.length})</h2>
+          <p style={{ marginBottom: 12 }}>
+            These are pending registrations, not active student accounts.
+            Verification and, for minors, guardian consent must finish before
+            they appear in the student directory.
+          </p>
+          <div className="admin-table-scroll">
+            <table className="admin-student-table">
+              <thead><tr><th>Student</th><th>Email</th><th>Registration status</th></tr></thead>
+              <tbody>
+                {pendingEnrollments.map(item => (
+                  <tr key={item.id}>
+                    <td>{item.fullName}</td>
+                    <td>{item.email}</td>
+                    <td>{(item.status || "pending").replaceAll("_", " ")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
       <section className="admin-student-table-card">
         {loading ? (
           <div className="admin-student-state">
@@ -397,7 +501,7 @@ export default function AdminStudentsPage() {
                         <div className="admin-row-actions">
                           <button
                             type="button"
-                            title="View"
+                            title="View student profile" aria-label="View student profile"
                             onClick={() =>
                               setSelectedStudent(
                                 student
@@ -411,7 +515,7 @@ export default function AdminStudentsPage() {
 
                           <button
                             type="button"
-                            title="Edit"
+                            title="Edit student profile" aria-label="Edit student profile"
                             onClick={() =>
                               setEditingStudent({
                                 ...student,
@@ -427,14 +531,18 @@ export default function AdminStudentsPage() {
                             />
                           </button>
 
+
+                          {student.accountStatus === "inactive" && (
+                            <button type="button" title="Reactivate student" aria-label="Reactivate student"
+                              disabled={saving} onClick={() => reactivateStudent(student)}>
+                              <UserRoundCheck size={17} />
+                            </button>
+                          )}
                           <button
                             type="button"
-                            title="Deactivate"
+                            title="Deactivate student" aria-label="Deactivate student"
                             className="delete"
-                            disabled={
-                              student.accountStatus ===
-                              "inactive"
-                            }
+                            disabled={student.accountStatus !== "active"}
                             onClick={() =>
                               deactivateStudent(
                                 student
@@ -608,6 +716,12 @@ function StudentViewModal({
             )}
           </div>
         </div>
+        <Link
+          href={`/admin/reports?youthId=${encodeURIComponent(student.youthId || "")}`}
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-orange-600 px-5 py-3 text-sm font-bold text-white hover:bg-orange-500"
+        >
+          Generate Full Report
+        </Link>
       </section>
     </div>
   );

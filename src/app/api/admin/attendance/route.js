@@ -2,7 +2,7 @@ import crypto from "crypto";
 
 import {
   adminAccessResponse,
-  requireActiveAdmin,
+  requireAdminPermission,
 } from "@/services/adminAccess";
 
 import {
@@ -25,9 +25,7 @@ export async function POST(
 ) {
   try {
     const admin =
-      await requireActiveAdmin(
-        request
-      );
+      await requireAdminPermission(request, "attendance.manage");
 
     const {
       workshopId,

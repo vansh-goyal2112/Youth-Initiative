@@ -215,11 +215,8 @@ export async function processWorkshopCompletion({
         continue;
       }
 
-      const completedWorkshop =
-        await readCosmosDocument(
-          "workshops",
-          registration.workshopId
-        );
+      const completedWorkshop = registration.workshopSnapshot ||
+        await readCosmosDocument("workshops", registration.workshopId);
 
       if (
         completedWorkshop

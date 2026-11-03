@@ -7,9 +7,6 @@ import {
   queryCosmosDocuments,
   readCosmosDocument,
 } from "@/services/cosmosData";
-import {
-  getCompletedStudentWorkshops,
-} from "@/services/studentJourney";
 
 export const runtime = "nodejs";
 
@@ -185,21 +182,14 @@ export async function GET(request) {
   try {
     const {
       uid: studentId,
+      student,
     } =
       await requireActiveStudent(
         request
       );
 
-    /*
-      Load student profile
-      from Cosmos DB.
-    */
-
-    const student =
-      await readCosmosDocument(
-        "students",
-        studentId
-      );
+    // requireActiveStudent already loaded and validated this Cosmos
+    // profile. Reuse it instead of making a second database read.
 
     if (!student) {
       return Response.json(
@@ -215,14 +205,55 @@ export async function GET(request) {
       );
     }
 
-    const completedWorkshops =
-      await getCompletedStudentWorkshops(
-        studentId,
-        {
-          queryDocuments: queryCosmosDocuments,
-          readDocument: readCosmosDocument,
-        }
+    /*
+      Load all completed
+      registrations for the
+      student.
+    */
+
+    const completedRegistrations =
+      await queryCosmosDocuments(
+        "registrations",
+        `
+          SELECT *
+          FROM c
+          WHERE c.studentId = @studentId
+            AND c.status = @status
+        `,
+        [
+          {
+            name:
+              "@studentId",
+
+            value:
+              studentId,
+          },
+          {
+            name:
+              "@status",
+
+            value:
+              "completed",
+          },
+        ]
       );
+
+    const completedWorkshops = [];
+
+    // Keep the original ordering, duplicate-registration behaviour and
+    // error propagation. Bound concurrent Cosmos reads to avoid bursts.
+    for (let offset = 0; offset < completedRegistrations.length; offset += 4) {
+      const batch = completedRegistrations.slice(offset, offset + 4);
+      const workshops = await Promise.all(batch.map(async registration =>
+        registration.workshopSnapshot ||
+        (registration.workshopId
+          ? await readCosmosDocument("workshops", registration.workshopId)
+          : null)
+      ));
+      for (const workshop of workshops) {
+        if (workshop) completedWorkshops.push({ id: workshop.id, ...workshop });
+      }
+    }
 
     const categoryProgress = {};
 
@@ -355,6 +386,8 @@ export async function GET(request) {
 
       gamification: {
         totalXp,
+
+        activeQuestId: student.activeQuestId || null,
 
         level:
           levelInformation.level,
