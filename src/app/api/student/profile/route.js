@@ -27,6 +27,11 @@ const VALID_INTERESTS = [
   "culinary",
 ];
 
+const VALID_SCHOOL_GRADES = new Set([
+  "K",
+  ...Array.from({ length: 12 }, (_, index) => String(index + 1)),
+]);
+
 export async function GET(
   request
 ) {
@@ -101,6 +106,50 @@ export async function PATCH(
       await request.json();
 
     const updates = {};
+
+    if (
+      Object.prototype.hasOwnProperty.call(
+        requestBody,
+        "schoolGrade"
+      )
+    ) {
+      if (
+        requestBody.schoolGrade !== null &&
+        typeof requestBody.schoolGrade !== "string"
+      ) {
+        return Response.json(
+          {
+            success: false,
+            message: "School grade is invalid.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const schoolGrade =
+        requestBody.schoolGrade === null
+          ? ""
+          : requestBody.schoolGrade.trim();
+
+      if (
+        schoolGrade &&
+        !VALID_SCHOOL_GRADES.has(schoolGrade)
+      ) {
+        return Response.json(
+          {
+            success: false,
+            message: "School grade is invalid.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      updates.schoolGrade = schoolGrade || null;
+    }
 
     /*
       Learning preference is optional

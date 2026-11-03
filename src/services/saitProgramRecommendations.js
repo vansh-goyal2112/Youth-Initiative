@@ -5,35 +5,51 @@ import {
 } from "./saitProgramNormalization.js";
 
 export const PROGRAM_RECOMMENDATION_WEIGHTS = Object.freeze({
-  interestCategory: 30,
-  interestSubject: 20,
-  completedWorkshopCategory: 25,
+  interestCategory: 25,
+  interestSubject: 15,
+  completedWorkshopCategory: 20,
   completedWorkshopTopic: 25,
+  learningMode: 15,
 });
 
-const INTEREST_CATEGORIES = {
-  "artificial intelligence": "Technology",
-  aviation: "Aviation",
-  business: "Business & Leadership",
-  coding: "Technology",
-  culinary: "Culinary & Hospitality",
-  design: "Design & Creativity",
-  health: "Health",
-  robotics: "Technology",
-  "skilled trades": "Trades",
-};
-
-const INTEREST_SUBJECTS = {
-  "artificial intelligence": ["artificial intelligence"],
-  aviation: ["aviation"],
-  business: ["business"],
-  coding: ["coding", "programming"],
-  culinary: ["culinary arts"],
-  design: ["design"],
-  health: ["health"],
-  robotics: ["robotics"],
-  "skilled trades": ["trades"],
-};
+export const SAIT_INTEREST_PATHWAY_MAPPINGS = Object.freeze({
+  "artificial intelligence": {
+    category: "Technology",
+    subjects: ["artificial intelligence"],
+  },
+  aviation: {
+    category: "Aviation",
+    subjects: ["aviation"],
+  },
+  business: {
+    category: "Business & Leadership",
+    subjects: ["business"],
+  },
+  coding: {
+    category: "Technology",
+    subjects: ["coding", "programming"],
+  },
+  culinary: {
+    category: "Culinary & Hospitality",
+    subjects: ["culinary arts"],
+  },
+  design: {
+    category: "Design & Creativity",
+    subjects: ["design"],
+  },
+  health: {
+    category: "Health",
+    subjects: ["health"],
+  },
+  robotics: {
+    category: "Technology",
+    subjects: ["robotics"],
+  },
+  "skilled trades": {
+    category: "Trades",
+    subjects: ["trades"],
+  },
+});
 
 function normalizeCategory(value) {
   return normalizeMatchText(value).replace(/\s/g, " ");
@@ -64,6 +80,9 @@ function getWorkshopText(workshop) {
     workshop.description,
     workshop.category,
     workshop.programArea,
+    ...(Array.isArray(workshop.topics) ? workshop.topics : []),
+    ...(Array.isArray(workshop.subjects) ? workshop.subjects : []),
+    ...(Array.isArray(workshop.skills) ? workshop.skills : []),
   ]
     .filter((value) => typeof value === "string")
     .join(" ");
@@ -71,12 +90,14 @@ function getWorkshopText(workshop) {
 
 function getRecommendationReasons(
   program,
+  student,
   interests,
   completedWorkshops,
   weights
 ) {
   let score = 0;
   const reasons = [];
+  const matchedWorkshopIds = new Set();
   const programCategory = normalizeCategory(program.category);
   const relatedCategories = program.relatedWorkshopCategories.map(
     normalizeCategory
@@ -84,7 +105,8 @@ function getRecommendationReasons(
   const relatedTopics = program.relatedWorkshopTopics;
 
   const categoryInterestMatch = interests.find((interest) => {
-    const category = INTEREST_CATEGORIES[normalizeMatchText(interest)];
+    const category =
+      SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]?.category;
     return category && normalizeCategory(category) === programCategory;
   });
 
@@ -96,9 +118,8 @@ function getRecommendationReasons(
   const subjectInterestMatch = interests
     .map((interest) => {
       const supportedSubjects =
-        INTEREST_SUBJECTS[normalizeMatchText(interest)] || [
-          normalizeMatchText(interest),
-        ];
+        SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]
+          ?.subjects || [normalizeMatchText(interest)];
 
       const programSubject = program.subjects.find((subject) =>
         supportedSubjects.some(
@@ -130,6 +151,9 @@ function getRecommendationReasons(
 
   if (categoryWorkshop) {
     score += weights.completedWorkshopCategory;
+    if (categoryWorkshop.id) {
+      matchedWorkshopIds.add(categoryWorkshop.id);
+    }
     reasons.push(
       `Builds on your completed ${categoryWorkshop.title} workshop`
     );
@@ -146,14 +170,46 @@ function getRecommendationReasons(
 
   if (topicWorkshopMatch) {
     score += weights.completedWorkshopTopic;
+    if (topicWorkshopMatch.workshop.id) {
+      matchedWorkshopIds.add(topicWorkshopMatch.workshop.id);
+    }
     reasons.push(
       `Connects with ${topicWorkshopMatch.topic} topics from your learning journey`
+    );
+  }
+
+  const studentLearningMode = student.learningMode;
+  const programLearningMode = program.learningMode;
+  const isKnownStudentMode = ["in-person", "online", "both"].includes(
+    studentLearningMode
+  );
+  const isKnownProgramMode = ["in-person", "online", "hybrid"].includes(
+    programLearningMode
+  );
+  const learningModeMatches =
+    isKnownStudentMode &&
+    isKnownProgramMode &&
+    (
+      studentLearningMode === "both" ||
+      studentLearningMode === programLearningMode ||
+      programLearningMode === "hybrid"
+    );
+
+  if (learningModeMatches) {
+    score += weights.learningMode;
+    reasons.push(
+      studentLearningMode === "both"
+        ? "Fits your preference to consider both online and in-person options"
+        : programLearningMode === "hybrid"
+          ? `Offers a hybrid option that includes your ${studentLearningMode} learning preference`
+          : `Fits your ${studentLearningMode} learning preference`
     );
   }
 
   return {
     score: Math.min(100, Math.round(score)),
     reasons,
+    matchedWorkshopIds: [...matchedWorkshopIds],
   };
 }
 
@@ -172,8 +228,17 @@ export function recommendSaitPrograms(
     throw new Error("A student profile is required for recommendations.");
   }
 
-  if (!Array.isArray(student.interests)) {
+  if (
+    student.interests !== undefined &&
+    !Array.isArray(student.interests)
+  ) {
     throw new Error("Student interests must be an array.");
+  }
+
+  const interests = student.interests || [];
+
+  if (interests.some((interest) => typeof interest !== "string")) {
+    throw new Error("Student interests must contain only strings.");
   }
 
   if (
@@ -197,9 +262,10 @@ export function recommendSaitPrograms(
       return program.status === "active";
     })
     .map((program) => {
-      const { score, reasons } = getRecommendationReasons(
+      const { score, reasons, matchedWorkshopIds } = getRecommendationReasons(
         program,
-        student.interests,
+        student,
+        interests,
         completedWorkshops,
         weights
       );
@@ -212,6 +278,7 @@ export function recommendSaitPrograms(
         },
         score,
         reasons,
+        matchedWorkshopIds,
       };
     })
     .filter((recommendation) => recommendation.score > 0)

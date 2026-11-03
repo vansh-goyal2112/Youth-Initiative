@@ -299,6 +299,7 @@ export default function ProfilePage() {
               <InfoRow Icon={GraduationCap} label="Youth Initiative ID" value={youthId} placeholder="Please contact the program team" emphasized/>
               <InfoRow Icon={Mail} label="Contact Email" value={email} placeholder="No contact email is recorded"/>
               <InfoRow Icon={CalendarDays} label="Date of Birth" value={birthDate} placeholder="No date recorded"/>
+              <InfoRow Icon={BookOpen} label="Current School Grade" value={student.schoolGrade === "K" ? "Kindergarten" : student.schoolGrade ? `Grade ${student.schoolGrade}` : ""} placeholder="Not provided"/>
               <InfoRow Icon={MonitorPlay} label="Learning Preference" value={formatLearningPreference(student.learningMode)}/>
             </div>
             <p className={styles.privateNote}><LockKeyhole size={16} aria-hidden="true"/> Your account details are private and visible only to you while signed in.</p>

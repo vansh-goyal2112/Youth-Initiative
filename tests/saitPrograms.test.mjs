@@ -16,6 +16,7 @@ import {
 } from "../src/services/saitProgramScraper.js";
 import {
   PROGRAM_RECOMMENDATION_WEIGHTS,
+  SAIT_INTEREST_PATHWAY_MAPPINGS,
   recommendSaitPrograms,
 } from "../src/services/saitProgramRecommendations.js";
 import {
@@ -320,13 +321,15 @@ test("uses the official SAIT sitemap when the listing is client-rendered", async
 });
 
 test("recommends programs using only supported matching evidence", () => {
-  const program = makeProgram();
+  const program = makeProgram({ learningMode: "online" });
   const recommendations = recommendSaitPrograms({
     student: {
       interests: ["coding"],
+      learningMode: "online",
     },
     completedWorkshops: [
       {
+        id: "completed-coding",
         title: "Intro to Coding",
         category: "Technology",
       },
@@ -341,7 +344,12 @@ test("recommends programs using only supported matching evidence", () => {
     "Connects your coding interest with Programming",
     "Builds on your completed Intro to Coding workshop",
     "Connects with Coding topics from your learning journey",
+    "Fits your online learning preference",
   ]);
+  assert.deepEqual(
+    recommendations[0].matchedWorkshopIds,
+    ["completed-coding"]
+  );
 
   const noMatch = recommendSaitPrograms({
     student: {
@@ -351,6 +359,58 @@ test("recommends programs using only supported matching evidence", () => {
     programs: [program],
   });
   assert.deepEqual(noMatch, []);
+});
+
+test("handles incomplete profiles and preserves explicit interest mappings", () => {
+  const recommendations = recommendSaitPrograms({
+    student: {},
+    completedWorkshops: [],
+    programs: [makeProgram()],
+  });
+
+  assert.deepEqual(recommendations, []);
+  assert.deepEqual(
+    SAIT_INTEREST_PATHWAY_MAPPINGS.coding,
+    {
+      category: "Technology",
+      subjects: ["coding", "programming"],
+    }
+  );
+});
+
+test("matches completed workshop skills and excludes unrelated activities", () => {
+  const program = makeProgram();
+  const recommendations = recommendSaitPrograms({
+    student: { interests: [] },
+    completedWorkshops: [
+      {
+        id: "coding-workshop",
+        title: "Creative Arts",
+        category: "Design & Creativity",
+        skills: ["Coding"],
+      },
+    ],
+    programs: [program],
+  });
+
+  assert.equal(recommendations.length, 1);
+  assert.deepEqual(recommendations[0].matchedWorkshopIds, [
+    "coding-workshop",
+  ]);
+
+  const unrelated = recommendSaitPrograms({
+    student: { interests: [] },
+    completedWorkshops: [
+      {
+        id: "unrelated-workshop",
+        title: "First Aid",
+        category: "Health",
+      },
+    ],
+    programs: [program],
+  });
+
+  assert.deepEqual(unrelated, []);
 });
 
 test("supports documented, configurable recommendation weights", () => {

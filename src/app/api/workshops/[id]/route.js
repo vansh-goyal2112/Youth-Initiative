@@ -7,6 +7,10 @@ import {
   readCosmosDocument,
 } from "@/services/cosmosData";
 
+import {
+  getWorkshopEligibility,
+} from "@/services/workshopEligibility";
+
 export const runtime = "nodejs";
 
 export async function GET(
@@ -14,7 +18,10 @@ export async function GET(
   context
 ) {
   try {
-    await requireActiveStudent(
+    const {
+      student,
+    } =
+      await requireActiveStudent(
       request
     );
 
@@ -80,6 +87,23 @@ export async function GET(
       );
     }
 
+    const eligibility = getWorkshopEligibility(
+      workshop,
+      student
+    );
+
+    if (eligibility.status === "ineligible") {
+      return Response.json(
+        {
+          success: false,
+          message: eligibility.reason,
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
     return Response.json({
       success: true,
 
@@ -88,6 +112,8 @@ export async function GET(
           workshop.id,
 
         ...workshop,
+        eligibilityStatus: eligibility.status,
+        eligibilityMessage: eligibility.reason,
       },
     });
   } catch (error) {

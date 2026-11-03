@@ -3655,6 +3655,33 @@ img {
   gap: 7px;
 }
 
+.workshop-eligibility-notice,
+.workshop-availability-notice {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #f0cf88;
+  border-radius: 8px;
+  background: #fff7e6;
+  color: #76500a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.workshop-availability-notice p {
+  margin: 4px 0 0;
+}
+
+.workshop-availability-status {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #fff1d6;
+  color: #805300;
+  font-size: 10px;
+  font-weight: 800;
+}
+
 .workshop-card-footer {
   display: flex;
   align-items: center;

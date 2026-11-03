@@ -389,6 +389,8 @@ export function AuthProvider({
 
     studentProfile,
 
+    updateStudentProfile: setStudentProfile,
+
     // Backward-compatible alias for existing student pages.
     // Both reference the same authenticated Cosmos-backed profile.
     student: studentProfile,
