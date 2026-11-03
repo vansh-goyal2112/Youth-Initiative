@@ -358,7 +358,11 @@ test("network failures are reported without writing", async () => {
     },
   });
 
-  test("does not write a partial workshop import when a page fetch fails", async () => {
+  assert.equal(reports[0].failed, 1);
+  assert.equal(reports[0].failures[0].stage, "discovery");
+});
+
+test("does not write a partial workshop import when a page fetch fails", async () => {
     const sitemap = `
       <urlset>
         <url><loc>https://www.sait.ca/youth-programs/digital-youth/cybersecurity</loc></url>
@@ -406,10 +410,6 @@ test("network failures are reported without writing", async () => {
     assert.equal(reports[0].validated, 1);
     assert.equal(reports[0].failed, 1);
     assert.equal(reports[0].skipped, 1);
-  });
-
-  assert.equal(reports[0].failed, 1);
-  assert.equal(reports[0].failures[0].stage, "discovery");
 });
 
 test("a live run writes through the supplied container", async () => {
