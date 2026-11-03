@@ -1,20 +1,9 @@
-export function getWorkshopImage(category = "") {
-  const normalizedCategory = category.toLowerCase();
+import { normalizeWorkshopTitle, resolveWorkshopImage } from "./workshopImageAssignment.mjs";
 
-  if (
-    normalizedCategory.includes("technology") ||
-    normalizedCategory.includes("digital") ||
-    normalizedCategory.includes("coding")
-  ) {
-    return "/images/landing/youth-coding.png";
-  }
-
-  if (
-    normalizedCategory.includes("trade") ||
-    normalizedCategory.includes("construction")
-  ) {
-    return "/images/landing/youth-trades.png";
-  }
-
-  return "/images/landing/youth-campus.png";
+// Returns a real assigned image or null. Missing images are represented by
+// a branded, accessible placeholder instead of an unrelated campus photo.
+export function getWorkshopImage(workshop = {}) {
+  if (!workshop || typeof workshop !== "object") return null;
+  if (workshop.imageStatus === "needs_image" && normalizeWorkshopTitle(workshop.title) !== "aviation bundle") return null;
+  return resolveWorkshopImage(workshop);
 }

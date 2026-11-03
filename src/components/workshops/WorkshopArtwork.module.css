@@ -1,0 +1,60 @@
+.placeholder {
+  position: absolute;
+  inset: 0;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  overflow: hidden;
+  padding: 20px;
+  color: #fff;
+  text-align: center;
+  background: linear-gradient(135deg, #19283e 0%, #273d57 60%, #a32132 100%);
+}
+
+.decoration {
+  position: absolute;
+  z-index: -1;
+  top: -75%;
+  right: -15%;
+  width: 72%;
+  height: 185%;
+  transform: rotate(-25deg);
+  border-radius: 100%;
+  background: rgba(255,255,255,.07);
+  box-shadow: -155px 175px 0 rgba(225,35,42,.19);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: 16px;
+  background: rgba(255,255,255,.12);
+}
+
+.eyebrow {
+  font-size: clamp(8px, 1vw, 11px);
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.heading {
+  font-size: clamp(16px, 2vw, 26px);
+  line-height: 1.15;
+  font-weight: 800;
+}
+
+.caption {
+  font-size: clamp(10px, 1vw, 12px);
+  color: rgba(255,255,255,.84);
+}
+
+@media (max-width: 400px) {
+  .placeholder { gap: 5px; padding: 12px; }
+  .icon { width: 44px; height: 44px; }
+}

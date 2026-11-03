@@ -1,6 +1,13 @@
 "use client";
 
+import { recommendYouthWorkshops } from "@/utils/youthWorkshopRecommendations.mjs";
 import Link from "next/link";
+import UpcomingAdventures from "@/components/gamification/UpcomingAdventures";
+import SkillQuestHub from "@/components/gamification/SkillQuestHub";
+import DiscoverySpinner from "@/components/gamification/DiscoverySpinner";
+import dashboardSkin from "@/components/gamification/dashboardQuest.module.css";
+import playfulSkin from "@/components/gamification/playfulSkin.module.css";
+import { daysUntilWorkshop } from "@/utils/upcomingWorkshops.mjs";
 import Image from "next/image";
 
 import {
@@ -41,9 +48,7 @@ import {
   studentFetch,
 } from "@/services/studentApi";
 
-import {
-  getWorkshopImage,
-} from "@/utils/getWorkshopImage";
+import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 
 export default function DashboardPage() {
   const {
@@ -180,19 +185,23 @@ export default function DashboardPage() {
             []
         );
 
-        try {
-          const pathwayResponse = await studentFetch(
-            "/api/pathways/recommendations"
-          );
-          if (pathwayResponse.ok) {
-            const pathwayResult = await pathwayResponse.json();
-            if (!cancelled && pathwayResult?.recommendations) {
-              setPathwayRecommendations(pathwayResult.recommendations);
+        // Recommendations do not determine whether dashboard content is ready.
+        // Keep the same cards and API data, but load them independently.
+        void (async () => {
+          try {
+            const pathwayResponse = await studentFetch(
+              "/api/pathways/recommendations"
+            );
+            if (pathwayResponse.ok) {
+              const pathwayResult = await pathwayResponse.json();
+              if (!cancelled && pathwayResult?.recommendations) {
+                setPathwayRecommendations(pathwayResult.recommendations);
+              }
             }
+          } catch {
+            // Gracefully omit post-secondary recommendations if not ready.
           }
-        } catch {
-          // Gracefully omit post-secondary recommendations if not ready
-        }
+        })();
       } catch (error) {
         console.error(
           "Dashboard loading error:",
@@ -227,127 +236,31 @@ export default function DashboardPage() {
     authLoading,
   ]);
 
-  const upcomingRegistrations =
-    useMemo(() => {
-      return registrations.filter(
-        (registration) =>
-          registration.status !==
-            "completed" &&
-          registration.workshop
-      );
-    }, [
-      registrations,
-    ]);
+  const upcomingRegistrations = useMemo(() => {
+    return registrations
+      .filter((registration) => {
+        if (registration.status === "completed" || !registration.workshop) {
+          return false;
+        }
+        const days = daysUntilWorkshop(registration.workshop.startDate);
+        return days === null || days >= 0;
+      })
+      .sort((first, second) => {
+        const firstDays = daysUntilWorkshop(first.workshop.startDate);
+        const secondDays = daysUntilWorkshop(second.workshop.startDate);
+        return (firstDays === null ? Infinity : firstDays)
+          - (secondDays === null ? Infinity : secondDays);
+      });
+  }, [registrations]);
 
   const nextWorkshop =
     upcomingRegistrations[0] ||
     null;
 
-  const activeQuest =
-    useMemo(() => {
-      if (
-        !gameData?.quests
-      ) {
-        return null;
-      }
-
-      return (
-        gameData.quests.find(
-          (quest) =>
-            !quest.completed
-        ) ||
-        gameData.quests[
-          gameData.quests.length -
-            1
-        ]
-      );
-    }, [
-      gameData,
-    ]);
-
-  const recommendedWorkshops =
-    useMemo(() => {
-      const registeredIds =
-        new Set(
-          registrations.map(
-            (registration) =>
-              registration.workshopId
-          )
-        );
-
-      const interests =
-        student?.interests ||
-        [];
-
-      const normalizedInterests =
-        interests.map(
-          (interest) =>
-            String(
-              interest
-            ).toLowerCase()
-        );
-
-      const scored =
-        workshops
-          .filter(
-            (workshop) =>
-              !registeredIds.has(
-                workshop.id
-              )
-          )
-          .map(
-            (workshop) => {
-              const searchableText =
-                [
-                  workshop.title,
-                  workshop.category,
-                  workshop.programArea,
-                  workshop.description,
-                ]
-                  .filter(
-                    Boolean
-                  )
-                  .join(" ")
-                  .toLowerCase();
-
-              let score = 0;
-
-              normalizedInterests.forEach(
-                (
-                  interest
-                ) => {
-                  if (
-                    searchableText.includes(
-                      interest
-                    )
-                  ) {
-                    score += 1;
-                  }
-                }
-              );
-
-              return {
-                ...workshop,
-                recommendationScore:
-                  score,
-              };
-            }
-          )
-          .sort(
-            (a, b) =>
-              b.recommendationScore -
-              a.recommendationScore
-          );
-
-      return scored.slice(
-        0,
-        3
-      );
-    }, [
-      workshops,
-      registrations,
-      student,
-    ]);
+  const recommendedWorkshops = useMemo(
+    () => recommendYouthWorkshops({workshops,registrations,student}),
+    [workshops,registrations,student]
+  );
 
   if (
     authLoading ||
@@ -420,20 +333,17 @@ export default function DashboardPage() {
     )[0] ||
     "Explorer";
 
-  const questProgress =
-    activeQuest
-      ? Math.min(
-          100,
-          Math.round(
-            (activeQuest.current /
-              activeQuest.target) *
-              100
-          )
-        )
-      : 0;
+  async function refreshRegistrations() {
+    const response = await studentFetch("/api/registrations");
+    const updated = await response.json();
+    if (!response.ok) {
+      throw new Error(updated.message || "Could not refresh journal progress.");
+    }
+    setRegistrations(updated.registrations || []);
+  }
 
   return (
-    <main className="student-dashboard">
+    <main className={`student-dashboard ${dashboardSkin.dashboardQuest}`}>
       {/* DESKTOP HEADER */}
 
       <header className="student-app-header">
@@ -635,228 +545,50 @@ export default function DashboardPage() {
       {/* MAIN CONTENT */}
 
       <section className="student-content-container dashboard-main">
-        {/* PLAYER STATS */}
+        {/* SKILL QUEST HQ: saved focus missions and verified learning journal */}
+        <SkillQuestHub
+          gameData={gameData}
+          student={student}
+          registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
+        />
 
-        <div className="dashboard-stat-grid">
-          <DashboardStat
-            icon={
-              CheckCircle2
-            }
-            value={
-              gameData.completedWorkshops
-            }
-            label="Completed"
-            detail="Workshops"
-          />
+        <UpcomingAdventures
+          workshops={workshops}
+          registrations={registrations}
+        />
 
-          <DashboardStat
-            icon={Trophy}
-            value={
-              gameData.badgeCount
-            }
-            label="Badges"
-            detail="Unlocked"
-          />
+        <DiscoverySpinner
+          workshops={workshops}
+          registrations={registrations}
+        />
 
-          <DashboardStat
-            icon={Compass}
-            value={
-              gameData.categoryCount
-            }
-            label="Skill Areas"
-            detail="Explored"
-          />
-
-          <DashboardStat
-            icon={Zap}
-            value={
-              gameData.totalXp
-            }
-            label="Total XP"
-            detail="Earned"
-          />
-        </div>
-
-        {/* NEXT WORKSHOP + QUEST */}
-
-        <div className="dashboard-focus-grid">
-          <section className="dashboard-section">
-            <div className="dashboard-section-heading">
-              <div>
-                <span>
-                  UP NEXT
-                </span>
-
-                <h2>
-                  Continue Your
-                  Journey
-                </h2>
-              </div>
-
-              <Link href="/registered-workshops">
-                View all
-                <ChevronRight
-                  size={16}
-                />
-              </Link>
+        <section className="dashboard-section dashboard-next-adventure">
+          <div className="dashboard-section-heading">
+            <div>
+              <span>YOUR NEXT WORKSHOP</span>
+              <h2>Next Stop on Your Journey</h2>
             </div>
-
-            {nextWorkshop ? (
-              <NextWorkshopCard
-                registration={
-                  nextWorkshop
-                }
-              />
-            ) : (
-              <div className="dashboard-empty-workshop">
-                <div>
-                  <Rocket
-                    size={31}
-                  />
-                </div>
-
-                <section>
-                  <span>
-                    READY FOR YOUR NEXT
-                    QUEST?
-                  </span>
-
-                  <h3>
-                    Find a workshop
-                    that interests you.
-                  </h3>
-
-                  <p>
-                    Register for a
-                    workshop and start
-                    earning XP, badges
-                    and skill progress.
-                  </p>
-
-                  <Link href="/workshops">
-                    Explore Workshops
-                    <ChevronRight
-                      size={16}
-                    />
-                  </Link>
-                </section>
-              </div>
-            )}
-          </section>
-
-          <section className="dashboard-section">
-            <div className="dashboard-section-heading">
-              <div>
-                <span>
-                  ACTIVE QUEST
-                </span>
-
-                <h2>
-                  Your Challenge
-                </h2>
-              </div>
-
-              <Link href="/journey">
-                All quests
-                <ChevronRight
-                  size={16}
-                />
-              </Link>
+            <Link href="/registered-workshops">
+              View My Workshops <ChevronRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
+          {nextWorkshop ? (
+            <NextWorkshopCard registration={nextWorkshop} />
+          ) : (
+            <div className="dashboard-empty-workshop">
+              <div><Rocket size={31} aria-hidden="true" /></div>
+              <section>
+                <span>A NEW ADVENTURE AWAITS</span>
+                <h3>Find a workshop that sparks your curiosity!</h3>
+                <p>Discover something new, try a skill, and start building your real learning journey.</p>
+                <Link href="/workshops">
+                  Explore Workshops <ChevronRight size={16} aria-hidden="true"/>
+                </Link>
+              </section>
             </div>
-
-            {activeQuest && (
-              <article
-                className={`dashboard-quest-card ${
-                  activeQuest.completed
-                    ? "completed"
-                    : ""
-                }`}
-              >
-                <div className="dashboard-quest-top">
-                  <div className="dashboard-quest-icon">
-                    {activeQuest.completed ? (
-                      <CheckCircle2
-                        size={27}
-                      />
-                    ) : (
-                      <Target
-                        size={27}
-                      />
-                    )}
-                  </div>
-
-                  <div className="dashboard-quest-reward">
-                    <Star
-                      size={14}
-                    />
-                    +
-                    {
-                      activeQuest.reward
-                    }
-                    {" XP"}
-                  </div>
-                </div>
-
-                <span className="dashboard-quest-label">
-                  {activeQuest.completed
-                    ? "QUEST COMPLETE"
-                    : "IN PROGRESS"}
-                </span>
-
-                <h3>
-                  {
-                    activeQuest.title
-                  }
-                </h3>
-
-                <p>
-                  {
-                    activeQuest.description
-                  }
-                </p>
-
-                <div className="dashboard-quest-progress-heading">
-                  <span>
-                    Quest Progress
-                  </span>
-
-                  <strong>
-                    {
-                      activeQuest.current
-                    }
-                    {" / "}
-                    {
-                      activeQuest.target
-                    }
-                  </strong>
-                </div>
-
-                <div className="dashboard-quest-progress">
-                  <div
-                    style={{
-                      width:
-                        `${questProgress}%`,
-                    }}
-                  />
-                </div>
-
-                <div className="dashboard-quest-footer">
-                  <span>
-                    {questProgress}%
-                    complete
-                  </span>
-
-                  <Link href="/journey">
-                    View Skill Quest
-                    <ChevronRight
-                      size={14}
-                    />
-                  </Link>
-                </div>
-              </article>
-            )}
-          </section>
-        </div>
+          )}
+        </section>
 
         {/* SKILL TRACKS */}
 
@@ -1058,7 +790,7 @@ export default function DashboardPage() {
                     href={rec.program.informationUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                    className={playfulSkin.programLink}
                   >
                     <span>View SAIT Program</span>
                     <ExternalLink size={14} />
@@ -1167,60 +899,16 @@ export default function DashboardPage() {
   );
 }
 
-function DashboardStat({
-  icon: Icon,
-  value,
-  label,
-  detail,
-}) {
-  return (
-    <article className="dashboard-stat-card">
-      <div className="dashboard-stat-icon">
-        <Icon
-          size={21}
-        />
-      </div>
-
-      <div>
-        <strong>
-          {value}
-        </strong>
-
-        <span>
-          {label}
-        </span>
-
-        <small>
-          {detail}
-        </small>
-      </div>
-    </article>
-  );
-}
-
 function NextWorkshopCard({
   registration,
 }) {
   const workshop =
     registration.workshop;
 
-  const image =
-    workshop.image ||
-    getWorkshopImage(
-      workshop.category
-    );
-
   return (
     <article className="dashboard-next-workshop">
       <div className="dashboard-next-image">
-        <Image
-          src={image}
-          alt={
-            workshop.title
-          }
-          fill
-          sizes="(max-width: 700px) 100vw, 500px"
-        />
+        <WorkshopArtwork workshop={workshop} sizes="(max-width: 700px) 100vw, 500px" />
 
         <span>
           UPCOMING
@@ -1244,7 +932,7 @@ function NextWorkshopCard({
               size={16}
             />
 
-            {workshop.date ||
+            {workshop.startDate ||
               "Workshop date"}
           </div>
 
@@ -1284,11 +972,6 @@ function NextWorkshopCard({
 function RecommendedWorkshop({
   workshop,
 }) {
-  const image =
-    workshop.image ||
-    getWorkshopImage(
-      workshop.category
-    );
 
   return (
     <Link
@@ -1296,14 +979,7 @@ function RecommendedWorkshop({
       className="dashboard-recommendation-card"
     >
       <div className="dashboard-recommendation-image">
-        <Image
-          src={image}
-          alt={
-            workshop.title
-          }
-          fill
-          sizes="(max-width: 700px) 100vw, 350px"
-        />
+        <WorkshopArtwork workshop={workshop} sizes="(max-width: 700px) 100vw, 350px" />
 
         {workshop.recommendationScore >
           0 && (

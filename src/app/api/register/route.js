@@ -190,7 +190,8 @@ export async function POST(request) {
               "pending_consent",
               "consent_approved",
               "consent_not_required",
-              "pending_email_verification"
+              "pending_email_verification",
+              "email_verified"
             )
         `,
         [
@@ -209,10 +210,13 @@ export async function POST(request) {
           success: false,
 
           message:
-            "A registration is already pending for this email address.",
+            "You already started registration with this email address. Select Resume Registration to securely continue without creating a duplicate.",
 
           code:
             "registration-already-pending",
+
+          recoveryUrl:
+            "/resume-registration",
         },
         {
           status: 409,

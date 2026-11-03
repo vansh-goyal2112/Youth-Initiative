@@ -54,5 +54,11 @@ jobs:
       - name: Run ESLint
         run: npm run lint
 
+      - name: Run unit tests
+        run: npm test
+
       - name: Build Next.js application
         run: npm run build
+
+      - name: Run production HTTP smoke tests
+        run: npm run test:smoke
