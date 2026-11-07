@@ -27,6 +27,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  sendEmailVerification,
   getMultiFactorResolver,
   TotpMultiFactorGenerator,
   signOut,
@@ -83,6 +84,7 @@ export default function AdminLoginPage() {
   async function resendVerification() {
     setResending(true);
     setErrorMessage("");
+    setInfoMessage("");
     try {
       if (!auth.currentUser || auth.currentUser.email?.toLowerCase() !== email.trim().toLowerCase()) {
         await signInWithEmailAndPassword(auth, email.trim(), password);
@@ -90,9 +92,42 @@ export default function AdminLoginPage() {
       const response = await adminFetch("/api/admin/auth/send-verification", { method: "POST" });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Could not resend verification.");
-      setInfoMessage(data.message);
+      setInfoMessage(data.verified
+        ? data.message
+        : `Azure accepted the email for delivery, but inbox delivery is not confirmed. Check Junk, or use "Send with Firebase" below.${data.deliveryId ? ` Reference: ${data.deliveryId}` : ""}`);
+      if (data.verified) setMode("request");
     } catch (error) { setErrorMessage(error?.message || "Could not resend verification."); }
     finally { setResending(false); }
+  }
+
+  // Firebase Authentication can send its own verification email to the
+  // currently signed-in user's address, independently of Azure Email.
+  // This does not mark the user verified or grant administrator access.
+  async function sendFirebaseVerification() {
+    setResending(true);
+    setErrorMessage("");
+    setInfoMessage("");
+    try {
+      const address = email.trim().toLowerCase();
+      if (!/^[^@\s]+@sait\.ca$/i.test(address)) {
+        throw new Error("A SAIT work email is required.");
+      }
+      let user = auth.currentUser;
+      if (!user || user.email?.trim().toLowerCase() !== address) {
+        const result = await signInWithEmailAndPassword(auth, address, password);
+        user = result.user;
+      }
+      await user.reload();
+      if (user.emailVerified) {
+        setInfoMessage("This SAIT email is already verified. Submit your access request.");
+      } else {
+        await sendEmailVerification(user);
+        setInfoMessage("Firebase accepted a verification email request for your SAIT address. Check Inbox/Junk, open the verification link, then return to Request access.");
+      }
+      setMode("request");
+    } catch (error) {
+      setErrorMessage(error?.message || "Could not send Firebase verification email.");
+    } finally { setResending(false); }
   }
 
   async function handleLogin(
@@ -133,8 +168,13 @@ export default function AdminLoginPage() {
         await createUserWithEmailAndPassword(auth, email.trim(), password);
         const response = await adminFetch("/api/admin/auth/send-verification", { method: "POST" });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Verification email could not be sent.");
-        setInfoMessage("A verification link was sent through Azure Email. Open your SAIT inbox, verify, then return to request access.");
+        if (!response.ok) {
+          // Firebase account already exists, so switch to access-request mode
+          // instead of leaving the user stuck at the Create account form.
+          setMode("request");
+          throw new Error("Your account was created, but the Azure verification request failed. Use the Firebase verification option below.");
+        }
+        setInfoMessage("Azure accepted the verification email for delivery (arrival is not guaranteed). Check Inbox/Junk, or use the Firebase option below.");
         setMode("request");
         return;
       }
@@ -307,7 +347,10 @@ export default function AdminLoginPage() {
               {errorMessage && <div className="admin-auth-alert error" role="alert"><ShieldCheck size={19}/><span>{errorMessage}</span></div>}
               <button className="admin-auth-submit" type="submit" disabled={loading}>{loading ? <><LoaderCircle size={19} className="animate-spin"/> Processing...</> : <>{mode === "register" ? <UserRoundPlus size={19}/> : <LockKeyhole size={18}/>} {content.action}<ArrowRight size={19}/></>}</button>
             </form>
-            {(mode === "request" || mode === "register") && <button type="button" disabled={resending} className="admin-auth-secondary" onClick={resendVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Resend verification email</button>}
+            {(mode === "request" || mode === "register") && <>
+              <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={resendVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Resend via Azure Email</button>
+              <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={sendFirebaseVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Send with Firebase instead</button>
+            </>}
             {mode === "reset" || mode === "mfa" || mode === "appMfa" ? <button type="button" className="admin-auth-back" onClick={() => {setMode("login");setErrorMessage("");setInfoMessage("");}}>← Back to sign in</button> :
               <button type="button" className="admin-auth-back" onClick={() => {setMode("reset");setErrorMessage("");setInfoMessage("");}}>Forgot your password?</button>}
             <div className="admin-auth-trust"><ShieldCheck size={16}/><span>Protected access · SAIT verified accounts only</span></div>

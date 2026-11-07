@@ -72,7 +72,10 @@ export async function POST(request) {
         '" style="display:inline-block;padding:12px 20px;background:#d52731;color:#fff;text-decoration:none;border-radius:6px">Verify email</a></p><p>If you did not register, ignore this message.</p></div>',
       replyTo: process.env.EMAIL_REPLY_TO || undefined,
     });
-    return Response.json({ success: true, message: "Verification email sent using Azure Communication Services.", deliveryId: result?.id || null });
+    // ACS reports successful handoff for delivery, NOT delivery to the inbox.
+    // Preserve the ACS operation ID for troubleshooting recipient-side failures.
+    console.info("Admin email verification accepted by ACS", { operationId: result?.id || null });
+    return Response.json({ success: true, message: "Azure accepted the verification email for delivery. Inbox delivery is not confirmed.", deliveryId: result?.id || null });
   } catch (error) {
     console.error("Admin email verification delivery failed:", error?.message);
     return Response.json({ message: "Verification email could not be sent. Check Azure Email configuration and try again later." }, { status: 500 });
