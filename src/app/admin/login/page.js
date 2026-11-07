@@ -109,7 +109,7 @@ export default function AdminLoginPage() {
     setInfoMessage("");
     try {
       const address = email.trim().toLowerCase();
-      if (!/^[^@\\s]+@sait\\.ca$/i.test(address)) {
+      if (!/^[^@\s]+@sait\.ca$/i.test(address)) {
         throw new Error("A SAIT work email is required.");
       }
       let user = auth.currentUser;
