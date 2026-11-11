@@ -45,9 +45,12 @@ const PRIVILEGED_PERMISSIONS = new Set([
   "audit.view", "students.delete",
 ]);
 
+// Accept exactly the SAIT staff and SAIT education mail domains.
+// This validates an application, not authorization: verification and Super Admin
+// approval remain mandatory before an applicant can access the admin console.
 export function isSaitEmail(value) {
   return typeof value === "string" &&
-    /^[^@\s]+@sait\.ca$/i.test(value.trim());
+    /^[^@\s]+@(?:edu\.)?sait\.ca$/i.test(value.trim());
 }
 
 export function resolveAdminPermissions(admin) {
