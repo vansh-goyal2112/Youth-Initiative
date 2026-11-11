@@ -41,6 +41,25 @@ import {
   adminFetch,
 } from "@/services/adminApi";
 
+function readableAuthError(error, fallback) {
+  switch (error?.code) {
+    case "auth/email-already-in-use":
+      return "An account already exists with this SAIT email. Select Request access, then resend verification if needed.";
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "The email or password is incorrect. Check your details or reset your password.";
+    case "auth/too-many-requests":
+      return "Too many verification or sign-in attempts. Please wait before trying again.";
+    case "auth/network-request-failed":
+      return "Could not connect to Firebase. Check your connection and try again.";
+    case "auth/unauthorized-domain":
+      return "This website is not authorized for Firebase email verification. Contact the Youth Initiative team.";
+    default:
+      return error?.message || fallback;
+  }
+}
+
 export default function AdminLoginPage() {
   const router =
     useRouter();
@@ -91,12 +110,14 @@ export default function AdminLoginPage() {
       }
       const response = await adminFetch("/api/admin/auth/send-verification", { method: "POST" });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Could not resend verification.");
+      if (!response.ok) {
+        throw new Error(data.message || "The verification request could not be completed.");
+      }
       setInfoMessage(data.verified
         ? data.message
-        : `Azure accepted the email for delivery, but inbox delivery is not confirmed. Check Junk, or use "Send with Firebase" below.${data.deliveryId ? ` Reference: ${data.deliveryId}` : ""}`);
+        : `${data.message} ${data.deliveryId ? `Azure reference for SAIT IT: ${data.deliveryId}.` : ""} If Firebase emails also do not arrive, ask SAIT IT to check the mailbox's message trace.`);
       if (data.verified) setMode("request");
-    } catch (error) { setErrorMessage(error?.message || "Could not resend verification."); }
+    } catch (error) { setErrorMessage(readableAuthError(error, "Could not resend verification.")); }
     finally { setResending(false); }
   }
 
@@ -122,11 +143,11 @@ export default function AdminLoginPage() {
         setInfoMessage("This SAIT email is already verified. Submit your access request.");
       } else {
         await sendEmailVerification(user);
-        setInfoMessage("Firebase accepted a verification email request for your SAIT address. Check Inbox/Junk, open the verification link, then return to Request access.");
+        setInfoMessage("Firebase accepted the verification request, but delivery is not confirmed. Check your SAIT Inbox/Junk. If neither Azure nor Firebase email arrives, ask SAIT IT to trace messages to your mailbox.");
       }
       setMode("request");
     } catch (error) {
-      setErrorMessage(error?.message || "Could not send Firebase verification email.");
+      setErrorMessage(readableAuthError(error, "Could not send Firebase verification email."));
     } finally { setResending(false); }
   }
 
@@ -169,12 +190,12 @@ export default function AdminLoginPage() {
         const response = await adminFetch("/api/admin/auth/send-verification", { method: "POST" });
         const data = await response.json();
         if (!response.ok) {
-          // Firebase account already exists, so switch to access-request mode
-          // instead of leaving the user stuck at the Create account form.
+          // The Firebase account was created successfully. Do not ask the
+          // applicant to create it again when only the email dispatch failed.
           setMode("request");
-          throw new Error("Your account was created, but the Azure verification request failed. Use the Firebase verification option below.");
+          throw new Error(`${data.message || "Could not request verification."} Your account exists; choose Resend via Azure Email or Send with Firebase instead.`);
         }
-        setInfoMessage("Azure accepted the verification email for delivery (arrival is not guaranteed). Check Inbox/Junk, or use the Firebase option below.");
+        setInfoMessage(`${data.message} ${data.deliveryId ? `Azure reference for SAIT IT: ${data.deliveryId}.` : ""} If it does not arrive, use the Firebase option below.`);
         setMode("request");
         return;
       }
@@ -199,6 +220,15 @@ export default function AdminLoginPage() {
         await signInWithEmailAndPassword(auth, email.trim(), password);
       }
       if (mode === "request") {
+        // Like the student verification flow, confirm the verification state
+        // before advancing. Firebase tokens can contain stale email_verified
+        // claims until a fresh token is obtained after clicking the link.
+        const applicant = auth.currentUser;
+        await applicant.reload();
+        if (!applicant.emailVerified) {
+          throw new Error("Your SAIT email is not verified yet. Open the verification link from your inbox, then return here. If no email arrived, try either resend option below.");
+        }
+        await applicant.getIdToken(true);
         const response = await adminFetch("/api/admin/access-request", { method: "POST" });
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || "Unable to request access.");
@@ -220,6 +250,12 @@ export default function AdminLoginPage() {
         normal fetch(), so the App Check
         token was missing.
       */
+
+      if (mode === "login" && !auth.currentUser?.emailVerified) {
+        setMode("request");
+        setInfoMessage("Your email is not verified yet. Use either verification button below, then select Request access after clicking the link.");
+        return;
+      }
 
       const response =
         await adminFetch(
@@ -287,8 +323,7 @@ export default function AdminLoginPage() {
       );
 
       setErrorMessage(
-        error?.message ||
-          "Invalid admin credentials."
+        readableAuthError(error, "Administrator sign-in failed.")
       );
     } finally {
       setLoading(
@@ -350,6 +385,7 @@ export default function AdminLoginPage() {
             {(mode === "request" || mode === "register") && <>
               <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={resendVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Resend via Azure Email</button>
               <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={sendFirebaseVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Send with Firebase instead</button>
+              <p className="admin-auth-hint">No verification emails from either service? Ask SAIT IT to check email quarantine and message trace. Your account already exists, so do not register again.</p>
             </>}
             {mode === "reset" || mode === "mfa" || mode === "appMfa" ? <button type="button" className="admin-auth-back" onClick={() => {setMode("login");setErrorMessage("");setInfoMessage("");}}>← Back to sign in</button> :
               <button type="button" className="admin-auth-back" onClick={() => {setMode("reset");setErrorMessage("");setInfoMessage("");}}>Forgot your password?</button>}
