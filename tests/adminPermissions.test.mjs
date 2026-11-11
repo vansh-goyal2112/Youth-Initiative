@@ -5,10 +5,29 @@ import {
   hasAdminPermission, validatePermissionOverrides,
 } from "../src/services/adminPermissions.js";
 
-test("SAIT email validation rejects lookalike domains", () => {
-  assert.equal(isSaitEmail("Abdullah.Rafih@sait.ca"), true);
-  for (const email of ["a@sait.ca.evil.com", "a@xsait.ca", "a@sait.ca@evil.com", "", null]) {
-    assert.equal(isSaitEmail(email), false);
+test("SAIT email validation allows staff and education addresses only", () => {
+  for (const email of [
+    "Abdullah.Rafih@sait.ca",
+    "student@edu.sait.ca",
+    "STUDENT@EDU.SAIT.CA",
+    "  staff@SAIT.CA  ",
+  ]) {
+    assert.equal(isSaitEmail(email), true, String(email));
+  }
+  for (const email of [
+    "a@sait.ca.evil.com",
+    "a@edu.sait.ca.evil.com",
+    "a@xsait.ca",
+    "a@notedu.sait.ca",
+    "a@edu-sait.ca",
+    "a@sub.edu.sait.ca",
+    "a@sait.ca@evil.com",
+    "a@edu.sait.ca@evil.com",
+    "a@gmail.com",
+    "",
+    null,
+  ]) {
+    assert.equal(isSaitEmail(email), false, String(email));
   }
 });
 

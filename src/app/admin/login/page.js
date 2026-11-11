@@ -130,8 +130,8 @@ export default function AdminLoginPage() {
     setInfoMessage("");
     try {
       const address = email.trim().toLowerCase();
-      if (!/^[^@\s]+@sait\.ca$/i.test(address)) {
-        throw new Error("A SAIT work email is required.");
+      if (!/^[^@\s]+@(?:edu\.)?sait\.ca$/i.test(address)) {
+        throw new Error("Use a SAIT email ending in @sait.ca or @edu.sait.ca.");
       }
       let user = auth.currentUser;
       if (!user || user.email?.trim().toLowerCase() !== address) {
@@ -172,8 +172,8 @@ export default function AdminLoginPage() {
         through Firebase Authentication.
       */
 
-      if (!/^[^@\s]+@sait\.ca$/i.test(email.trim())) {
-        throw new Error("A SAIT work email is required.");
+      if (!/^[^@\s]+@(?:edu\.)?sait\.ca$/i.test(email.trim())) {
+        throw new Error("Use a SAIT email ending in @sait.ca or @edu.sait.ca.");
       }
       if (mode === "reset") {
         await sendPasswordResetEmail(auth, email.trim());
@@ -334,7 +334,7 @@ export default function AdminLoginPage() {
 
   const content = {
     login: { eyebrow: "WELCOME BACK", title: "Sign in to your workspace", detail: "Manage programs, people and progress in one secure place.", action: "Sign in to dashboard" },
-    register: { eyebrow: "JOIN THE TEAM", title: "Create an admin account", detail: "Start with your SAIT email. Every new account requires verification and approval.", action: "Create account" },
+    register: { eyebrow: "JOIN THE TEAM", title: "Create an admin account", detail: "Use @sait.ca or @edu.sait.ca. Email verification and Super Admin approval are required.", action: "Create account" },
     request: { eyebrow: "ACCESS REQUEST", title: "Request administrator access", detail: "Already verified your SAIT email? Send your application for review.", action: "Submit access request" },
     reset: { eyebrow: "ACCOUNT RECOVERY", title: "Reset your password", detail: "We’ll send password recovery instructions to your SAIT email.", action: "Send recovery email" },
     appMfa: { eyebrow: "EXTRA PROTECTION", title: "Verify your authenticator", detail: "Enter the current six-digit code to access the administration workspace.", action: "Verify & continue" },
@@ -374,7 +374,7 @@ export default function AdminLoginPage() {
                 onClick={() => { setMode(item.id); setErrorMessage(""); setInfoMessage(""); }}>{item.text}</button>)}
             </div>}
             <form onSubmit={handleLogin} className="admin-auth-form">
-              {mode !== "mfa" && mode !== "appMfa" && <label className="admin-auth-field"><span>SAIT email address</span><div className="admin-auth-input-wrap"><Mail size={19}/><input type="email" value={email} required autoComplete="email" placeholder="name@sait.ca" onChange={event => setEmail(event.target.value)}/></div></label>}
+              {mode !== "mfa" && mode !== "appMfa" && <label className="admin-auth-field"><span>SAIT email (@sait.ca or @edu.sait.ca)</span><div className="admin-auth-input-wrap"><Mail size={19}/><input type="email" value={email} required autoComplete="email" placeholder="name@sait.ca" onChange={event => setEmail(event.target.value)}/></div></label>}
               {mode !== "reset" && mode !== "mfa" && mode !== "appMfa" && <label className="admin-auth-field"><span>Password</span><div className="admin-auth-input-wrap"><LockKeyhole size={18}/><input type={showPassword ? "text" : "password"} value={password} required autoComplete={mode === "register" ? "new-password" : "current-password"} placeholder="Enter your password" onChange={event => setPassword(event.target.value)}/><button className="admin-auth-visibility" type="button" aria-label={showPassword ? "Hide password" : "Show password"} onClick={() => setShowPassword(value => !value)}>{showPassword ? <EyeOff size={19}/> : <Eye size={19}/>}</button></div></label>}
               {mode === "register" && <p className="admin-auth-hint">At least 12 characters, with uppercase, lowercase, a number and a symbol.</p>}
               {(mode === "mfa" || mode === "appMfa") && <label className="admin-auth-field"><span>Authenticator code</span><div className="admin-auth-input-wrap"><KeyRound size={19}/><input type="text" inputMode="text" minLength={6} maxLength={19} autoComplete="one-time-code" value={totpCode} onChange={event => setTotpCode(event.target.value.replace(/[^0-9a-fA-F-]/g, "").slice(0, 19))} placeholder="6-digit code or recovery code" required/></div></label>}

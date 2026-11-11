@@ -73,7 +73,7 @@ export async function POST(request) {
     }
 
     if (!isSaitEmail(decoded.email)) {
-      return Response.json({ success: false, code: "sait-email-required", message: "Administrator accounts require an email address ending in @sait.ca." }, { status: 403 });
+      return Response.json({ success: false, code: "sait-email-required", message: "Administrator accounts require a verified @sait.ca or @edu.sait.ca email address." }, { status: 403 });
     }
 
     const user = await adminAuth.getUser(decoded.uid);
