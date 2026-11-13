@@ -177,8 +177,8 @@ export default function RegistrationSuccessPage() {
 
             body:
               JSON.stringify({
-                workshopId:
-                  params.id,
+                workshopId: params.id,
+                sessionId: typeof window !== "undefined" ? new URL(window.location.href).searchParams.get("sessionId") : null,
               }),
           }
         );
@@ -389,7 +389,9 @@ export default function RegistrationSuccessPage() {
 
         <a
           href={
-            workshop.registrationUrl ||
+            (Array.isArray(workshop.sessions) && typeof window !== "undefined"
+              ? workshop.sessions.find(item => item.id === new URL(window.location.href).searchParams.get("sessionId"))?.registrationUrl
+              : null) || workshop.registrationUrl ||
             "https://saitdigitalyouth.campbrainregistration.com/"
           }
           target="_blank"
