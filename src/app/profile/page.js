@@ -382,6 +382,9 @@ export default function ProfilePage() {
 
         <div className={styles.bottomActions}>
           <Link href="/workshops" className={styles.exploreLink}><Sparkles size={18} aria-hidden="true"/> Explore New Workshops <ArrowRight size={17} aria-hidden="true"/></Link>
+          <button type="button" className={styles.editButton} onClick={() => window.dispatchEvent(new Event("student-tutorial-replay"))}>
+            <Sparkles size={17} aria-hidden="true"/> Replay Welcome Tutorial
+          </button>
           <button type="button" className={styles.logoutButton} onClick={handleLogout} disabled={loggingOut}>
             <LogOut size={17} aria-hidden="true"/>{loggingOut ? "Logging Out..." : "Log Out"}
           </button>

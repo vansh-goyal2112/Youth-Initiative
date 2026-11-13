@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import StudentAnnouncements from "@/components/common/StudentAnnouncements";
 import StudentHeader, { StudentBottomNavigation } from "@/components/common/StudentHeader";
+import WelcomeTutorial from "@/components/common/WelcomeTutorial";
 import styles from "./studentShell.module.css";
 import { isStudentRoute, studentBackDestination } from "@/utils/studentRouteConfig.mjs";
 
@@ -45,6 +46,7 @@ export default function StudentShell({ children }) {
         {user && <StudentAnnouncements userId={user.uid} />}
         {children}
       </div>
+      {user && student && <WelcomeTutorial user={user} student={student} />}
       <StudentBottomNavigation />
     </div>
   );

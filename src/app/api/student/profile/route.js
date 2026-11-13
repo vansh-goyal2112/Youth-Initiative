@@ -341,6 +341,13 @@ export async function PATCH(
           .onboardingCompleted;
     }
 
+    if (Object.prototype.hasOwnProperty.call(requestBody, "tutorialCompleted")) {
+      if (typeof requestBody.tutorialCompleted !== "boolean") {
+        return Response.json({ success: false, message: "Tutorial status is invalid." }, { status: 400 });
+      }
+      updates.tutorialCompleted = requestBody.tutorialCompleted;
+    }
+
     if (
       Object.keys(
         updates
