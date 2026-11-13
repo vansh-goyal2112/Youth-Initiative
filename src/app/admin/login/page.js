@@ -365,10 +365,23 @@ export default function AdminLoginPage() {
             {mode === "reset" && (
               <p className="admin-auth-hint">Recovery instructions are sent through the SAIT Youth Initiatives email service. If nothing arrives, check Inbox/Junk and ask SAIT IT to check message trace. Do not create a second admin account.</p>
             )}
-            {(mode === "request" || mode === "register") && <>
-              <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={resendVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Resend via Azure Email</button>
-              <p className="admin-auth-hint">If the Azure verification email does not arrive, check Inbox/Junk and ask SAIT IT to check quarantine and message trace. Do not create a second admin account.</p>
-            </>}
+            {mode === "request" && (
+              <div className="admin-auth-verification-actions">
+                <button
+                  type="button"
+                  disabled={resending || loading}
+                  className="admin-auth-secondary"
+                  onClick={resendVerification}
+                >
+                  {resending ? <LoaderCircle size={17} className="animate-spin" aria-hidden="true"/> : <Mail size={17} aria-hidden="true"/>}
+                  <span>Resend via Azure Email</span>
+                </button>
+                <p className="admin-auth-hint">
+                  If your verification email has not arrived, check Inbox/Junk.
+                  SAIT IT can also check quarantine and message trace. Do not create another admin account.
+                </p>
+              </div>
+            )}
             {mode === "reset" || mode === "mfa" || mode === "appMfa" ? <button type="button" className="admin-auth-back" onClick={() => {setMode("login");setErrorMessage("");setInfoMessage("");}}>← Back to sign in</button> :
               <button type="button" className="admin-auth-back" onClick={() => {setMode("reset");setErrorMessage("");setInfoMessage("");}}>Forgot your password?</button>}
             <div className="admin-auth-trust"><ShieldCheck size={16}/><span>Protected access · SAIT verified accounts only</span></div>
