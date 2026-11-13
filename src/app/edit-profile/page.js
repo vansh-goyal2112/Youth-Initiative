@@ -87,6 +87,9 @@ function EditProfileForm({
   updateStudentProfile,
   router,
 }) {
+  const [firstName, setFirstName] = useState(student.firstName || "");
+  const [lastName, setLastName] = useState(student.lastName || "");
+
   const [
     schoolGrade,
     setSchoolGrade,
@@ -170,6 +173,13 @@ function EditProfileForm({
         ""
       );
 
+      if (!firstName.trim() || !lastName.trim()) {
+        throw new Error("Please enter your first and last name.");
+      }
+      if (!schoolGrade) {
+        throw new Error("Please select your current school grade.");
+      }
+
       if (
         !appCheck
       ) {
@@ -211,8 +221,9 @@ function EditProfileForm({
 
             body:
               JSON.stringify({
-                schoolGrade:
-                  schoolGrade || null,
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                schoolGrade,
                 learningMode,
                 interests,
               }),
@@ -294,6 +305,17 @@ function EditProfileForm({
           }
           className="edit-profile-form"
         >
+          <div className="edit-identity-name-grid">
+            <div className="edit-profile-field">
+              <label htmlFor="firstName">First Name</label>
+              <input id="firstName" className="edit-profile-text-input" autoComplete="given-name" maxLength={40} required value={firstName} onChange={(event) => setFirstName(event.target.value)} />
+            </div>
+            <div className="edit-profile-field">
+              <label htmlFor="lastName">Last Name</label>
+              <input id="lastName" className="edit-profile-text-input" autoComplete="family-name" maxLength={40} required value={lastName} onChange={(event) => setLastName(event.target.value)} />
+            </div>
+          </div>
+
           <div className="edit-profile-field">
             <label htmlFor="schoolGrade">
               Current School Grade
@@ -301,12 +323,13 @@ function EditProfileForm({
 
             <select
               id="schoolGrade"
+              required
               value={schoolGrade}
               onChange={(event) =>
                 setSchoolGrade(event.target.value)
               }
             >
-              <option value="">Not provided</option>
+              <option value="">Select your grade</option>
               <option value="K">Kindergarten</option>
               {Array.from({ length: 12 }, (_, index) => (
                 <option key={index + 1} value={String(index + 1)}>
