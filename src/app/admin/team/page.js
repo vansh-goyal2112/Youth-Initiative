@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ShieldCheck, RefreshCw, Users, Save, Search, UserRoundCheck, Clock3, LockKeyhole, ChevronRight, SlidersHorizontal, CheckCircle2 } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
 
-const ROLES = ["viewer", "workshop_coordinator", "program_admin"];
+const ROLES = ["viewer", "event_staff", "workshop_coordinator", "program_admin"];
 const RIGHTS = [
   ["students.view", "View students"], ["students.edit", "Edit students"],
   ["students.deactivate", "Deactivate students"], ["reports.generate", "Generate student reports"],
@@ -11,6 +11,9 @@ const RIGHTS = [
   ["workshops.create", "Create workshops"], ["workshops.edit", "Edit workshops"],
   ["workshops.delete", "Delete workshops"], ["workshops.import", "Import workshop Excel"],
   ["attendance.view", "View attendance"], ["attendance.manage", "Manage attendance"],
+  ["completion.review", "Review self-reported completions"], ["completion.reverse", "Reverse workshop completions"],
+  ["badges.manage", "Manage student badges"], ["xp.adjust", "Adjust erroneous XP"],
+  ["xp.redeem", "Redeem XP for event swag"],
 ];
 const labelRole = role => String(role || "unassigned").replaceAll("_", " ");
 

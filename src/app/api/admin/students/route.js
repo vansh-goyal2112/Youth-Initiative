@@ -2,6 +2,7 @@ import {
   adminAuth,
 } from "@/services/firebaseAdmin";
 
+import { getXpBalances } from "@/services/xpBalance.mjs";
 import {
   adminAccessResponse,
   requireAdminPermission,
@@ -393,6 +394,8 @@ export async function GET(
           learningMode: student.learningMode,
           interests: student.interests || [],
           totalXp: student.totalXp || 0,
+          currentXp: getXpBalances(student).currentXp,
+          schoolGrade: student.schoolGrade || null,
           level: student.level || 1,
           badgeCount: student.badgeCount || 0,
           completedWorkshopCount: student.completedWorkshopCount || 0,
