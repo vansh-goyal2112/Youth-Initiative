@@ -23,7 +23,19 @@ export default function SelfReportWorkshop({ onClaimed }) {
       .then(async response => {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || "Unable to load past workshops.");
-        if (active) setWorkshops(Array.isArray(result.workshops) ? result.workshops : []);
+        if (!active) return;
+        const available = Array.isArray(result.workshops) ? result.workshops : [];
+        setWorkshops(available);
+        const params = new URLSearchParams(window.location.search);
+        const requestedId = params.get("workshop");
+        if (requestedId || params.get("claim") === "1") setExpanded(true);
+        if (requestedId) {
+          if (available.some(item => item.id === requestedId)) {
+            setSelected(requestedId);
+          } else {
+            setError("That workshop has no unclaimed past sessions, or has already been recorded. You can choose another workshop below.");
+          }
+        }
       })
       .catch(cause => { if (active) setError(cause.message || "Past workshops unavailable."); })
       .finally(() => { if (active) setLoading(false); });
@@ -45,7 +57,12 @@ export default function SelfReportWorkshop({ onClaimed }) {
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || "Could not save your completion.");
       setMessage(result.message);
-      setWorkshops(current => current.filter(item => item.id !== selected));
+      setWorkshops(current => current.flatMap(item => {
+        if (item.id !== selected) return [item];
+        if (!sessionId || !item.sessions?.length) return [];
+        const remaining = item.sessions.filter(session => session.id !== sessionId);
+        return remaining.length ? [{ ...item, sessions: remaining }] : [];
+      }));
       setSelected(""); setSessionId(""); setCompletedOn(""); setConfirmed(false);
       if (typeof onClaimed === "function") onClaimed();
     } catch (cause) {
@@ -63,7 +80,7 @@ export default function SelfReportWorkshop({ onClaimed }) {
           <p>Attended a SAIT workshop before joining the app? Record it here—no QR code needed.</p>
         </div>
         <button type="button" className={styles.toggle} onClick={() => setExpanded(open => !open)} aria-expanded={expanded} aria-controls="claim-workshop-form">
-          {expanded ? "Close" : "Mark completed"}
+          {expanded ? "Close" : "Previously Completed"}
         </button>
       </div>
       {expanded && (
