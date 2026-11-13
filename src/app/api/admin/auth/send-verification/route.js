@@ -177,7 +177,7 @@ export async function POST(request) {
         code: linkFailure ? "verification-link-failed" : "email-send-failed",
         message: linkFailure
           ? "We could not generate your verification link. Please try again shortly or contact the Youth Initiatives team."
-          : "Azure could not accept the verification email. Your account still exists. Try again after 60 seconds, or select Send with Firebase instead.",
+          : "Azure could not accept the verification email. Your account still exists. Try again after 60 seconds or contact SAIT IT if delivery continues to fail.",
       }, { status: linkFailure ? 500 : 502 });
     }
   } catch (error) {

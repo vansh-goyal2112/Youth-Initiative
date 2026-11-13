@@ -26,8 +26,6 @@ import {
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  sendEmailVerification,
   getMultiFactorResolver,
   TotpMultiFactorGenerator,
   signOut,
@@ -116,65 +114,10 @@ export default function AdminLoginPage() {
       }
       setInfoMessage(data.verified
         ? data.message
-        : `${data.message} ${data.deliveryId ? `Azure reference for SAIT IT: ${data.deliveryId}.` : ""} If Firebase emails also do not arrive, ask SAIT IT to check the mailbox's message trace.`);
+        : `${data.message} ${data.deliveryId ? `Azure reference for SAIT IT: ${data.deliveryId}.` : ""} If the email does not arrive, check Inbox/Junk and ask SAIT IT to check its mailbox message trace.`);
       if (data.verified) setMode("request");
     } catch (error) { setErrorMessage(readableAuthError(error, "Could not resend verification.")); }
     finally { setResending(false); }
-  }
-
-  // Firebase Authentication can send its own verification email to the
-  // currently signed-in user's address, independently of Azure Email.
-  // This does not mark the user verified or grant administrator access.
-  async function sendFirebaseVerification() {
-    setResending(true);
-    setErrorMessage("");
-    setInfoMessage("");
-    try {
-      const address = email.trim().toLowerCase();
-      if (!/^[^@\s]+@(?:edu\.)?sait\.ca$/i.test(address)) {
-        throw new Error("Use a SAIT email ending in @sait.ca or @edu.sait.ca.");
-      }
-      let user = auth.currentUser;
-      if (!user || user.email?.trim().toLowerCase() !== address) {
-        const result = await signInWithEmailAndPassword(auth, address, password);
-        user = result.user;
-      }
-      await user.reload();
-      if (user.emailVerified) {
-        setInfoMessage("This SAIT email is already verified. Submit your access request.");
-      } else {
-        await sendEmailVerification(user);
-        setInfoMessage("Firebase accepted the verification request, but delivery is not confirmed. Check your SAIT Inbox/Junk. If neither Azure nor Firebase email arrives, ask SAIT IT to trace messages to your mailbox.");
-      }
-      setMode("request");
-    } catch (error) {
-      setErrorMessage(readableAuthError(error, "Could not send Firebase verification email."));
-    } finally { setResending(false); }
-  }
-
-  // Independent recovery option if a SAIT mailbox blocks Azure messages.
-  // The Firebase Auth action never approves or elevates admin accounts.
-  async function sendFirebaseReset() {
-    if (resending || loading) return;
-    setResending(true);
-    setErrorMessage("");
-    setInfoMessage("");
-    try {
-      const address = email.trim().toLowerCase();
-      if (!/^[^@\s]+@(?:edu\.)?sait\.ca$/i.test(address)) {
-        throw new Error("Enter your @sait.ca or @edu.sait.ca email.");
-      }
-      await sendPasswordResetEmail(auth, address);
-      setInfoMessage("Firebase accepted the password reset request. Delivery is not confirmed. Check Inbox/Junk; if neither service reaches your SAIT mailbox, contact SAIT IT for a message trace.");
-    } catch (error) {
-      if (["auth/user-not-found", "auth/invalid-email"].includes(error?.code)) {
-        setInfoMessage("If your SAIT email has a Firebase account, recovery instructions will be sent.");
-      } else {
-        setErrorMessage(readableAuthError(error, "Firebase reset email could not be sent. Contact SAIT IT."));
-      }
-    } finally {
-      setResending(false);
-    }
   }
 
   async function handleLogin(
@@ -230,9 +173,9 @@ export default function AdminLoginPage() {
           // The Firebase account was created successfully. Do not ask the
           // applicant to create it again when only the email dispatch failed.
           setMode("request");
-          throw new Error(`${data.message || "Could not request verification."} Your account exists; choose Resend via Azure Email or Send with Firebase instead.`);
+          throw new Error(`${data.message || "Could not request verification."} Your account exists; choose Resend via Azure Email.`);
         }
-        setInfoMessage(`${data.message} ${data.deliveryId ? `Azure reference for SAIT IT: ${data.deliveryId}.` : ""} If it does not arrive, use the Firebase option below.`);
+        setInfoMessage(`${data.message} ${data.deliveryId ? `Azure reference for SAIT IT: ${data.deliveryId}.` : ""} If the message does not arrive, check Inbox/Junk or ask SAIT IT to check mailbox delivery.`);
         setMode("request");
         return;
       }
@@ -263,7 +206,7 @@ export default function AdminLoginPage() {
         const applicant = auth.currentUser;
         await applicant.reload();
         if (!applicant.emailVerified) {
-          throw new Error("Your SAIT email is not verified yet. Open the verification link from your inbox, then return here. If no email arrived, try either resend option below.");
+          throw new Error("Your SAIT email is not verified yet. Open the verification link from your inbox, then return here. If no email arrived, use Resend via Azure Email below.");
         }
         await applicant.getIdToken(true);
         const response = await adminFetch("/api/admin/access-request", { method: "POST" });
@@ -290,7 +233,7 @@ export default function AdminLoginPage() {
 
       if (mode === "login" && !auth.currentUser?.emailVerified) {
         setMode("request");
-        setInfoMessage("Your email is not verified yet. Use either verification button below, then select Request access after clicking the link.");
+        setInfoMessage("Your email is not verified yet. Use Resend via Azure Email below, then select Request access after clicking the link.");
         return;
       }
 
@@ -419,17 +362,12 @@ export default function AdminLoginPage() {
               {errorMessage && <div className="admin-auth-alert error" role="alert"><ShieldCheck size={19}/><span>{errorMessage}</span></div>}
               <button className="admin-auth-submit" type="submit" disabled={loading}>{loading ? <><LoaderCircle size={19} className="animate-spin"/> Processing...</> : <>{mode === "register" ? <UserRoundPlus size={19}/> : <LockKeyhole size={18}/>} {content.action}<ArrowRight size={19}/></>}</button>
             </form>
-            {mode === "reset" && <>
-              <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={sendFirebaseReset}>
-                {resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>}
-                Send with Firebase instead
-              </button>
-              <p className="admin-auth-hint">Admin password recovery uses your SAIT email. If neither Azure nor Firebase email arrives, contact SAIT IT to check message quarantine. Never create a second admin account.</p>
-            </>}
+            {mode === "reset" && (
+              <p className="admin-auth-hint">Recovery instructions are sent through the SAIT Youth Initiatives email service. If nothing arrives, check Inbox/Junk and ask SAIT IT to check message trace. Do not create a second admin account.</p>
+            )}
             {(mode === "request" || mode === "register") && <>
               <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={resendVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Resend via Azure Email</button>
-              <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={sendFirebaseVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Send with Firebase instead</button>
-              <p className="admin-auth-hint">No verification emails from either service? Ask SAIT IT to check email quarantine and message trace. Your account already exists, so do not register again.</p>
+              <p className="admin-auth-hint">If the Azure verification email does not arrive, check Inbox/Junk and ask SAIT IT to check quarantine and message trace. Do not create a second admin account.</p>
             </>}
             {mode === "reset" || mode === "mfa" || mode === "appMfa" ? <button type="button" className="admin-auth-back" onClick={() => {setMode("login");setErrorMessage("");setInfoMessage("");}}>← Back to sign in</button> :
               <button type="button" className="admin-auth-back" onClick={() => {setMode("reset");setErrorMessage("");setInfoMessage("");}}>Forgot your password?</button>}
