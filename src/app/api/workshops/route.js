@@ -22,6 +22,12 @@ export async function GET(request) {
       request
     );
 
+    // Existing students without a saved grade must update My Identity first.
+    // Avoid exposing grade-restricted opportunities when eligibility is unknown.
+    if (!student.schoolGrade) {
+      return Response.json({ success: true, gradeRequired: true, workshops: [] });
+    }
+
     const workshopDocuments =
       await queryCosmosDocuments(
         "workshops",

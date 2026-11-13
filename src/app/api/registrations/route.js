@@ -140,6 +140,10 @@ export async function POST(request) {
     } =
       await request.json();
 
+    if (!student.schoolGrade) {
+      return Response.json({ success: false, message: "Please add your current school grade in My Identity before registering." }, { status: 409 });
+    }
+
     if (!workshopId) {
       return Response.json(
         {

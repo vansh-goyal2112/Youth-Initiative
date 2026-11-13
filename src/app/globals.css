@@ -10722,3 +10722,7 @@ button:last-child {
   }
 
 }
+/* Program area replaces workshop-format labels on the catalogue card footer. */
+.workshop-card-reward {display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;}
+.workshop-program-area {display:inline-flex;align-items:flex-start;gap:5px;color:#5b6580;font-size:11px;font-weight:750;line-height:1.35;overflow-wrap:anywhere;}
+.workshop-program-area svg {flex-shrink:0;margin-top:1px;color:#ad3151;}

@@ -111,3 +111,10 @@ test("requires a valid grade during student registration", async () => {
     /valid current school grade/
   );
 });
+
+test("recognizes hyphenated and kindergarten grade ranges from the workshop catalogue", () => {
+  assert.equal(getWorkshopEligibility({ grade: "Grades 6–9" }, { schoolGrade: "12" }, TODAY).status, "ineligible");
+  assert.equal(getWorkshopEligibility({ grade: "K-6" }, { schoolGrade: "K" }, TODAY).status, "eligible");
+  assert.equal(getWorkshopEligibility({ grade: "6 to 12" }, { schoolGrade: "12" }, TODAY).status, "eligible");
+  assert.equal(getWorkshopEligibility({ grade: "Grade 6" }, { schoolGrade: "12" }, TODAY).status, "ineligible");
+});

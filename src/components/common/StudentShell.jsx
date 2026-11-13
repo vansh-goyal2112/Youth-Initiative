@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import StudentAnnouncements from "@/components/common/StudentAnnouncements";
 import StudentHeader, { StudentBottomNavigation } from "@/components/common/StudentHeader";
@@ -44,6 +45,12 @@ export default function StudentShell({ children }) {
 
       <div className={styles.pageContent}>
         {user && <StudentAnnouncements userId={user.uid} />}
+        {user && student && !student.schoolGrade && (
+          <div className={styles.gradeNotice} role="status">
+            <span><strong>One small step before exploring:</strong> Add your current school grade so we can match workshops to you.</span>
+            <Link href="/edit-profile">Add my grade</Link>
+          </div>
+        )}
         {children}
       </div>
       {user && student && <WelcomeTutorial user={user} student={student} />}
