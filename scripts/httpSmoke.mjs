@@ -45,7 +45,7 @@ test("production server: public onboarding and recovery pages load; APIs require
     await waitUntilReady(server);
 
     await t.test("public pages render over HTTP without authentication", async () => {
-      for (const pathname of ["/", "/login", "/register", "/resume-registration"]) {
+      for (const pathname of ["/", "/login", "/register", "/resume-registration", "/admin/login", "/admin/reset-password"]) {
         const response = await fetch(baseUrl + pathname, { signal: AbortSignal.timeout(10_000) });
         assert.equal(response.status, 200, `${pathname} returned ${response.status}: ${logs.slice(-1_000)}`);
         assert.match(response.headers.get("content-type") || "", /text\/html/, pathname);
@@ -57,6 +57,7 @@ test("production server: public onboarding and recovery pages load; APIs require
         "/api/register",
         "/api/register/recover",
         "/api/consent/approve",
+        "/api/admin/password-reset/request",
       ]) {
         const response = await fetch(baseUrl + pathname, {
           method: "POST",
