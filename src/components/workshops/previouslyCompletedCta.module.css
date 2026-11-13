@@ -1,0 +1,42 @@
+/* The global unlayered a { color: inherit } can override Tailwind's
+   text-white utility. Keep the actionable CTA colors in a scoped rule. */
+.button,
+.button:link,
+.button:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 12px 21px;
+  border: 1px solid #b61f2b;
+  border-radius: 13px;
+  color: #ffffff;
+  background: #d02633;
+  box-shadow: 0 4px 0 #9f202b;
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.35;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+.button:hover,
+.button:focus-visible {
+  color: #ffffff;
+  background: #b81d2b;
+}
+.button:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+.fullWidth {
+  width: 100%;
+}
+@media (max-width: 600px) {
+  .button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .button { transition: none; }
+}
