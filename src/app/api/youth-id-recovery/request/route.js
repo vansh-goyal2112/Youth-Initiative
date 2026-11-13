@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { selectRecoverableYouthIds, youthIdRecoveryPlainText } from "@/services/youthIdRecovery.mjs";
 
 import {
   sendAzureEmail,
@@ -121,18 +122,20 @@ function getDate(
   return date;
 }
 
-function genericResponse() {
+function genericResponse(reference) {
   return Response.json(
     {
       success:
         true,
 
       message:
-        "If the email is associated with an eligible Youth Initiatives account, the Youth ID will be sent shortly.",
+        "If this email belongs to an eligible account, Youth ID recovery instructions will be sent to the verified contact or approved guardian email. Email delivery is not guaranteed; keep the reference below for support.",
+      reference,
     },
     {
       status:
         200,
+      headers: { "Cache-Control": "no-store" },
     }
   );
 }
@@ -369,25 +372,14 @@ async function checkRateLimit(
   return false;
 }
 
-function accountIsEligible(
-  student
-) {
-  return (
-    student?.role ===
-      "student" &&
-    student?.accountStatus ===
-      "active" &&
-    typeof student?.youthId ===
-      "string" &&
-    Boolean(
-      student.youthId.trim()
-    )
-  );
-}
-
 export async function POST(
   request
 ) {
+  const requestReference = crypto.randomUUID();
+  const report = (outcome, details = {}) => {
+    // Never log addresses, Youth IDs, email bodies, or Firebase credentials.
+    console.info("Youth ID recovery status", { reference: requestReference, outcome, ...details });
+  };
   try {
     await requireAppCheck(
       request
@@ -442,7 +434,8 @@ export async function POST(
     if (
       !allowed
     ) {
-      return genericResponse();
+      report("rate_limited");
+      return genericResponse(requestReference);
     }
 
     /*
@@ -468,7 +461,7 @@ export async function POST(
           `
             SELECT TOP 10 *
             FROM c
-            WHERE c.contactEmail = @email
+            WHERE LOWER(c.contactEmail) = @email
           `,
           [
             {
@@ -486,7 +479,7 @@ export async function POST(
           `
             SELECT TOP 10 *
             FROM c
-            WHERE c.parentEmail = @email
+            WHERE LOWER(c.parentEmail) = @email
           `,
           [
             {
@@ -500,92 +493,11 @@ export async function POST(
         ),
       ]);
 
-    const eligibleAccounts =
-      new Map();
-
-    for (
-      const student of
-      contactEmailStudents
-    ) {
-      if (
-        !accountIsEligible(
-          student
-        )
-      ) {
-        continue;
-      }
-
-      /*
-        Only send a Youth ID to a
-        student's contact email if
-        ownership of that email has
-        actually been verified.
-      */
-
-      if (
-        student
-          .contactEmailVerified !==
-        true
-      ) {
-        continue;
-      }
-
-      eligibleAccounts.set(
-        student.id,
-        {
-          firstName:
-            student.firstName ||
-            "Student",
-
-          youthId:
-            student.youthId,
-        }
-      );
-    }
-
-    for (
-      const student of
-      parentEmailStudents
-    ) {
-      if (
-        !accountIsEligible(
-          student
-        )
-      ) {
-        continue;
-      }
-
-      /*
-        Parent-email recovery is
-        only valid for accounts that
-        actually required parental
-        consent and have approved
-        consent.
-      */
-
-      if (
-        student
-          .requiresParentalConsent !==
-          true ||
-        student
-          .consentStatus !==
-          "approved"
-      ) {
-        continue;
-      }
-
-      eligibleAccounts.set(
-        student.id,
-        {
-          firstName:
-            student.firstName ||
-            "Student",
-
-          youthId:
-            student.youthId,
-        }
-      );
-    }
+    const eligibleAccounts = selectRecoverableYouthIds({
+      requestedEmail: cleanedEmail,
+      contactEmailStudents,
+      parentEmailStudents,
+    });
 
     /*
       Never tell the requester
@@ -593,16 +505,15 @@ export async function POST(
     */
 
     if (
-      eligibleAccounts.size ===
+      eligibleAccounts.length ===
       0
     ) {
-      return genericResponse();
+      report("no_eligible_account");
+      return genericResponse(requestReference);
     }
 
     const accountRows =
-      Array.from(
-        eligibleAccounts.values()
-      )
+      eligibleAccounts
         .map(
           (
             account
@@ -660,7 +571,7 @@ export async function POST(
       "http://localhost:3000";
 
     try {
-      await sendAzureEmail(
+      const delivery = await sendAzureEmail(
         {
           to: [
             cleanedEmail,
@@ -673,6 +584,8 @@ export async function POST(
 
           subject:
             "Your Youth ID",
+
+          text: youthIdRecoveryPlainText(eligibleAccounts, appUrl),
 
           html: `
             <!doctype html>
@@ -779,18 +692,21 @@ export async function POST(
           `,
         }
       );
+      report("azure_accepted", { deliveryId: delivery?.id || null });
     } catch (
       emailError
     ) {
-      console.error(
-        "Youth ID recovery email error:",
-        emailError
-      );
+      report("azure_delivery_failed", {
+        code: emailError?.code || "provider_error",
+        category: String(emailError?.message || "").includes("AZURE_EMAIL_SENDER_ADDRESS")
+          ? "sender_configuration" : String(emailError?.message || "").includes("AZURE_COMMUNICATION_EMAIL_CONNECTION_STRING")
+            ? "connection_configuration" : "provider_failure",
+      });
 
-      return genericResponse();
+      return genericResponse(requestReference);
     }
 
-    return genericResponse();
+    return genericResponse(requestReference);
   } catch (
     error
   ) {
@@ -805,10 +721,7 @@ export async function POST(
       return appCheckResponse;
     }
 
-    console.error(
-      "Youth ID recovery request error:",
-      error
-    );
+    report("request_failed", { code: error?.code || "server_error" });
 
     return Response.json(
       {

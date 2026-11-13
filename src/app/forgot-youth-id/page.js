@@ -43,6 +43,8 @@ export default function ForgotYouthIdPage() {
   ] =
     useState(false);
 
+  const [requestReference, setRequestReference] = useState("");
+
   async function handleSubmit(
     event
   ) {
@@ -106,6 +108,8 @@ export default function ForgotYouthIdPage() {
         );
       }
 
+      setRequestReference(typeof data.reference === "string" ? data.reference : "");
+
       setRequestSent(
         true
       );
@@ -155,11 +159,21 @@ export default function ForgotYouthIdPage() {
           </h1>
 
           <p>
-            If this email is
-            associated with an
-            eligible Youth Initiatives
-            account, the Youth ID has
-            been sent.
+            If this address belongs to an eligible Youth Initiatives
+            account, a Youth ID reminder will be sent to the verified
+            student email or approved guardian email. Delivery
+            is not guaranteed.
+          </p>
+
+          {requestReference && (
+            <p className="password-security-note" role="status">
+              Support reference: <strong>{requestReference}</strong>
+            </p>
+          )}
+          <p>
+            If the message does not arrive, check Spam/Junk and ask
+            SAIT Youth Initiatives support to investigate using this reference.
+            Please do not repeatedly submit the form.
           </p>
 
           <div className="password-security-note">
