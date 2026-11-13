@@ -92,7 +92,7 @@ export function buildRecoveryEmail(registration, stage, token, baseUrl) {
       return {
         subject: "Continue Parental Consent – SAIT Youth Initiatives",
         url: `${root}/consent/${id}?token=${encodedToken}`,
-        intro: "A new parental consent link was requested for an unfinished Youth Initiative registration.",
+        intro: "A new parental consent link was requested for an unfinished Youth Initiatives registration.",
         action: "Review Parental Consent",
       };
 
@@ -100,15 +100,15 @@ export function buildRecoveryEmail(registration, stage, token, baseUrl) {
       return {
         subject: "Continue Registration – Verify Your Email",
         url: `${root}/verify-email/${id}#token=${encodedToken}`,
-        intro: "A new email verification link was requested for an unfinished Youth Initiative registration.",
+        intro: "A new email verification link was requested for an unfinished Youth Initiatives registration.",
         action: "Verify My Email",
       };
 
     default:
       return {
-        subject: "Continue Youth Initiative Account Setup",
+        subject: "Continue Youth Initiatives Account Setup",
         url: `${root}/set-password/${id}?token=${encodedToken}`,
-        intro: "A new account setup link was requested for an approved or verified Youth Initiative registration.",
+        intro: "A new account setup link was requested for an approved or verified Youth Initiatives registration.",
         action: "Complete Account Setup",
       };
   }

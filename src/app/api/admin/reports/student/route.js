@@ -121,7 +121,7 @@ export async function GET(request) {
     return new Response(rows.join("\r\n"), {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": 'attachment; filename="youth-initiative-student-report.csv"',
+        "Content-Disposition": 'attachment; filename="youth-initiatives-student-report.csv"',
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
       },

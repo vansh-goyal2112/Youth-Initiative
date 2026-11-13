@@ -657,7 +657,7 @@ export async function POST(
                 ${safeFirstName}
               </strong>
               &apos;s SAIT Youth
-              Initiative account.
+              Initiatives account.
             </p>
           `
         : `
@@ -669,7 +669,7 @@ export async function POST(
               A new account setup
               link was requested for
               your SAIT Youth
-              Initiative account.
+              Initiatives account.
             </p>
           `;
 
@@ -686,7 +686,7 @@ export async function POST(
             "youth.programs@sait.ca",
 
           subject:
-            "Complete Your Youth Initiative Account Setup",
+            "Complete Your Youth Initiatives Account Setup",
 
           html: `
             <!doctype html>
@@ -728,7 +728,7 @@ export async function POST(
                       font-weight:700;
                     "
                   >
-                    Youth Initiative
+                    Youth Initiatives
                   </p>
 
                   <h1>

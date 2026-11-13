@@ -106,7 +106,7 @@ export async function sendWelcomeEmail({
 
   const subject =
     requiresParentalConsent
-      ? "Youth Initiative Account Created"
+      ? "Youth Initiatives Account Created"
       : "Welcome to SAIT Youth Initiatives";
 
   const heading =
@@ -134,7 +134,7 @@ export async function sendWelcomeEmail({
 
           <p>
             Welcome to the SAIT Youth
-            Initiative. Your account
+            Initiatives. Your account
             has been created
             successfully and is ready
             to use.
@@ -194,7 +194,7 @@ export async function sendWelcomeEmail({
                     font-weight:700;
                   "
                 >
-                  Youth Initiative
+                  Youth Initiatives
                 </p>
 
                 <h1>
@@ -247,7 +247,7 @@ export async function sendWelcomeEmail({
                   somewhere safe. It
                   will be used to sign
                   in to the Youth
-                  Initiative
+                  Initiatives
                   application.
                 </p>
 
@@ -290,7 +290,7 @@ export async function sendWelcomeEmail({
                 >
                   If you have
                   questions about the
-                  Youth Initiative,
+                  Youth Initiatives,
                   reply to this email
                   or contact
                   youth.programs@sait.ca.
@@ -401,7 +401,7 @@ export async function sendPasswordChangedEmail({
               ${safeFirstName}
             </strong>
             &apos;s SAIT Youth
-            Initiative account was
+            Initiatives account was
             changed successfully.
           </p>
         `
@@ -472,7 +472,7 @@ export async function sendPasswordChangedEmail({
                     font-weight:700;
                   "
                 >
-                  Youth Initiative
+                  Youth Initiatives
                 </p>
 
                 <h1>
@@ -530,7 +530,7 @@ export async function sendPasswordChangedEmail({
                     "
                   >
                     Contact the Youth
-                    Initiative team as
+                    Initiatives team as
                     soon as possible at
                     youth.programs@sait.ca.
                   </p>

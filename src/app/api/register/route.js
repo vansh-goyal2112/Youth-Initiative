@@ -559,7 +559,7 @@ export async function POST(request) {
                       font-weight:700;
                     "
                   >
-                    Youth Initiative
+                    Youth Initiatives
                   </p>
 
                   <h1>
@@ -573,7 +573,7 @@ export async function POST(request) {
                   <p>
                     You started creating
                     an account on the SAIT
-                    Youth Initiative
+                    Youth Initiatives
                     platform.
                   </p>
 
@@ -797,7 +797,7 @@ export async function POST(request) {
                     font-weight:700;
                   "
                 >
-                  Youth Initiative
+                  Youth Initiatives
                 </p>
 
                 <h1>
@@ -816,7 +816,7 @@ export async function POST(request) {
                   </strong>
                   has started creating
                   an account on the SAIT
-                  Youth Initiative
+                  Youth Initiatives
                   platform.
                 </p>
 

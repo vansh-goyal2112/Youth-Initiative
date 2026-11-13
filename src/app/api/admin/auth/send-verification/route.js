@@ -42,7 +42,7 @@ function verificationEmail(link) {
       '<!doctype html><html lang="en"><body style="margin:0;padding:30px;background:#f4f5f7;font-family:Arial,Helvetica,sans-serif;color:#222">',
       '<div style="max-width:620px;margin:auto;background:#fff;border-radius:14px;padding:32px;border-top:4px solid #e2232a">',
       '<div style="color:#e2232a;font-size:34px;font-weight:900">SAIT</div>',
-      '<p style="margin-top:4px;color:#555;font-weight:700">Youth Initiative</p>',
+      '<p style="margin-top:4px;color:#555;font-weight:700">Youth Initiatives</p>',
       '<h1>Verify Your Email</h1>',
       '<p>You started creating an administrator account for the SAIT Youth Initiatives platform.</p>',
       '<p>Please confirm that this SAIT email address belongs to you before requesting administrator access.</p>',
@@ -176,7 +176,7 @@ export async function POST(request) {
         success: false,
         code: linkFailure ? "verification-link-failed" : "email-send-failed",
         message: linkFailure
-          ? "We could not generate your verification link. Please try again shortly or contact the Youth Initiative team."
+          ? "We could not generate your verification link. Please try again shortly or contact the Youth Initiatives team."
           : "Azure could not accept the verification email. Your account still exists. Try again after 60 seconds, or select Send with Firebase instead.",
       }, { status: linkFailure ? 500 : 502 });
     }
@@ -187,7 +187,7 @@ export async function POST(request) {
     return Response.json({
       success: false,
       code: "verification-unavailable",
-      message: "Verification is temporarily unavailable. Your account has not been deleted. Please try again later or contact the Youth Initiative team.",
+      message: "Verification is temporarily unavailable. Your account has not been deleted. Please try again later or contact the Youth Initiatives team.",
     }, { status: 500 });
   }
 }

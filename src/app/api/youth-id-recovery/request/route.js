@@ -128,7 +128,7 @@ function genericResponse() {
         true,
 
       message:
-        "If the email is associated with an eligible Youth Initiative account, the Youth ID will be sent shortly.",
+        "If the email is associated with an eligible Youth Initiatives account, the Youth ID will be sent shortly.",
     },
     {
       status:
@@ -672,7 +672,7 @@ export async function POST(
             "youth.programs@sait.ca",
 
           subject:
-            "Your Youth Initiative ID",
+            "Your Youth ID",
 
           html: `
             <!doctype html>
@@ -714,25 +714,23 @@ export async function POST(
                       font-weight:700;
                     "
                   >
-                    Youth Initiative
+                    Youth Initiatives
                   </p>
 
                   <h1>
-                    Your Youth Initiative ID
+                    Your Youth ID
                   </h1>
 
                   <p>
                     A request was made to
-                    recover the Youth
-                    Initiative ID associated
+                    recover the Youth ID associated
                     with this email address.
                   </p>
 
                   ${accountRows}
 
                   <p>
-                    Use your Youth Initiative
-                    ID and password to sign in.
+                    Use your Youth ID and password to sign in.
                   </p>
 
                   <a

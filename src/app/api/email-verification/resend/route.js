@@ -626,7 +626,7 @@ export async function POST(
                     font-weight:700;
                   "
                 >
-                  Youth Initiative
+                  Youth Initiatives
                 </p>
 
                 <h1>
@@ -641,7 +641,7 @@ export async function POST(
                   A new verification
                   link was requested
                   for your SAIT Youth
-                  Initiative
+                  Initiatives
                   registration.
                 </p>
 

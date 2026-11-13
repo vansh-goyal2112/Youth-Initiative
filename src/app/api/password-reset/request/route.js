@@ -187,7 +187,7 @@ function genericResponse() {
         true,
 
       message:
-        "If the Youth Initiative ID is valid and eligible for recovery, a secure email will be sent shortly.",
+        "If the Youth ID is valid and eligible for recovery, a secure email will be sent shortly.",
     },
     {
       status:
@@ -452,7 +452,7 @@ export async function POST(
             false,
 
           message:
-            "Youth Initiative ID is required.",
+            "Youth ID is required.",
         },
         {
           status:
@@ -726,7 +726,7 @@ export async function POST(
         ? `
           A password reset was requested for
           <strong>${safeFirstName}</strong>'s
-          Youth Initiative account.
+          Youth Initiatives account.
           <br /><br />
           Because the student is under 18,
           parent or guardian approval is
@@ -735,7 +735,7 @@ export async function POST(
         `
         : `
           A password reset was requested for
-          your Youth Initiative account.
+          your Youth Initiatives account.
           <br /><br />
           Use the secure link below to create
           a new password.
@@ -798,7 +798,7 @@ export async function POST(
                         font-weight:700;
                       "
                     >
-                      Youth Initiative
+                      Youth Initiatives
                     </p>
 
                     <h1>
