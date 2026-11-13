@@ -139,10 +139,10 @@ export const registrationSchema = Yup.object({
 
   schoolGrade: Yup.string()
     .oneOf(
-      ["", "K", ...Array.from({ length: 12 }, (_, index) => String(index + 1))],
+      ["K", ...Array.from({ length: 12 }, (_, index) => String(index + 1))],
       "Select a valid current school grade."
     )
-    .notRequired(),
+    .required("Select your current school grade."),
 
   parentEmail: Yup.string()
     .transform((value) =>

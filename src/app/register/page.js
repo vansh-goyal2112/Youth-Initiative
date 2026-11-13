@@ -455,14 +455,20 @@ export default function RegisterPage() {
                           htmlFor="schoolGrade"
                           className="auth-form-label"
                         >
-                          Current School Grade (Optional)
+                          Current School Grade
                         </label>
 
                         <Field
                           as="select"
                           id="schoolGrade"
                           name="schoolGrade"
-                          className="auth-form-input"
+                          required
+                          aria-required="true"
+                          className={`auth-form-input ${
+                            errors.schoolGrade && touched.schoolGrade
+                              ? "auth-input-error"
+                              : ""
+                          }`}
                         >
                           <option value="">Select your grade</option>
                           <option value="K">Kindergarten</option>
@@ -473,8 +479,13 @@ export default function RegisterPage() {
                           ))}
                         </Field>
 
+                        <ErrorMessage
+                          name="schoolGrade"
+                          component="p"
+                          className="auth-error-message"
+                        />
                         <p className="auth-helper-text">
-                          This helps us show youth programs with grade requirements.
+                          Required to show workshops suitable for your grade.
                         </p>
                       </div>
 

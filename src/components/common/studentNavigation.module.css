@@ -33,11 +33,15 @@
 .questChip { display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:9px 13px;border-radius:14px;background:linear-gradient(120deg,#f5eaff,#fff1e0);color:#6c3a8f;text-decoration:none;font-size:12px;font-weight:900;border:1px solid #e6d6f1;white-space:nowrap; }
 .questChip svg {color:#cd8132;animation:twinkle 3.8s ease-in-out infinite;transform-origin:center;}
 .questChip:hover {background:#f0e5fc;}
-.userChip {display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:#293a65;color:white;font-size:14px;font-weight:900;text-decoration:none;}
+ .userChip {display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:#293a65;color:white;font-size:14px;font-weight:900;text-decoration:none;}
+.logoutButton {display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:8px 12px;border:1px solid #e3d9dc;border-radius:12px;background:#fff8f8;color:#8d2836;font:inherit;font-size:12px;font-weight:850;white-space:nowrap;cursor:pointer;transition:background .2s,border-color .2s;}
+.logoutButton:hover {background:#ffeded;border-color:#dfa8b0;}
+.logoutButton:disabled {opacity:.65;cursor:wait;}
+.logoutError {color:#af2434;font-size:11px;font-weight:750;max-width:160px;}
 .breadcrumbRow {height:39px;display:flex;align-items:center;width:min(1440px,calc(100% - 54px));margin:0 auto;border-top:1px solid #eceef7;}
 .backLink {display:inline-flex;align-items:center;gap:7px;min-height:34px;color:#475a75;font-size:12px;font-weight:850;text-decoration:none;}
 .backLink:hover {color:#be2c39;}
-.brand:focus-visible,.desktopNav a:focus-visible,.questChip:focus-visible,.userChip:focus-visible,.backLink:focus-visible,.mobileNav a:focus-visible {
+.brand:focus-visible,.desktopNav a:focus-visible,.questChip:focus-visible,.userChip:focus-visible,.logoutButton:focus-visible,.backLink:focus-visible,.mobileNav a:focus-visible {
   outline:3px solid #2e63d7;
   outline-offset:3px;
 }
@@ -72,6 +76,8 @@
   .questChip {width:39px;height:39px;justify-content:center;min-height:0;padding:0;}
   .headerEnd {gap:6px;}
   .userChip {width:31px;height:31px;flex-basis:31px;}
+  .logoutButton {width:39px;min-width:39px;min-height:39px;padding:0;}
+  .logoutButton span {display:none;}
   .mobileNav a {font-size:10px;}
 }
 @media(max-width:350px) {
