@@ -109,7 +109,10 @@ export default function AdminLayout({ children }) {
             <button type="button" onClick={() => setMobileOpen(true)} className="rounded-xl border border-slate-200 p-2.5 text-slate-700 lg:hidden" aria-label="Open navigation"><Menu size={21}/></button>
             <div><p className="text-[10px] font-bold uppercase tracking-[0.19em] text-slate-400">Administration / Youth Initiative</p><p className="mt-0.5 truncate text-base font-bold text-slate-900">{currentItem?.label || "Admin workspace"}</p></div>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"><span className="h-2 w-2 rounded-full bg-emerald-500"/>Secure workspace</div>
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 sm:flex"><span className="h-2 w-2 rounded-full bg-emerald-500"/>Secure workspace</div>
+            <button type="button" onClick={logoutAdmin} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-800 transition-colors hover:bg-rose-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500" aria-label="Log out of admin portal"><LogOut size={17}/><span className="hidden sm:inline">Log out</span></button>
+          </div>
         </header>
         <div className="min-w-0">{children}</div>
       </div>
