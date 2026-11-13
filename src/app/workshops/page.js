@@ -220,14 +220,14 @@ export default function WorkshopsPage() {
       </section>
 
       <section className="student-content-container workshops-main-content">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-violet-200 bg-violet-50 p-5 shadow-sm">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 border-l-4 border-l-red-600 bg-white p-5 shadow-sm">
           <div>
             <h2 className="text-lg font-extrabold text-slate-900">Already attended a SAIT workshop?</h2>
             <p className="mt-1 text-sm text-slate-600">Find a past workshop and choose Previously Completed to claim half XP. Staff may review your claim.</p>
           </div>
           <Link
             href="/completed-workshops?claim=1#previously-completed"
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-violet-800 px-5 py-3 text-center text-sm font-extrabold text-white transition-colors hover:bg-violet-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-700"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-center text-sm font-extrabold text-white shadow-sm transition-colors hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
           >
             Previously Completed
           </Link>

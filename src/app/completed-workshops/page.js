@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { getWorkshopImage } from "@/utils/getWorkshopImage";
+import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 
 export default function CompletedWorkshopsPage() {
   const {
@@ -425,34 +425,22 @@ function CompletedWorkshopCard({
   const workshop =
     registration.workshop;
 
-  const workshopImage =
-    workshop.image ||
-    getWorkshopImage(
-      workshop.category
-    );
-
-  const completedDate =
-    registration.completedAt
-      ?._seconds
-      ? new Date(
-          registration
-            .completedAt
-            ._seconds *
-            1000
-        ).toLocaleDateString()
-      : "Completed";
+  const completionDay = registration.completedOn
+    ? new Date(registration.completedOn + "T12:00:00")
+    : registration.completedAt?._seconds
+      ? new Date(registration.completedAt._seconds * 1000)
+      : registration.completedAt
+        ? new Date(registration.completedAt)
+        : null;
+  const completedDate = completionDay && !Number.isNaN(completionDay.getTime())
+    ? completionDay.toLocaleDateString()
+    : "Completed";
 
   return (
     <article className="completed-workshop-card">
       <div className="completed-workshop-image-wrapper">
-        <Image
-          src={
-            workshopImage
-          }
-          alt={
-            workshop.title
-          }
-          fill
+        <WorkshopArtwork
+          workshop={workshop}
           sizes="(max-width: 700px) 100vw, 420px"
           className="completed-workshop-image"
         />

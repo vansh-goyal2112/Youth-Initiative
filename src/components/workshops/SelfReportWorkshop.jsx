@@ -50,10 +50,13 @@ export default function SelfReportWorkshop({ onClaimed }) {
     if (submitting || !selected || !completedOn || !confirmed) return;
     setSubmitting(true); setMessage(""); setError("");
     try {
+      // The server consumes App Check tokens for claims. Request a fresh
+      // limited-use token per submission; the normal cached token is reusable
+      // and would fail after the first successfully consumed claim.
       const response = await studentFetch("/api/workshops/self-report", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ workshopId: selected, sessionId: sessionId || null, completedOn, attested: confirmed }),
-      });
+      }, { limitedUse: true });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || "Could not save your completion.");
       setMessage(result.message);
