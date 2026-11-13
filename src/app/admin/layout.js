@@ -18,6 +18,7 @@ const navigation = [
     { href: "/admin/students", label: "Students", icon: Users, permission: "students.view" },
     { href: "/admin/workshops", label: "Workshops", icon: BookOpen, permission: "workshops.view" },
     { href: "/admin/badges", label: "Badges", icon: ShieldCheck, permission: "badges.manage" },
+    { href: "/admin/media", label: "Media library", icon: BookOpen, permission: "workshops.edit" },
     { href: "/admin/attendance", label: "Attendance", icon: QrCode, permission: "attendance.manage" },
     { href: "/admin/completions", label: "Completion reviews", icon: ClipboardList, permission: "completion.review" },
     { href: "/admin/reports", label: "Student reports", icon: FileText, permission: "reports.generate" },

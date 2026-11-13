@@ -12,7 +12,9 @@ import {
 } from "lucide-react";
 
 import {
+  useEffect,
   useMemo,
+  useState,
   useSyncExternalStore,
 } from "react";
 
@@ -31,6 +33,14 @@ function getClientSnapshot() {
 }
 
 export default function RewardPage() {
+  const [rewardArtwork, setRewardArtwork] = useState(null);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/media").then(r=>r.ok?r.json():null).then(data=>{
+      if (active && data?.rewardUrl) setRewardArtwork(data.rewardUrl);
+    }).catch(()=>{});
+    return()=>{active=false;};
+  },[]);
   const savedReward =
     useSyncExternalStore(
       subscribe,
@@ -82,6 +92,7 @@ export default function RewardPage() {
       <div className="reward-glow reward-glow-two" />
 
       <section className="reward-card">
+        {rewardArtwork && <div className="reward-custom-artwork" role="img" aria-label="SAIT reward artwork" style={{backgroundImage:"url("+JSON.stringify(rewardArtwork)+")"}} />}
         <div className="reward-success-icon">
           <CheckCircle2
             size={54}

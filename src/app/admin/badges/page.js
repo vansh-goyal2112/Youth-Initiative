@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Award, CheckCircle2, ImagePlus, Layers3, LoaderCircle, Plus, Save, Search, ShieldCheck, Sparkles, X } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
+import MediaUploader from "@/components/admin/MediaUploader";
 
 const empty = {
   name: "", description: "", artworkUrl: "", status: "active",
@@ -170,6 +171,8 @@ export default function AdminBadgesPage() {
                 <input type="url" value={draft.artworkUrl} onChange={event=>setDraft(d=>({...d,artworkUrl:event.target.value}))} className="min-h-11 w-full border-0 bg-transparent text-sm outline-none" placeholder="https://.../badge.png"/>
               </div>
             </label>
+            {selected && <MediaUploader kind="badge" recordId={selected} initialUrl={draft.artworkUrl} onUploaded={url => setDraft(current=>({...current,artworkUrl:url}))} />}
+            {!selected && <p className="text-xs font-semibold text-amber-700">Create this badge first, then use the upload control to attach your own artwork.</p>}
             <p className="text-xs text-slate-500">Artwork recommendation: square PNG or WebP, 512 × 512 px, ideally under 1 MB. Uploaded artwork requires a configured image-storage service; HTTPS URLs can be assigned now.</p>
             {draft.artworkUrl && <div className="rounded-xl border border-slate-200 p-3"><div className="mx-auto h-28 w-28 rounded-xl bg-slate-100 bg-contain bg-center bg-no-repeat" style={{backgroundImage:"url("+JSON.stringify(draft.artworkUrl)+")"}}/><p className="mt-2 text-center text-xs text-slate-500">Artwork preview</p></div>}
             <div className="flex flex-wrap items-center gap-3">

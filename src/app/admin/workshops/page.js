@@ -22,6 +22,7 @@ import * as XLSX from "xlsx";
 
 import { adminFetch } from "@/services/adminApi";
 import WorkshopSessionsPanel from "@/components/admin/WorkshopSessionsPanel";
+import MediaUploader from "@/components/admin/MediaUploader";
 
 function excelDate(value) {
   if (value === null || value === undefined || value === "") return "";
@@ -970,6 +971,8 @@ export default function AdminWorkshopsPage() {
                   handleInputChange
                 }
               />
+
+              {editingWorkshop && <MediaUploader kind="workshop" recordId={editingWorkshop.id} initialUrl={editingWorkshop.image || ""} onUploaded={() => {loadWorkshops();setMessage("Workshop image uploaded and saved.");}} />}
 
               <div className="admin-form-buttons">
                 <button

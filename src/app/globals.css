@@ -10726,3 +10726,7 @@ button:last-child {
 .workshop-card-reward {display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-width:0;}
 .workshop-program-area {display:inline-flex;align-items:flex-start;gap:5px;color:#5b6580;font-size:11px;font-weight:750;line-height:1.35;overflow-wrap:anywhere;}
 .workshop-program-area svg {flex-shrink:0;margin-top:1px;color:#ad3151;}
+
+/* Optional admin-managed reward artwork, hidden until an image is configured. */
+.reward-custom-artwork {height:165px;max-width:580px;border-radius:18px;background-position:center;background-size:cover;background-repeat:no-repeat;margin:0 auto 20px;border:1px solid #e9e2ed;}
+@media(max-width:600px){.reward-custom-artwork{height:120px;border-radius:13px;}}

@@ -76,6 +76,7 @@ export default function DashboardPage() {
     pathwayRecommendations,
     setPathwayRecommendations,
   ] = useState([]);
+  const [bannerUrl, setBannerUrl] = useState(null);
 
   const [
     loading,
@@ -86,6 +87,14 @@ export default function DashboardPage() {
     errorMessage,
     setErrorMessage,
   ] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/media").then(r => r.ok ? r.json() : null).then(data => {
+      if (active && data?.bannerUrl) setBannerUrl(data.bannerUrl);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (
@@ -418,7 +427,10 @@ export default function DashboardPage() {
 
       {/* HERO / PLAYER PROFILE */}
 
-      <section className="dashboard-game-hero">
+      <section className="dashboard-game-hero" style={bannerUrl ? {
+        backgroundImage: "linear-gradient(90deg, rgba(23,34,63,.91), rgba(34,46,78,.76)), url(" + JSON.stringify(bannerUrl) + ")",
+        backgroundSize: "cover", backgroundPosition: "center",
+      } : undefined}>
         <div className="dashboard-hero-orb dashboard-orb-one" />
         <div className="dashboard-hero-orb dashboard-orb-two" />
 
