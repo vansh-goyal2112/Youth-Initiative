@@ -13,6 +13,7 @@ import {
   X,
   BookOpen,
   CheckCircle2,
+  CalendarDays,
   Layers3,
   RefreshCw,
 } from "lucide-react";
@@ -20,6 +21,7 @@ import {
 import * as XLSX from "xlsx";
 
 import { adminFetch } from "@/services/adminApi";
+import WorkshopSessionsPanel from "@/components/admin/WorkshopSessionsPanel";
 
 function excelDate(value) {
   if (value === null || value === undefined || value === "") return "";
@@ -78,6 +80,7 @@ export default function AdminWorkshopsPage() {
 
   const [editingWorkshop, setEditingWorkshop] =
     useState(null);
+  const [sessionWorkshop, setSessionWorkshop] = useState(null);
 
   const [formData, setFormData] =
     useState(emptyWorkshop);
@@ -670,6 +673,9 @@ export default function AdminWorkshopsPage() {
 
                       <td>
                         <div className="admin-row-actions">
+                          <button type="button" title="Manage sessions" aria-label={"Manage sessions for " + workshop.title} onClick={() => setSessionWorkshop(workshop)}>
+                            <CalendarDays size={18} />
+                          </button>
                           <button
                             type="button"
                             aria-label="Edit workshop"
@@ -708,6 +714,8 @@ export default function AdminWorkshopsPage() {
           </div>
         )}
       </section>
+
+      {sessionWorkshop && <WorkshopSessionsPanel workshop={sessionWorkshop} onClose={() => setSessionWorkshop(null)} onUpdated={loadWorkshops} />}
 
       {showForm && (
         <div className="admin-form-overlay">
