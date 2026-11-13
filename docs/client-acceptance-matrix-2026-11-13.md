@@ -37,7 +37,7 @@
 | 20 | Specific Super Admins: Abdullah, Greg, Roz | Roles and secure SAIT approval exist; `docs/admin-console-setup.md` documents Abdullah bootstrap | **Live provisioning of all three is not verified** |
 | 21 | Limited staff roles, per-user permission overrides | `adminPermissions.js`, `admin/team` UI/API | In code; verify authorized accounts and role enforcement |
 | 22 | Admin badge removal and XP correction | `api/admin/badges/revoke`, `api/admin/xp-adjust` + audit/XP ledger | In code; **permission-gated**, per owner's later policy |
-| 23 | Clear all session completions | `api/admin/completions` currently only reverses self-reported completions | **Partial: QR-verified completion reversal is not implemented in this workflow** |
+| 23 | Admin review/approval/reversal of self-reported completions only; QR-verified attendance is trusted | `api/admin/completions` checks `completionSource = 'self_reported'` for approval/reversal. QR attendance is not reversible by this workflow by design. | **In code; matches owner-confirmed scope (2026-11-13)**; live testing needed |
 | 24 | Badges & Rewards navigation label | Shared StudentHeader/BottomNavigation | In code |
 | 25 | Total XP vs Current XP and swag message | `badges/page.js`, `xpBalance.mjs` | In code; unit-tested balance logic |
 | 26 | Admin search and deduct XP for swag | Student directory search, redemption modal, `api/admin/rewards` | In code; live test required |
@@ -69,7 +69,7 @@ Developer or deployment work remains necessary for changing fixed homepage order
 4. Test real Firebase Storage upload/replacement and image display on workshop, badge, banner and reward UI.
 5. Run responsive/accessibility browser QA at mobile/tablet/desktop sizes and keyboard/screen-reader controls. CI cannot establish visual quality.
 6. Confirm Azure email sender and client-facing templates work with a verified service sender. GitHub CI success does not prove email delivery.
-7. Design and test a safe QR-completion reversal path, including the separate 20 XP feedback reward if present. **Do not reuse the self-report reversal unmodified**, or it could leave XP balances/ledger inconsistent.
+7. **Owner-confirmed scope (2026-11-13):** QR-scanned attendance is trusted and does not require a reversal feature. Test that only self-reported claims are eligible for admin review/reversal; confirm unauthorized roles and QR records cannot trigger that workflow. Test deduction of unearned half XP and badge reconciliation with live test records.
 8. For catalogue deletion, test a multi-session completed workshop so that each session's XP transaction and snapshot survive physical removal. Do not run against real student records.
 
-**Release rule:** A green CI build is necessary, not sufficient. Do not assert “fully functional and error-free” until the live QA above passes on a safe staging system, and the QR-completion reversal gap is resolved or explicitly excluded by the client.
+**Release rule:** A green CI build is necessary, not sufficient. The owner has explicitly excluded QR-verified reversal from the scope. Do not assert “fully functional and error-free” until the remaining staging live QA passes.
