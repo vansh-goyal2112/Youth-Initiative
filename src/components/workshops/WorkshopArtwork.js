@@ -67,7 +67,7 @@ export default function WorkshopArtwork({
       <div className={styles.icon} aria-hidden="true">
         {aviation ? <Plane size={32} strokeWidth={1.7} /> : <BookOpen size={32} strokeWidth={1.7} />}
       </div>
-      <span className={styles.eyebrow}>SAIT YOUTH INITIATIVE</span>
+      <span className={styles.eyebrow}>SAIT YOUTH INITIATIVES</span>
       <strong className={styles.heading}>{aviation ? "Explore Aviation" : "Explore New Skills"}</strong>
       <span className={styles.caption}>Workshop photo coming soon</span>
     </div>

@@ -1,4 +1,4 @@
-// Central authorization policy for SAIT Youth Initiative administrators.
+// Central authorization policy for SAIT Youth Initiatives administrators.
 // Never use client-supplied role or permission data for authorization.
 // Permission overrides can only be applied by a separately authorized super admin.
 
