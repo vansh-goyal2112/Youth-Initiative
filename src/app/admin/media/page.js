@@ -37,7 +37,7 @@ export default function AdminMediaPage() {
         </section>
         <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
           <div className="flex items-center gap-2"><ImagePlus size={20} className="text-rose-700"/><h2 className="text-lg font-extrabold">Reward artwork</h2></div>
-          <p className="text-xs leading-5 text-slate-600">Optional image displayed alongside students' existing reward celebration.</p>
+          <p className="text-xs leading-5 text-slate-600">Optional image displayed alongside students&apos; existing reward celebration.</p>
           <MediaUploader kind="reward" initialUrl={reward} onUploaded={setReward}/>
         </section>
       </div>
