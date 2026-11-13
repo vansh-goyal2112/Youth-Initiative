@@ -690,6 +690,7 @@ function StudentViewModal({
         </div>
 
         <XpRedemptionPanel student={student} onRedeemed={onRedeemed} />
+        <XpCorrectionPanel student={student} onAdjusted={onRedeemed} />
         <AdminBadgeRemoval student={student} onBadgeRemoved={onBadgeRemoved} />
 
         <div className="admin-student-interests">
@@ -870,6 +871,60 @@ function AdminBadgeRemoval({ student, onBadgeRemoved }) {
           </label>
           <button disabled={saving||!selected||reason.trim().length<5} className="min-h-10 rounded-xl border border-rose-300 bg-white px-4 py-2 text-xs font-extrabold text-rose-800 hover:bg-rose-50 disabled:opacity-50" type="submit">{saving?"Removing…":"Remove badge"}</button>
         </form>}
+      {notice&&<p className="mt-3 text-xs font-semibold text-emerald-700" role="status">{notice}</p>}
+      {error&&<p className="mt-3 text-xs font-semibold text-rose-700" role="alert">{error}</p>}
+    </section>
+  );
+}
+
+function XpCorrectionPanel({ student, onAdjusted }) {
+  const [allowed, setAllowed] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const operationRef = useRef(null);
+  useEffect(()=>{
+    let active=true;
+    queueMicrotask(()=>{
+      if (!active) return;
+      try{setAllowed(JSON.parse(sessionStorage.getItem("adminSession")||"{}").permissions?.includes("xp.adjust")===true);}catch{setAllowed(false);}
+    });
+    return()=>{active=false;};
+  },[]);
+  if (!allowed) return null;
+  async function submit(event){
+    event.preventDefault();
+    const points=Number(amount);
+    if (!Number.isSafeInteger(points)||points<=0||points>(student.totalXp||0)||reason.trim().length<5){
+      setError("Enter an amount within Total XP and a reason of at least five characters.");return;
+    }
+    setSaving(true);setNotice("");setError("");
+    if (!operationRef.current) operationRef.current=crypto.randomUUID();
+    try{
+      const response=await adminFetch("/api/admin/xp-adjust",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({studentId:student.id,amount:points,reason,operationId:operationRef.current})});
+      const result=await response.json();
+      if (!response.ok||!result.success) throw new Error(result.message||"XP correction failed.");
+      operationRef.current=null;
+      onAdjusted?.({totalXp:result.totalXp,currentXp:result.currentXp,xpCorrectionDebt:result.xpCorrectionDebt});
+      setNotice(result.message);setAmount("");setReason("");
+    }catch(cause){setError(cause.message||"XP correction could not be completed. Check the ledger before retrying.");}
+    finally{setSaving(false);}
+  }
+  return (
+    <section className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4" aria-label="Correct earned student XP">
+      <h3 className="mb-2 flex items-center gap-2 text-sm font-extrabold text-slate-800"><ShieldCheck size={18}/> Correct erroneous XP</h3>
+      <p className="mb-3 text-xs text-slate-600">Unlike swag redemption, this removes incorrectly earned lifetime XP. Spendable XP remains at zero if insufficient and an outstanding correction offsets future rewards.</p>
+      <form onSubmit={submit} className="space-y-3">
+        <label className="grid gap-1 text-xs font-bold text-slate-700">XP to remove (maximum {student.totalXp||0})
+          <input required type="number" min="1" max={student.totalXp||0} step="1" value={amount} onChange={event=>{setAmount(event.target.value);operationRef.current=null;}} className="min-h-10 rounded-xl border border-slate-300 bg-white p-2 text-sm"/>
+        </label>
+        <label className="grid gap-1 text-xs font-bold text-slate-700">Correction reason (required)
+          <input required minLength={5} maxLength={250} value={reason} onChange={event=>{setReason(event.target.value);operationRef.current=null;}} className="min-h-10 rounded-xl border border-slate-300 bg-white p-2 text-sm" placeholder="Incorrect attendance XP award"/>
+        </label>
+        <button disabled={saving||!amount||reason.trim().length<5} type="submit" className="min-h-10 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-extrabold text-rose-800 hover:bg-rose-50 disabled:opacity-50">{saving?"Applying correction…":"Remove erroneous XP"}</button>
+      </form>
       {notice&&<p className="mt-3 text-xs font-semibold text-emerald-700" role="status">{notice}</p>}
       {error&&<p className="mt-3 text-xs font-semibold text-rose-700" role="alert">{error}</p>}
     </section>

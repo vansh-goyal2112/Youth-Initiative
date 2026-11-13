@@ -64,7 +64,9 @@ export async function GET(request) {
         createdAt: student.createdAt || null,
         totalXp: student.totalXp ?? 0,
         level: student.level ?? 1,
-        grade: student.grade || null,
+        grade: student.schoolGrade || null,
+        currentXp: student.currentXp ?? student.totalXp ?? 0,
+        xpCorrectionDebt: student.xpCorrectionDebt ?? 0,
         activeQuestId: student.activeQuestId || null,
       },
       registrations: registrations.map((item) => ({
@@ -87,7 +89,10 @@ export async function GET(request) {
       xpHistory: transactions.map((item) => ({
         workshopId: item.workshopId || null,
         status: item.status || null,
-        amount: item.amount ?? item.xpAmount ?? null,
+        amount: item.points ?? item.amount ?? item.xpAmount ?? null,
+        action: item.action || null,
+        note: item.note || null,
+        actorEmail: item.actorEmail || null,
         createdAt: item.createdAt || null,
         completedAt: item.completedAt || null,
       })),
