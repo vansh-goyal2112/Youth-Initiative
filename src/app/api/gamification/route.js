@@ -3,6 +3,7 @@ import {
   studentAccessResponse,
 } from "@/services/studentAccess";
 
+import { getXpBalances } from "@/services/xpBalance.mjs";
 import {
   queryCosmosDocuments,
   readCosmosDocument,
@@ -380,12 +381,14 @@ export async function GET(request) {
       getLevelInformation(
         totalXp
       );
+    const { currentXp } = getXpBalances(student);
 
     return Response.json({
       success: true,
 
       gamification: {
         totalXp,
+        currentXp,
 
         activeQuestId: student.activeQuestId || null,
 

@@ -14,7 +14,7 @@ const navigation = [
   { href: "/dashboard", label: "Home", Icon: Home },
   { href: "/workshops", label: "Workshops", Icon: BookOpen },
   { href: "/journey", label: "Journey", Icon: Compass },
-  { href: "/badges", label: "Badges", Icon: Trophy },
+  { href: "/badges", label: "Badges & Rewards", Icon: Trophy },
   { href: "/profile", label: "Profile", Icon: UserRound },
 ];
 

@@ -14,6 +14,7 @@ import {
   BookOpen,
   CheckCircle2,
   Cpu,
+  Gift,
   Home,
   LoaderCircle,
   Lock,
@@ -368,14 +369,14 @@ export default function BadgesPage() {
             </span>
 
             <h1>
-              My Badges
+              Badges &amp; Rewards
             </h1>
 
             <p>
               Complete workshops,
               explore new skill areas
               and unlock achievements
-              as your journey grows.
+              as your journey grows. Use your XP to redeem real rewards and SAIT swag at events!
             </p>
           </div>
 
@@ -410,6 +411,12 @@ export default function BadgesPage() {
               <span>
                 Total XP
               </span>
+            </div>
+
+            <div>
+              <Gift size={23} />
+              <strong>{gameData.currentXp ?? gameData.totalXp}</strong>
+              <span>Current XP</span>
             </div>
 
             <div>

@@ -1,6 +1,7 @@
 import { requireActiveStudent, studentAccessResponse } from "@/services/studentAccess";
 import { cosmosNow, queryCosmosDocuments, readCosmosDocument, replaceCosmosDocument, createCosmosDocument, isCosmosConflict, isCosmosPreconditionFailed } from "@/services/cosmosData";
 import { WORKSHOP_FEEDBACK_XP, FEEDBACK_QUESTIONS, validateWorkshopFeedback } from "@/services/workshopFeedback.mjs";
+import { creditXp } from "@/services/xpBalance.mjs";
 export const runtime = "nodejs";
 
 const levels = [[1000,6,"Youth Champion"],[700,5,"Pathway Explorer"],[450,4,"Innovation Builder"],[250,3,"Future Creator"],[100,2,"Skill Starter"],[0,1,"New Explorer"]];
@@ -78,9 +79,9 @@ export async function POST(request) {
       for(let attempt=0;attempt<3;attempt++) {
         const student=await readCosmosDocument("students",uid);
         if(!student) throw new Error("Student profile unavailable");
-        const totalXp=(Number(student.totalXp)||0)+WORKSHOP_FEEDBACK_XP;
+        const { totalXp, currentXp, xpCorrectionDebt } = creditXp(student, WORKSHOP_FEEDBACK_XP);
         try {
-          await replaceCosmosDocument("students",student,{totalXp,...getLevel(totalXp),updatedAt:cosmosNow()});
+          await replaceCosmosDocument("students",student,{totalXp,currentXp,xpCorrectionDebt,...getLevel(totalXp),updatedAt:cosmosNow()});
           awarded=true; break;
         } catch(error) { if(!isCosmosPreconditionFailed(error)) throw error; }
       }

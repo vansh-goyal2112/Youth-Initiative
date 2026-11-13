@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { creditXp } from "@/services/xpBalance.mjs";
 
 import {
   cosmosNow,
@@ -153,9 +154,8 @@ export async function processWorkshopCompletion({
       };
     }
 
-    const newTotalXp =
-      currentXp +
-      xpReward;
+    const newBalances = creditXp(student, xpReward);
+    const newTotalXp = newBalances.totalXp;
 
     const newLevel =
       calculateLevel(
@@ -436,6 +436,8 @@ export async function processWorkshopCompletion({
           {
             totalXp:
               newTotalXp,
+            currentXp: newBalances.currentXp,
+            xpCorrectionDebt: newBalances.xpCorrectionDebt,
 
             level:
               newLevel,
