@@ -303,7 +303,7 @@ export default function WorkshopDetailsPage() {
             </p>
             <Link
               href={`/completed-workshops?workshop=${encodeURIComponent(workshop.id)}#previously-completed`}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-violet-200 bg-violet-50 px-4 py-3 text-center text-sm font-extrabold text-violet-800 transition-colors hover:border-violet-300 hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-700"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-3 text-center text-sm font-extrabold text-white shadow-sm transition-colors hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
             >
               <CalendarDays size={18} aria-hidden="true" />
               Previously Completed
