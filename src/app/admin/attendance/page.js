@@ -10,6 +10,7 @@ import { adminFetch } from "@/services/adminApi";
 export default function AdminAttendancePage() {
   const [workshops, setWorkshops] = useState([]);
   const [workshopId, setWorkshopId] = useState("");
+  const [catalogSessionId, setCatalogSessionId] = useState("");
   const [duration, setDuration] = useState(15);
   const [qrImage, setQrImage] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
@@ -41,7 +42,7 @@ export default function AdminAttendancePage() {
       setExpiresAt("");
       const response = await adminFetch("/api/admin/attendance", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workshopId, durationMinutes: Number(duration) }),
+        body: JSON.stringify({ workshopId, catalogSessionId: catalogSessionId || null, durationMinutes: Number(duration) }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to create attendance session.");
@@ -56,6 +57,7 @@ export default function AdminAttendancePage() {
   }
 
   const workshop = workshops.find(item => item.id === workshopId);
+  const scheduled = Array.isArray(workshop?.sessions) && workshop.sessions.length > 0 ? workshop.sessions.filter(item => item.status === "active") : [];
   return <main className="admin-attendance-page admin-attendance-redesign">
     <div className="admin-attendance-intro">
       <span className="admin-section-eyebrow"><ScanLine size={15}/> ENGAGEMENT OPERATIONS</span>
@@ -72,11 +74,17 @@ export default function AdminAttendancePage() {
         <p className="admin-panel-subtext">Choose the experience and how long students can scan the code.</p>
         <div className="admin-attendance-fields">
           <label><span><BookOpen size={16}/> Workshop</span>
-            <select disabled={loadingWorkshops || loading} value={workshopId} onChange={event => {setWorkshopId(event.target.value);setSuccessMessage("");setQrImage("");}}>
+            <select disabled={loadingWorkshops || loading} value={workshopId} onChange={event => {setWorkshopId(event.target.value);setCatalogSessionId("");setSuccessMessage("");setQrImage("");}}>
               <option value="">{loadingWorkshops ? "Loading workshops…" : "Choose a workshop"}</option>
               {workshops.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
             </select>
           </label>
+          {scheduled.length > 0 && <label><span><CalendarCheck2 size={16}/> Scheduled date</span>
+            <select disabled={loading} required value={catalogSessionId} onChange={event=>{setCatalogSessionId(event.target.value);setQrImage("");}}>
+              <option value="">Choose a session date</option>
+              {scheduled.map(item=><option key={item.id} value={item.id}>{item.startDate}{item.time ? " · " + item.time : ""}</option>)}
+            </select>
+          </label>}
           <label><span><Timer size={16}/> Check-in window</span>
             <select value={duration} disabled={loading} onChange={event => {setDuration(event.target.value);setQrImage("");setSuccessMessage("");}}>
               {[5,10,15,30].map(minutes => <option value={minutes} key={minutes}>{minutes} minutes</option>)}
@@ -85,7 +93,7 @@ export default function AdminAttendancePage() {
         </div>
         {workshop && <div className="admin-attendance-workshop"><CheckCircle2 size={18}/><span>Selected: <strong>{workshop.title}</strong></span></div>}
         {errorMessage && <div className="admin-auth-alert error mt-5" role="alert"><ShieldCheck size={19}/><span>{errorMessage}</span></div>}
-        <button type="button" disabled={loading || !workshopId} className="admin-attendance-generate" onClick={generateQr}>
+        <button type="button" disabled={loading || !workshopId || (scheduled.length > 0 && !catalogSessionId)} className="admin-attendance-generate" onClick={generateQr}>
           {loading ? <><LoaderCircle size={19} className="animate-spin"/> Creating session…</> : <><QrCode size={19}/> {qrImage ? "Create new session" : "Generate check-in QR"} <ArrowRight size={19}/></>}
         </button>
         <div className="admin-attendance-info"><ShieldCheck size={18}/><p>Only authorized administrators can generate a session. Codes expire automatically after the selected window.</p></div>

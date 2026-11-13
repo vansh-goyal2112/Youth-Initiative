@@ -57,6 +57,15 @@ export async function GET(request) {
               : registration.workshopId
                 ? await readCosmosDocument("workshops", registration.workshopId)
                 : null;
+            const session = registration.sessionId && Array.isArray(workshop?.sessions)
+              ? workshop.sessions.find(item => item.id === registration.sessionId)
+              : registration.sessionSnapshot;
+            const listedWorkshop = workshop && registration.status === "upcoming" && session
+              ? { ...workshop, startDate: session.startDate || workshop.startDate,
+                  endDate: session.endDate || workshop.endDate, time: session.time || workshop.time,
+                  location: session.location || workshop.location,
+                  registrationUrl: session.registrationUrl || workshop.registrationUrl }
+              : workshop;
 
             return {
               id:
@@ -65,13 +74,8 @@ export async function GET(request) {
               ...registration,
 
               workshop:
-                workshop
-                  ? {
-                      id:
-                        workshop.id,
-
-                      ...workshop,
-                    }
+                listedWorkshop
+                  ? { id: listedWorkshop.id, ...listedWorkshop }
                   : null,
             };
           }
@@ -135,10 +139,7 @@ export async function POST(request) {
         request
       );
 
-    const {
-      workshopId,
-    } =
-      await request.json();
+    const { workshopId, sessionId: requestedSessionId = null } = await request.json();
 
     if (!student.schoolGrade) {
       return Response.json({ success: false, message: "Please add your current school grade in My Identity before registering." }, { status: 409 });
@@ -215,11 +216,21 @@ export async function POST(request) {
       );
     }
 
+    let sessionId = null;
+    let selectedSession = null;
+    if (Array.isArray(workshop.sessions) && workshop.sessions.length > 0) {
+      selectedSession = workshop.sessions.find(item => item.id === requestedSessionId && item.status === "active");
+      if (!selectedSession) return Response.json({ success: false, message: "Choose an active workshop session date before confirming registration." }, { status: 400 });
+      sessionId = selectedSession.id;
+    } else if (requestedSessionId && requestedSessionId !== "legacy") {
+      return Response.json({ success: false, message: "This workshop has no matching session date." }, { status: 400 });
+    }
+
     const existingRegistrations =
       await queryCosmosDocuments(
         "registrations",
         `
-          SELECT TOP 1 *
+          SELECT *
           FROM c
           WHERE c.studentId = @studentId
             AND c.workshopId = @workshopId
@@ -242,12 +253,8 @@ export async function POST(request) {
         ]
       );
 
-    if (
-      existingRegistrations.length >
-      0
-    ) {
-      const existingRegistration =
-        existingRegistrations[0];
+    const existingRegistration = existingRegistrations.find(item => (item.sessionId || null) === sessionId);
+    if (existingRegistration) {
 
       return Response.json(
         {
@@ -286,6 +293,8 @@ export async function POST(request) {
           uid,
 
         workshopId,
+        sessionId,
+        sessionSnapshot: selectedSession ? { ...selectedSession } : null,
 
         status:
           "upcoming",
