@@ -99,7 +99,7 @@ export default function AdminBadgesPage() {
       <div className="mb-8">
         <span className="mb-2 inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wider text-rose-600"><Sparkles size={15}/> Reward design studio</span>
         <h1 className="text-3xl font-black tracking-tight">Custom <span className="text-rose-600">badges.</span></h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Create real achievements with artwork and safe automatic earning rules. Existing badges and students' historical achievements remain unchanged.</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Create real achievements with artwork and safe automatic earning rules. Existing badges and students&apos; historical achievements remain unchanged.</p>
       </div>
       <div className="grid items-start gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-label="Badge catalogue">
