@@ -217,7 +217,7 @@ export default function ResetPasswordPage() {
         <p>
           Create the new password the
           student will use with their
-          Youth Initiative ID.
+          Youth ID.
         </p>
 
 

@@ -308,7 +308,7 @@ export default function DashboardPage() {
 
         <p>
           Log in to continue your
-          Youth Initiative journey.
+          Youth Initiatives journey.
         </p>
 
         <Link href="/login">
@@ -374,7 +374,7 @@ export default function DashboardPage() {
 
             <div className="student-brand-text">
               <strong>
-                Youth Initiative
+                Youth Initiatives
               </strong>
 
               <span>

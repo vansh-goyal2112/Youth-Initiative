@@ -316,7 +316,7 @@ export default function ParentalVerificationPage() {
 
         <p>
           A password reset was requested
-          for this Youth Initiative account.
+          for this Youth Initiatives account.
         </p>
 
         <div className="parent-reset-confirmations">

@@ -166,7 +166,7 @@ async function reserveUniqueYouthId(
   }
 
   throw new Error(
-    "A unique Youth Initiative ID could not be generated."
+    "A unique Youth ID could not be generated."
   );
 }
 
@@ -861,7 +861,7 @@ export async function POST(
         )
       ) {
         throw createRequestError(
-          "The Youth Initiative ID could not be assigned. Please try again.",
+          "The Youth ID could not be assigned. Please try again.",
           409,
           "youth-id-assignment-conflict"
         );

@@ -98,14 +98,14 @@ export default function ResumeRegistrationPage() {
               <p className={styles.smallHelp}>
                 Nothing arrives? The old registration may already be closed.
                 You can <Link href="/register">start a new registration</Link>, or contact
-                <a href="mailto:youth.programs@sait.ca"> Youth Initiative support</a>
+                <a href="mailto:youth.programs@sait.ca"> Youth Initiatives support</a>
                 if you no longer have access to the original email.
               </p>
             </div>
           ) : (
             <div className={styles.mainCopy}>
               <div className={styles.iconCircle}><RefreshCcw size={31} aria-hidden="true"/></div>
-              <span className={styles.eyebrow}>SAIT YOUTH INITIATIVE</span>
+              <span className={styles.eyebrow}>SAIT YOUTH INITIATIVES</span>
               <h1>Continue Your Adventure</h1>
               <p>
                 Started signing up but didn&apos;t finish? You don&apos;t have to begin from scratch.

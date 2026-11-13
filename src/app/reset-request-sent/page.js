@@ -27,7 +27,7 @@ export default function ResetRequestSentPage() {
         </h1>
 
         <p>
-          If the Youth Initiative ID is valid
+          If the Youth ID is valid
           and eligible for password recovery,
           a secure recovery email will be sent
           to the appropriate registered email

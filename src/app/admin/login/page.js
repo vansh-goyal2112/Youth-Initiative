@@ -54,7 +54,7 @@ function readableAuthError(error, fallback) {
     case "auth/network-request-failed":
       return "Could not connect to Firebase. Check your connection and try again.";
     case "auth/unauthorized-domain":
-      return "This website is not authorized for Firebase email verification. Contact the Youth Initiative team.";
+      return "This website is not authorized for Firebase email verification. Contact the Youth Initiatives team.";
     default:
       return error?.message || fallback;
   }
@@ -344,9 +344,9 @@ export default function AdminLoginPage() {
   return (
     <main className="admin-auth min-h-screen bg-[#f5f6fb]">
       <div className="admin-auth-grid">
-        <section className="admin-auth-story" aria-label="Youth Initiative administration">
+        <section className="admin-auth-story" aria-label="Youth Initiatives administration">
           <div className="admin-auth-story-content">
-            <div className="admin-auth-brand"><span className="admin-auth-brand-mark">S</span><span><strong>SAIT</strong><small>YOUTH INITIATIVE</small></span></div>
+            <div className="admin-auth-brand"><span className="admin-auth-brand-mark">S</span><span><strong>SAIT</strong><small>YOUTH INITIATIVES</small></span></div>
             <div className="admin-auth-story-main">
               <span className="admin-auth-kicker"><Sparkles size={15}/> THE PROGRAM OPERATIONS PLATFORM</span>
               <h2>Make every learning experience <em>count.</em></h2>
@@ -363,7 +363,7 @@ export default function AdminLoginPage() {
           <div className="admin-auth-decoration admin-auth-decoration-two" aria-hidden="true"/>
         </section>
         <section className="admin-auth-form-panel">
-          <div className="admin-auth-mobile-brand"><span className="admin-auth-brand-mark">S</span><span><strong>SAIT</strong><small>YOUTH INITIATIVE</small></span></div>
+          <div className="admin-auth-mobile-brand"><span className="admin-auth-brand-mark">S</span><span><strong>SAIT</strong><small>YOUTH INITIATIVES</small></span></div>
           <div className="admin-auth-form-wrap">
             <div className="admin-auth-lock"><ShieldCheck size={23}/></div>
             <span className="admin-auth-eyebrow">{content.eyebrow}</span>

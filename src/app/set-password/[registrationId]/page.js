@@ -602,7 +602,7 @@ export default function SetPasswordPage() {
         <p className="set-password-introduction">
           Create the password the
           student will use with their
-          Youth Initiative ID.
+          Youth ID.
         </p>
 
         <form

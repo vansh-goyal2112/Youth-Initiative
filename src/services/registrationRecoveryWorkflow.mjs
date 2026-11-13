@@ -95,7 +95,7 @@ export async function recoverPendingRegistration({
       html: `<!doctype html>
         <html lang="en"><body style="margin:0;padding:30px;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;color:#24334c;">
           <div style="max-width:620px;margin:auto;background:#ffffff;border-radius:16px;padding:30px;border-top:5px solid #e2232a;">
-            <h1 style="font-size:24px;margin:0 0 18px;">Continue Your Youth Initiative Journey</h1>
+            <h1 style="font-size:24px;margin:0 0 18px;">Continue Your Youth Initiatives Journey</h1>
             <p>Hello ${safeFirstName},</p>
             <p>${escapeHtml(mail.intro)}</p>
             <p style="margin:24px 0;"><a href="${escapeHtml(mail.url)}" style="display:inline-block;padding:13px 20px;border-radius:10px;background:#e2232a;color:#ffffff;text-decoration:none;font-weight:bold;">${escapeHtml(mail.action)}</a></p>
