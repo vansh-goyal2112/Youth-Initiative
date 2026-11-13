@@ -8,11 +8,46 @@ import { useAuth } from "@/contexts/AuthContext";
 import styles from "./welcomeTutorial.module.css";
 
 const CARDS = [
-  { id: "welcome", eyebrow: "YOUR LEARNING JOURNEY", heading: "Your next adventure starts here.", text: "Explore SAIT Youth Initiatives, discover new skills, and build a learning journey that belongs to you.", Icon: Sparkles, color: "rose" },
-  { id: "discover", eyebrow: "EXPLORE WORKSHOPS", heading: "Find what sparks your curiosity.", text: "Browse workshops by program area. Your school grade helps us highlight opportunities that fit you.", Icon: BookOpen, color: "purple" },
-  { id: "checkin", eyebrow: "CHECK IN", heading: "Make every workshop count.", text: "Scan the QR code when you attend, or record a workshop you already completed. Self-reported workshops earn half XP.", Icon: QrCode, color: "blue" },
-  { id: "xp", eyebrow: "EARN & GROW", heading: "Unlock XP and badges.", text: "Your completed workshops grow your experience, progress and badges. You can also redeem spendable XP for SAIT swag at events.", Icon: Trophy, color: "gold" },
-  { id: "path", eyebrow: "FIND YOUR PATH", heading: "See where your interests lead.", text: "Get recommendations for workshops and future SAIT programs. Already done some workshops? Find them, mark them complete and start earning XP!", Icon: Compass, color: "mint" },
+  {
+    id: "welcome",
+    eyebrow: "WELCOME, EXPLORER",
+    heading: "Your learning journey starts here.",
+    text: "SAIT Youth Initiatives helps you explore workshops, track what you've learned, collect achievements and discover what you could do next.",
+    Icon: Sparkles,
+    color: "rose",
+  },
+  {
+    id: "discover",
+    eyebrow: "STEP 1 · EXPLORE",
+    heading: "Find your next workshop.",
+    text: "Browse workshops by program area, choose an opportunity for your school grade, and follow its registration link to sign up for a session.",
+    Icon: BookOpen,
+    color: "purple",
+  },
+  {
+    id: "checkin",
+    eyebrow: "STEP 2 · CHECK IN OR CLAIM",
+    heading: "Get credit for showing up.",
+    text: "Scan the workshop QR code when you attend to earn full workshop XP. Attended one in the past? Choose 'Previously Completed' to claim half XP. Staff can review self-reported claims.",
+    Icon: QrCode,
+    color: "blue",
+  },
+  {
+    id: "xp",
+    eyebrow: "STEP 3 · EARN AND GROW",
+    heading: "Earn XP. Unlock badges.",
+    text: "Earn XP from workshops and unlock badges as you progress. After a verified workshop, complete the short feedback task to earn 20 more XP. Check your Total XP and Current XP in Badges & Rewards.",
+    Icon: Trophy,
+    color: "gold",
+  },
+  {
+    id: "path",
+    eyebrow: "YOUR NEXT ADVENTURE",
+    heading: "Your past adventures count too!",
+    text: "Discover recommended workshops and future SAIT programs. Already completed a workshop, even before using this app? Find it in the workshop list and choose 'Previously Completed' to claim your XP.",
+    Icon: Compass,
+    color: "mint",
+  },
 ];
 
 export default function WelcomeTutorial({ user, student }) {
@@ -98,7 +133,7 @@ export default function WelcomeTutorial({ user, student }) {
           <p className={styles.eyebrow}>{card.eyebrow}</p>
           <h2 id="student-tutorial-title">{card.heading}</h2>
           <p id="student-tutorial-description">{card.text}</p>
-          {last && <div className={styles.rewardNote}><Gift size={18} aria-hidden="true"/> XP can be redeemed for SAIT swag at events!</div>}
+          {last && <div className={styles.rewardNote}><Gift size={18} aria-hidden="true"/> Redeem your Current XP for SAIT swag at Youth Initiatives events!</div>}
         </div>
         <div className={styles.footer}>
           <div className={styles.dots} role="group" aria-label="Tutorial steps">
@@ -107,7 +142,7 @@ export default function WelcomeTutorial({ user, student }) {
           <div className={styles.controls}>
             {index > 0 && <button type="button" className={styles.back} disabled={saving} onClick={() => setIndex(index - 1)}><ChevronLeft size={17} aria-hidden="true"/> Back</button>}
             {last
-              ? <button type="button" className={styles.next} disabled={saving} onClick={() => finish(true)}><CheckCircle2 size={17} aria-hidden="true"/>{saving ? "Saving…" : "Find workshops"}</button>
+              ? <button type="button" className={styles.next} disabled={saving} onClick={() => finish(true)}><CheckCircle2 size={17} aria-hidden="true"/>{saving ? "Saving…" : "Explore & claim workshops"}</button>
               : <button type="button" className={styles.next} onClick={() => setIndex(index + 1)}>Next <ChevronRight size={17} aria-hidden="true"/></button>}
           </div>
         </div>
