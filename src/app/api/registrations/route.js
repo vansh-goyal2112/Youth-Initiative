@@ -15,6 +15,7 @@ import {
 import {
   getWorkshopEligibility,
 } from "@/services/workshopEligibility";
+import { withCompletionArtwork } from "@/services/workshopHistory.mjs";
 
 export const runtime = "nodejs";
 
@@ -52,11 +53,15 @@ export async function GET(request) {
           async (
             registration
           ) => {
-            const workshop = registration.status === "completed" && registration.workshopSnapshot
+            const historicalSnapshot = registration.status === "completed"
               ? registration.workshopSnapshot
-              : registration.workshopId
-                ? await readCosmosDocument("workshops", registration.workshopId)
-                : null;
+              : null;
+            // New snapshots carry their original artwork. Older snapshots may
+            // lack it, so fetch only the current catalogue image as a fallback.
+            const currentWorkshop = registration.workshopId && (!historicalSnapshot || !historicalSnapshot.image)
+              ? await readCosmosDocument("workshops", registration.workshopId)
+              : null;
+            const workshop = withCompletionArtwork(historicalSnapshot, currentWorkshop);
             const session = registration.sessionId && Array.isArray(workshop?.sessions)
               ? workshop.sessions.find(item => item.id === registration.sessionId)
               : registration.sessionSnapshot;
