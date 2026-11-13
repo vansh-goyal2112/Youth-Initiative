@@ -7,6 +7,7 @@ import { recordAdminAudit } from "@/services/adminAudit";
 import { reverseEarnedXp } from "@/services/xpBalance.mjs";
 import { completionTransactionId } from "@/services/completionRules.mjs";
 import { calculateLevel, getLevelName } from "@/services/gamificationAdmin";
+import { findUnmetCustomBadgeIds } from "@/services/customBadges.mjs";
 
 export const runtime = "nodejs";
 
@@ -195,16 +196,28 @@ export async function POST(request) {
         reversalReason: reason, completionXpAwarded: false, updatedAt: cosmosNow(),
       });
 
-      // Remove only automatic badges whose requirements are no longer met.
-      // Manually granted/custom badges remain untouched.
+      // Reconcile built-in and active rule-driven badges using persisted history.
+      // Manually granted or archived custom badges are preserved.
       const remaining = await queryCosmosDocuments("registrations",
         "SELECT * FROM c WHERE c.studentId = @id AND c.status = 'completed'",
         [{ name: "@id", value: record.studentId }]
       );
-      const eligible = badgeEligibility(remaining);
+      const completedWithSnapshots = await Promise.all(remaining.map(async item => ({
+        ...item,
+        workshopSnapshot: item.workshopSnapshot ||
+          (item.workshopId ? await readCosmosDocument("workshops", item.workshopId) : null),
+      })));
+      const eligible = badgeEligibility(completedWithSnapshots);
+      const customDefinitions = await queryCosmosDocuments("admins",
+        "SELECT * FROM c WHERE c.role = @role AND c.status = @status",
+        [{ name: "@role", value: "badge_definition" }, { name: "@status", value: "active" }]
+      );
+      const unmetCustom = new Set(findUnmetCustomBadgeIds(customDefinitions, completedWithSnapshots));
       const refreshedStudent = await readCosmosDocument("students", record.studentId);
       const oldBadges = Array.isArray(refreshedStudent?.badges) ? refreshedStudent.badges : [];
-      const removed = oldBadges.filter(id => AUTO_BADGES.has(id) && !eligible.has(id));
+      const removed = oldBadges.filter(id =>
+        (AUTO_BADGES.has(id) && !eligible.has(id)) || unmetCustom.has(id)
+      );
       const remainingBadges = oldBadges.filter(id => !removed.includes(id));
       if (refreshedStudent) {
         await replaceCosmosDocument("students", refreshedStudent, {
