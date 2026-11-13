@@ -107,18 +107,18 @@ export async function sendWelcomeEmail({
   const subject =
     requiresParentalConsent
       ? "Youth Initiative Account Created"
-      : "Welcome to SAIT Youth Initiative";
+      : "Welcome to SAIT Youth Initiatives";
 
   const heading =
     requiresParentalConsent
       ? "Account Created Successfully"
-      : "Welcome to SAIT Youth Initiative";
+      : "Welcome to SAIT Youth Initiatives";
 
   const introduction =
     requiresParentalConsent
       ? `
           <p>
-            The SAIT Youth Initiative
+            The SAIT Youth Initiatives
             account for
             <strong>
               ${safeFirstName}
@@ -412,7 +412,7 @@ export async function sendPasswordChangedEmail({
 
           <p>
             The password for your
-            SAIT Youth Initiative
+            SAIT Youth Initiatives
             account was changed
             successfully.
           </p>
@@ -430,7 +430,7 @@ export async function sendPasswordChangedEmail({
           getReplyTo(),
 
         subject:
-          "Password Changed – SAIT Youth Initiative",
+          "Password Changed – SAIT Youth Initiatives",
 
         html: `
           <!doctype html>

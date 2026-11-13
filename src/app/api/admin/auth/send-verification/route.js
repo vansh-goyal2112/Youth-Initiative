@@ -31,10 +31,10 @@ function safeHtml(value) {
 // verification action: do not mark emailVerified or grant access here.
 function verificationEmail(link) {
   return {
-    subject: "Verify Your Email - SAIT Youth Initiative",
+    subject: "Verify Your Email - SAIT Youth Initiatives",
     replyTo: process.env.EMAIL_REPLY_TO || "youth.programs@sait.ca",
     text:
-      "Please verify your SAIT Youth Initiative administrator email address using this secure link:\n" +
+      "Please verify your SAIT Youth Initiatives administrator email address using this secure link:\n" +
       link +
       "\n\nVerification only confirms your email; administrator access still requires approval.\n" +
       "If you did not request an administrator account, ignore this message.",
@@ -44,7 +44,7 @@ function verificationEmail(link) {
       '<div style="color:#e2232a;font-size:34px;font-weight:900">SAIT</div>',
       '<p style="margin-top:4px;color:#555;font-weight:700">Youth Initiative</p>',
       '<h1>Verify Your Email</h1>',
-      '<p>You started creating an administrator account for the SAIT Youth Initiative platform.</p>',
+      '<p>You started creating an administrator account for the SAIT Youth Initiatives platform.</p>',
       '<p>Please confirm that this SAIT email address belongs to you before requesting administrator access.</p>',
       '<a href="',
       safeHtml(link),

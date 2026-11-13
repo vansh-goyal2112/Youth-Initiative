@@ -91,7 +91,7 @@ export async function recoverPendingRegistration({
       to: [recipient],
       replyTo,
       subject: mail.subject,
-      text: `Hello,\n\n${mail.intro}\n\nUse this secure link within 30 minutes:\n${mail.url}\n\nIf you did not request this, ignore this email.\n\nSAIT Youth Initiative`,
+      text: `Hello,\n\n${mail.intro}\n\nUse this secure link within 30 minutes:\n${mail.url}\n\nIf you did not request this, ignore this email.\n\nSAIT Youth Initiatives`,
       html: `<!doctype html>
         <html lang="en"><body style="margin:0;padding:30px;background:#f4f6fb;font-family:Arial,Helvetica,sans-serif;color:#24334c;">
           <div style="max-width:620px;margin:auto;background:#ffffff;border-radius:16px;padding:30px;border-top:5px solid #e2232a;">
@@ -100,7 +100,7 @@ export async function recoverPendingRegistration({
             <p>${escapeHtml(mail.intro)}</p>
             <p style="margin:24px 0;"><a href="${escapeHtml(mail.url)}" style="display:inline-block;padding:13px 20px;border-radius:10px;background:#e2232a;color:#ffffff;text-decoration:none;font-weight:bold;">${escapeHtml(mail.action)}</a></p>
             <p>This link expires in 30 minutes. If you did not request it, you can ignore this message.</p>
-            <p>SAIT Youth Initiative</p>
+            <p>SAIT Youth Initiatives</p>
           </div>
         </body></html>`,
     });

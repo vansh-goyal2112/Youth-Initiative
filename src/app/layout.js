@@ -4,12 +4,12 @@ import StudentShell from "@/components/common/StudentShell";
 
 export const metadata = {
   title: {
-    default: "SAIT Youth Initiative",
-    template: "%s | SAIT Youth Initiative",
+    default: "SAIT Youth Initiatives",
+    template: "%s | SAIT Youth Initiatives",
   },
   description:
     "Explore workshops, build skills, earn achievements, and discover future SAIT pathways.",
-  applicationName: "SAIT Youth Initiative",
+  applicationName: "SAIT Youth Initiatives",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

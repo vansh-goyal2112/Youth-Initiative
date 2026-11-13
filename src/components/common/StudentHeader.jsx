@@ -48,7 +48,7 @@ export default function StudentHeader({ backHref, backLabel = "Back", studentNam
   return (
     <header className={styles.shell}>
       <div className={styles.headerInner}>
-        <Link href="/dashboard" className={styles.brand} aria-label="SAIT Youth Initiative Skill Quest — Home">
+        <Link href="/dashboard" className={styles.brand} aria-label="SAIT Youth Initiatives Skill Quest — Home">
           <Image
             src="/images/landing/sait-logo.jpg"
             alt="SAIT"
@@ -59,7 +59,7 @@ export default function StudentHeader({ backHref, backLabel = "Back", studentNam
           />
           <span className={styles.divider} aria-hidden="true" />
           <span className={styles.brandWords}>
-            <strong>Youth Initiative</strong>
+            <strong>Youth Initiatives</strong>
             <small>SKILL QUEST <Sparkles size={12} aria-hidden="true"/></small>
           </span>
         </Link>

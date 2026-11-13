@@ -62,7 +62,7 @@ export default function ResumeRegistrationPage() {
               <ArrowLeft size={20} aria-hidden="true"/>
               Back
             </Link>
-            <Link href="/" aria-label="SAIT Youth Initiative home">
+            <Link href="/" aria-label="SAIT Youth Initiatives home">
               <Image
                 src="/images/landing/sait-logo.jpg"
                 alt="SAIT"

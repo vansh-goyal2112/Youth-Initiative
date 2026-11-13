@@ -559,7 +559,7 @@ export default function LoginPage() {
 
           <div className="login-desktop-content">
             <span className="login-desktop-label">
-              SAIT Youth Initiative
+              SAIT Youth Initiatives
             </span>
 
             <h2>

@@ -40,7 +40,7 @@ export default function WorkshopCard({ workshop }) {
 
         <p className="workshop-card-description">
           {workshop.description ||
-            "Explore this SAIT Youth Initiative learning opportunity."}
+            "Explore this SAIT Youth Initiatives learning opportunity."}
         </p>
 
         <div className="workshop-card-details">
