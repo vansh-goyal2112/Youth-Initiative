@@ -83,7 +83,7 @@ test("leaves opportunities with no published age or grade requirements unconfirm
   assert.equal(result.status, "unconfirmed");
 });
 
-test("accepts an optional valid grade during student registration", async () => {
+test("requires a valid grade during student registration", async () => {
   const values = {
     firstName: "Sam",
     lastName: "Student",
@@ -95,12 +95,12 @@ test("accepts an optional valid grade during student registration", async () => 
 
   const validated = await registrationSchema.validate(values);
   assert.equal(validated.schoolGrade, "10");
-  assert.equal(
-    (await registrationSchema.validate({
+  await assert.rejects(
+    registrationSchema.validate({
       ...values,
       schoolGrade: "",
-    })).schoolGrade,
-    ""
+    }),
+    /Select your current school grade/
   );
   await assert.rejects(
     registrationSchema.validate({
