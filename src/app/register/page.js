@@ -627,7 +627,7 @@ export default function RegisterPage() {
 
           <div className="register-information-content">
             <span className="register-information-label">
-              SAIT Youth Initiative
+              SAIT Youth Initiatives
             </span>
 
             <h2>

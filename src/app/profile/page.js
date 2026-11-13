@@ -295,7 +295,7 @@ export default function ProfilePage() {
               <div><span>MY IDENTITY</span><h2 id="identity-heading">Explorer Information</h2></div>
               <Link href="/edit-profile" className={styles.miniEdit} aria-label="Edit my identity"><Edit3 size={16} aria-hidden="true"/> Edit</Link>
             </div>
-            <p className={styles.panelLead}>Your own student details, securely loaded from your SAIT Youth Initiative account.</p>
+            <p className={styles.panelLead}>Your own student details, securely loaded from your SAIT Youth Initiatives account.</p>
             <div className={styles.infoList}>
               <InfoRow Icon={GraduationCap} label="Youth Initiative ID" value={youthId} placeholder="Please contact the program team" emphasized/>
               <InfoRow Icon={Mail} label="Contact Email" value={email} placeholder="No contact email is recorded"/>

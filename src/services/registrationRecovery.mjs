@@ -90,7 +90,7 @@ export function buildRecoveryEmail(registration, stage, token, baseUrl) {
   switch (stage) {
     case "parental_consent":
       return {
-        subject: "Continue Parental Consent – SAIT Youth Initiative",
+        subject: "Continue Parental Consent – SAIT Youth Initiatives",
         url: `${root}/consent/${id}?token=${encodedToken}`,
         intro: "A new parental consent link was requested for an unfinished Youth Initiative registration.",
         action: "Review Parental Consent",

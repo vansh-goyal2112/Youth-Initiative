@@ -512,7 +512,7 @@ export async function POST(request) {
           ],
 
           subject:
-            "Verify Your Email – SAIT Youth Initiative",
+            "Verify Your Email – SAIT Youth Initiatives",
 
           replyTo:
             process.env
@@ -750,7 +750,7 @@ export async function POST(request) {
         ],
 
         subject:
-          "Parental Consent Required – SAIT Youth Initiative",
+          "Parental Consent Required – SAIT Youth Initiatives",
 
         replyTo:
           process.env

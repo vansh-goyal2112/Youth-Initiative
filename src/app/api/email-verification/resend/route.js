@@ -585,7 +585,7 @@ export async function POST(
           "youth.programs@sait.ca",
 
         subject:
-          "Verify Your Email – SAIT Youth Initiative",
+          "Verify Your Email – SAIT Youth Initiatives",
 
         html: `
           <!doctype html>

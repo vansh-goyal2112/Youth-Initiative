@@ -713,8 +713,8 @@ export async function POST(
 
     const subject =
       requiresGuardianApproval
-        ? "Password Reset Approval – SAIT Youth Initiative"
-        : "Reset Your Password – SAIT Youth Initiative";
+        ? "Password Reset Approval – SAIT Youth Initiatives"
+        : "Reset Your Password – SAIT Youth Initiatives";
 
     const heading =
       requiresGuardianApproval

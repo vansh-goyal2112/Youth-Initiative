@@ -484,7 +484,7 @@ export async function POST(
         ],
 
         subject:
-          "New Parental Consent Link – SAIT Youth Initiative",
+          "New Parental Consent Link – SAIT Youth Initiatives",
 
         html: `
           <!doctype html>

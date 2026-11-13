@@ -389,7 +389,7 @@ export default function ConsentPage() {
             <label htmlFor="termsAccepted">
               I consent to the creation and use
               of this student account for the
-              SAIT Youth Initiative application
+              SAIT Youth Initiatives application
               and agree to the applicable terms
               and privacy requirements.
             </label>
