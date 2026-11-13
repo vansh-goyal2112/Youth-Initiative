@@ -740,9 +740,9 @@ function XpRedemptionPanel({ student, onRedeemed }) {
     let allowed = false;
     try { allowed = JSON.parse(sessionStorage.getItem("adminSession") || "{}").permissions?.includes("xp.redeem") === true; }
     catch { allowed = false; }
-    setCanRedeem(allowed);
-    if (!allowed) return;
     let active = true;
+    queueMicrotask(() => { if (active) setCanRedeem(allowed); });
+    if (!allowed) return () => { active = false; };
     adminFetch("/api/admin/rewards?studentId=" + encodeURIComponent(student.id))
       .then(async response => { const result = await response.json(); if (!response.ok) throw new Error(result.message || "Could not load redemption history."); return result; })
       .then(result => { if (active) { setBalance(result.currentXp); setHistory(result.history || []); } })
