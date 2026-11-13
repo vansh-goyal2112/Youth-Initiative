@@ -16,7 +16,7 @@ const MAX_PER_WINDOW = 5;
 
 // Always return the same message whether an address is unknown, unapproved,
 // throttled or its mailbox rejects delivery; never reveal staff account status.
-const MESSAGE = "If this email belongs to a registered SAIT administrator, password-reset instructions will be sent. Check Inbox/Junk. If nothing arrives, try the Firebase email option or ask SAIT IT to check message trace.";
+const MESSAGE = "If this email belongs to a registered SAIT administrator, password-reset instructions will be sent. Check Inbox/Junk. If nothing arrives, ask SAIT IT to check your mailbox's message trace.";
 function reply() {
   return Response.json({ success: true, message: MESSAGE }, {
     status: 202, headers: { "Cache-Control": "no-store" },
@@ -118,7 +118,7 @@ export async function POST(request) {
       }
     } catch (error) {
       // Keep public response generic to avoid account enumeration. The
-      // independent Firebase fallback remains available on the login page.
+      // Public response remains generic even if Azure delivery fails.
       console.error("Admin password-reset delivery failed:", error?.code || error?.message);
     }
     return reply();
@@ -126,7 +126,7 @@ export async function POST(request) {
     const denied = appCheckErrorResponse(error);
     if (denied) return denied;
     console.error("Admin password-reset request unavailable:", error?.code || error?.message);
-    return Response.json({ success: false, message: "Password recovery is temporarily unavailable. Please use the Firebase email option or contact SAIT IT." },
+    return Response.json({ success: false, message: "Password recovery is temporarily unavailable. Please try again later or contact SAIT IT." },
       { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }
