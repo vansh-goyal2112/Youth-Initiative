@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { completionTransactionId, awardForCompletion } from "@/services/completionRules.mjs";
 import { creditXp } from "@/services/xpBalance.mjs";
 
 import {
@@ -75,9 +76,11 @@ export async function processWorkshopCompletion({
   studentId,
   workshopId,
   workshop,
+  completionSource = "qr",
+  sessionId = null,
+  registrationId = null,
 }) {
-  const transactionId =
-    `${studentId}_${workshopId}`;
+  const transactionId = completionTransactionId(studentId, workshopId, sessionId);
 
   /*
     Retry if the student document
@@ -106,10 +109,7 @@ export async function processWorkshopCompletion({
       );
     }
 
-    const xpReward =
-      Number(
-        workshop.xpReward
-      ) || 100;
+    const xpReward = awardForCompletion(workshop, completionSource);
 
     const currentXp =
       Number(
@@ -351,6 +351,9 @@ export async function processWorkshopCompletion({
             studentId,
 
             workshopId,
+            sessionId,
+            registrationId,
+            completionSource,
 
             action:
               "workshop_completion",
