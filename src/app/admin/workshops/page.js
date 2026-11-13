@@ -14,6 +14,7 @@ import {
   BookOpen,
   CheckCircle2,
   CalendarDays,
+  Copy,
   Layers3,
   RefreshCw,
 } from "lucide-react";
@@ -81,6 +82,7 @@ export default function AdminWorkshopsPage() {
 
   const [editingWorkshop, setEditingWorkshop] =
     useState(null);
+  const [duplicatingWorkshop, setDuplicatingWorkshop] = useState(false);
   const [sessionWorkshop, setSessionWorkshop] = useState(null);
 
   const [formData, setFormData] =
@@ -173,6 +175,7 @@ export default function AdminWorkshopsPage() {
   ]);
 
   function openCreateForm() {
+    setDuplicatingWorkshop(false);
     setEditingWorkshop(null);
     setFormData(emptyWorkshop);
     setShowForm(true);
@@ -180,6 +183,7 @@ export default function AdminWorkshopsPage() {
   }
 
   function openEditForm(workshop) {
+    setDuplicatingWorkshop(false);
     setEditingWorkshop(workshop);
 
     setFormData({
@@ -229,6 +233,27 @@ export default function AdminWorkshopsPage() {
         workshop.status || "active",
     });
 
+    setShowForm(true);
+    setErrorMessage("");
+  }
+
+  // A new workshop must have its own ID, sessions and student history.
+  // Copy details into the normal create form, but do not copy stale dates or registrations.
+  function openDuplicateForm(workshop) {
+    setEditingWorkshop(null);
+    setDuplicatingWorkshop(true);
+    setFormData({
+      ...emptyWorkshop,
+      title: (workshop.title || "Workshop") + " (Copy)",
+      programArea: workshop.programArea || "",
+      category: workshop.category || "",
+      grade: workshop.grade || "",
+      description: workshop.description || "",
+      informationUrl: workshop.informationUrl || "",
+      learningMode: workshop.learningMode || "in-person",
+      xpReward: workshop.xpReward ?? 100,
+      status: "inactive",
+    });
     setShowForm(true);
     setErrorMessage("");
   }
@@ -677,6 +702,10 @@ export default function AdminWorkshopsPage() {
                           <button type="button" title="Manage sessions" aria-label={"Manage sessions for " + workshop.title} onClick={() => setSessionWorkshop(workshop)}>
                             <CalendarDays size={18} />
                           </button>
+                          <button type="button" title="Duplicate workshop" aria-label={"Duplicate workshop " + workshop.title}
+                            onClick={() => openDuplicateForm(workshop)}>
+                            <Copy size={18} />
+                          </button>
                           <button
                             type="button"
                             aria-label="Edit workshop"
@@ -726,14 +755,19 @@ export default function AdminWorkshopsPage() {
                 <span>
                   {editingWorkshop
                     ? "EDIT WORKSHOP"
-                    : "NEW WORKSHOP"}
+                    : duplicatingWorkshop ? "DUPLICATE WORKSHOP" : "NEW WORKSHOP"}
                 </span>
 
                 <h2>
                   {editingWorkshop
                     ? "Update Workshop"
-                    : "Create Workshop"}
+                    : duplicatingWorkshop ? "Create Independent Workshop Copy" : "Create Workshop"}
                 </h2>
+                {duplicatingWorkshop && (
+                  <p className="mt-2 max-w-lg text-xs text-slate-600">
+                    Workshop details are copied into a new inactive record. Review the dates and registration URL before publishing; sessions, attendance and student history are never copied.
+                  </p>
+                )}
               </div>
 
               <button
