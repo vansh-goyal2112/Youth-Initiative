@@ -331,7 +331,7 @@ export default function ConsentPage() {
             }
           </strong>{" "}
           has requested access to the SAIT
-          Youth Initiative student platform.
+          Youth Initiatives student platform.
         </p>
 
         <div className="consent-review-box">

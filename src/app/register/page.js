@@ -700,8 +700,7 @@ export default function RegisterPage() {
 
                   <p>
                     The student receives
-                    their unique Youth
-                    Initiative ID.
+                    their unique Youth ID.
                   </p>
                 </div>
               </div>

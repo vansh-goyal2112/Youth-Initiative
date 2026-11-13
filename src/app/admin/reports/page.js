@@ -52,7 +52,7 @@ export default function AdminReportsPage() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "youth-initiative-student-report.csv";
+      link.download = "youth-initiatives-student-report.csv";
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -71,9 +71,9 @@ export default function AdminReportsPage() {
       <p>Pull together student participation, achievements and program activity in one secure report.</p>
     </div>
     <section className="admin-report-search-panel">
-      <div className="flex items-center gap-3"><span className="admin-panel-icon"><FileSearch size={23}/></span><div><h2>Find a student report</h2><p>Search using the student’s exact Youth Initiative ID.</p></div></div>
+      <div className="flex items-center gap-3"><span className="admin-panel-icon"><FileSearch size={23}/></span><div><h2>Find a student report</h2><p>Search using the student’s exact Youth ID.</p></div></div>
       <form onSubmit={loadReport} className="admin-report-search-form">
-        <label htmlFor="report-youth-id">Youth Initiative ID</label>
+        <label htmlFor="report-youth-id">Youth ID</label>
         <div className="admin-report-search-row">
           <div className="admin-report-search-input"><Search size={19}/><input id="report-youth-id" value={youthId} onChange={e => setYouthId(e.target.value)} placeholder="Enter a Youth ID" autoComplete="off" required maxLength={80}/></div>
           <button disabled={loading} type="submit"><FileText size={18}/>{loading ? "Generating…" : "Generate report"}<ArrowUpRight size={17}/></button>

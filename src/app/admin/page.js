@@ -89,7 +89,7 @@ export default function AdminDashboardPage() {
     </div>
 
     <div className="mt-9 flex flex-wrap items-end justify-between gap-3">
-      <div><p className="text-[11px] font-extrabold uppercase tracking-[.18em] text-[#e0523c]">PROGRAM PULSE</p><h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[#1a2941]">At a glance</h2><p className="mt-1 text-sm text-slate-500">A live snapshot of the Youth Initiative.</p></div>
+      <div><p className="text-[11px] font-extrabold uppercase tracking-[.18em] text-[#e0523c]">PROGRAM PULSE</p><h2 className="mt-1 text-2xl font-extrabold tracking-tight text-[#1a2941]">At a glance</h2><p className="mt-1 text-sm text-slate-500">A live snapshot of the Youth Initiatives.</p></div>
       <span className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500"><Activity size={14}/> Live program data</span>
     </div>
     <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Program metrics">
