@@ -59,6 +59,8 @@ export default function AdminLayout({ children }) {
   }
 
   if (pathname === "/admin/login") return <AdminGuard>{children}</AdminGuard>;
+  // A password reset link must be reachable without an authenticated admin session.
+  if (pathname === "/admin/reset-password") return children;
 
   const permissions = Array.isArray(session.permissions) ? session.permissions : [];
   const currentItem = navigation.flatMap(group => group.items).find(item =>
