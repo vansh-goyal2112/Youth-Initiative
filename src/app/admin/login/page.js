@@ -161,7 +161,7 @@ export default function AdminLoginPage() {
     setInfoMessage("");
     try {
       const address = email.trim().toLowerCase();
-      if (!/^[^@\\s]+@(?:edu\\.)?sait\\.ca$/i.test(address)) {
+      if (!/^[^@\s]+@(?:edu\.)?sait\.ca$/i.test(address)) {
         throw new Error("Enter your @sait.ca or @edu.sait.ca email.");
       }
       await sendPasswordResetEmail(auth, address);
