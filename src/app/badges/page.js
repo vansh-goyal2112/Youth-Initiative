@@ -34,7 +34,7 @@ import {
   studentFetch,
 } from "@/services/studentApi";
 
-const badgeCatalog = [
+const builtinBadgeCatalog = [
   {
     id: "first-step",
     name: "First Step",
@@ -218,6 +218,7 @@ export default function BadgesPage() {
   function getBadgeProgress(
     badge
   ) {
+    if (badge.type === "custom") return { current: badge.current || 0, target: badge.target };
     if (!gameData) {
       return {
         current: 0,
@@ -347,6 +348,11 @@ export default function BadgesPage() {
     );
   }
 
+  const badgeCatalog = [
+    ...builtinBadgeCatalog,
+    ...(gameData.customBadgeCatalog || []).filter(badge => badge.status === "active" ||
+      earnedBadgeIds.has(badge.id)).map(badge => ({ ...badge, type: "custom", icon: Award })),
+  ];
   const unlockedCount =
     badgeCatalog.filter(
       (badge) =>

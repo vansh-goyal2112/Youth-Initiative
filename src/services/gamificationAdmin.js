@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { completionTransactionId, awardForCompletion } from "@/services/completionRules.mjs";
+import { countMatchingSessions } from "@/services/customBadges.mjs";
 import { creditXp } from "@/services/xpBalance.mjs";
 
 import {
@@ -202,8 +203,8 @@ export async function processWorkshopCompletion({
         ]
       );
 
-    const completedCategories =
-      new Set();
+    const completedCategories = new Set();
+    const completedWithSnapshots = [];
 
     for (
       const registration of
@@ -218,9 +219,8 @@ export async function processWorkshopCompletion({
       const completedWorkshop = registration.workshopSnapshot ||
         await readCosmosDocument("workshops", registration.workshopId);
 
-      if (
-        completedWorkshop
-      ) {
+      if (completedWorkshop) {
+        completedWithSnapshots.push({ ...registration, workshopSnapshot: completedWorkshop });
         const category =
           completedWorkshop.category;
 
@@ -249,18 +249,11 @@ export async function processWorkshopCompletion({
           ]
         : [];
 
-    const newBadges =
-      [];
+    const newBadges = [];
+    const suppressedBadges = new Set(Array.isArray(student.suppressedBadgeIds) ? student.suppressedBadgeIds : []);
 
-    function awardBadge(
-      id,
-      name
-    ) {
-      if (
-        !currentBadges.includes(
-          id
-        )
-      ) {
+    function awardBadge(id, name) {
+      if (!suppressedBadges.has(id) && !currentBadges.includes(id)) {
         currentBadges.push(
           id
         );
@@ -312,14 +305,20 @@ export async function processWorkshopCompletion({
       );
     }
 
-    if (
-      completedWorkshopCount >=
-      5
-    ) {
-      awardBadge(
-        "workshop-champion",
-        "Workshop Champion"
-      );
+    if (completedWorkshopCount >= 5) {
+      awardBadge("workshop-champion", "Workshop Champion");
+    }
+
+    // Staff-configured badge definitions live alongside admin records but
+    // have a distinct role and cannot grant administrator privileges.
+    const customDefinitions = await queryCosmosDocuments("admins",
+      "SELECT * FROM c WHERE c.role = @role AND c.status = @status",
+      [{ name: "@role", value: "badge_definition" }, { name: "@status", value: "active" }]
+    );
+    for (const definition of customDefinitions) {
+      if (countMatchingSessions(definition.rule, completedWithSnapshots) >= Number(definition.rule?.minCount || 1)) {
+        awardBadge(definition.badgeId, definition.name);
+      }
     }
 
     /*
