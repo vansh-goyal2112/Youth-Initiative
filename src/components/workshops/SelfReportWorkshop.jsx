@@ -71,11 +71,11 @@ export default function SelfReportWorkshop({ onClaimed }) {
             Self-reported workshops earn <strong>half the regular XP</strong> immediately and remain subject to admin review.
           </div>
           {loading ? <p className={styles.status}><LoaderCircle size={17} aria-hidden="true"/> Loading workshops…</p> :
-          workshops.length === 0 ? <p className={styles.status}>You've already recorded all currently available workshop choices.</p> :
+          workshops.length === 0 ? <p className={styles.status}>You&apos;ve already recorded all currently available workshop choices.</p> :
           <form onSubmit={submit} className={styles.form}>
             <label className={styles.field}>Workshop
               <select required value={selected} onChange={event => setSelected(event.target.value)}>
-                <option value="">Choose a workshop you've attended</option>
+                <option value="">Choose a workshop you&apos;ve attended</option>
                 {workshops.map(item => <option key={item.id} value={item.id}>{item.title}{item.programArea ? " · " + item.programArea : ""}</option>)}
               </select>
             </label>
