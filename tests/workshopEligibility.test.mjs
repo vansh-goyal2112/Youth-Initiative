@@ -83,7 +83,7 @@ test("leaves opportunities with no published age or grade requirements unconfirm
   assert.equal(result.status, "unconfirmed");
 });
 
-test("accepts an optional valid grade during student registration", async () => {
+test("requires a valid grade during student registration", async () => {
   const values = {
     firstName: "Sam",
     lastName: "Student",
@@ -95,12 +95,13 @@ test("accepts an optional valid grade during student registration", async () => 
 
   const validated = await registrationSchema.validate(values);
   assert.equal(validated.schoolGrade, "10");
-  assert.equal(
-    (await registrationSchema.validate({
-      ...values,
-      schoolGrade: "",
-    })).schoolGrade,
-    ""
+  await assert.rejects(
+    registrationSchema.validate({ ...values, schoolGrade: "" }),
+    /current school grade/i
+  );
+  await assert.rejects(
+    registrationSchema.validate({ ...values, schoolGrade: undefined }),
+    /current school grade/i
   );
   await assert.rejects(
     registrationSchema.validate({
@@ -109,4 +110,11 @@ test("accepts an optional valid grade during student registration", async () => 
     }),
     /valid current school grade/
   );
+});
+
+test("recognizes hyphenated and kindergarten grade ranges from the workshop catalogue", () => {
+  assert.equal(getWorkshopEligibility({ grade: "Grades 6–9" }, { schoolGrade: "12" }, TODAY).status, "ineligible");
+  assert.equal(getWorkshopEligibility({ grade: "K-6" }, { schoolGrade: "K" }, TODAY).status, "eligible");
+  assert.equal(getWorkshopEligibility({ grade: "6 to 12" }, { schoolGrade: "12" }, TODAY).status, "eligible");
+  assert.equal(getWorkshopEligibility({ grade: "Grade 6" }, { schoolGrade: "12" }, TODAY).status, "ineligible");
 });

@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   studentFetch,
 } from "@/services/studentApi";
+import SelfReportWorkshop from "@/components/workshops/SelfReportWorkshop";
 
 import {
   Award,
@@ -36,6 +37,7 @@ export default function CompletedWorkshopsPage() {
     registrations,
     setRegistrations,
   ] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [
     loading,
@@ -119,6 +121,7 @@ export default function CompletedWorkshopsPage() {
   }, [
     user,
     authLoading,
+    refreshKey,
   ]);
 
   const filteredRegistrations =
@@ -261,6 +264,7 @@ export default function CompletedWorkshopsPage() {
       </section>
 
       <section className="student-content-container completed-workshops-content">
+        <SelfReportWorkshop onClaimed={() => setRefreshKey(value => value + 1)} />
         <div className="registered-workshop-tabs">
           <Link href="/registered-workshops">
             Upcoming

@@ -5,7 +5,9 @@ import {
 
 import {
   replaceCosmosDocument,
+  cosmosNow,
 } from "@/services/cosmosData";
+import { adminAuth } from "@/services/firebaseAdmin";
 
 export const runtime = "nodejs";
 
@@ -106,6 +108,20 @@ export async function PATCH(
       await request.json();
 
     const updates = {};
+    // Student-owned name updates are validated on the server and mirrored to Firebase.
+    const nameFieldsProvided = Object.prototype.hasOwnProperty.call(requestBody, "firstName") ||
+      Object.prototype.hasOwnProperty.call(requestBody, "lastName");
+    if (nameFieldsProvided) {
+      const firstName = String(requestBody.firstName ?? student.firstName ?? "").trim().replace(/\s+/g, " ");
+      const lastName = String(requestBody.lastName ?? student.lastName ?? "").trim().replace(/\s+/g, " ");
+      const namePattern = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:[ '-][A-Za-zÀ-ÖØ-öø-ÿ]+)*$/;
+      if ([firstName, lastName].some(name => name.length < 2 || name.length > 40 || !namePattern.test(name))) {
+        return Response.json({ success: false, message: "Enter a valid first and last name (2–40 characters each)." }, { status: 400 });
+      }
+      updates.firstName = firstName;
+      updates.lastName = lastName;
+      updates.fullName = firstName + " " + lastName;
+    }
 
     if (
       Object.prototype.hasOwnProperty.call(
@@ -325,6 +341,13 @@ export async function PATCH(
           .onboardingCompleted;
     }
 
+    if (Object.prototype.hasOwnProperty.call(requestBody, "tutorialCompleted")) {
+      if (typeof requestBody.tutorialCompleted !== "boolean") {
+        return Response.json({ success: false, message: "Tutorial status is invalid." }, { status: 400 });
+      }
+      updates.tutorialCompleted = requestBody.tutorialCompleted;
+    }
+
     if (
       Object.keys(
         updates
@@ -346,12 +369,31 @@ export async function PATCH(
       );
     }
 
-    const updatedStudent =
-      await replaceCosmosDocument(
-        "students",
-        student,
-        updates
-      );
+    updates.updatedAt = cosmosNow();
+
+    // Firebase Auth has a display-name mirror, while Cosmos is the canonical profile.
+    // If Cosmos rejects the update, best-effort restore the previous Firebase name.
+    let originalDisplayName = null;
+    let nameWasChangedInFirebase = false;
+    if (nameFieldsProvided) {
+      const firebaseUser = await adminAuth.getUser(uid);
+      originalDisplayName = firebaseUser.displayName || "";
+      if (originalDisplayName !== updates.fullName) {
+        await adminAuth.updateUser(uid, { displayName: updates.fullName });
+        nameWasChangedInFirebase = true;
+      }
+    }
+
+    let updatedStudent;
+    try {
+      updatedStudent = await replaceCosmosDocument("students", student, updates);
+    } catch (error) {
+      if (nameWasChangedInFirebase) {
+        try { await adminAuth.updateUser(uid, { displayName: originalDisplayName }); }
+        catch (rollbackError) { console.error("Profile name mirror rollback failed:", rollbackError?.message); }
+      }
+      throw error;
+    }
 
     return Response.json({
       success:

@@ -3,23 +3,13 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarDays,
-  MapPin,
-  Monitor,
+  BookOpen,
   Users,
 } from "lucide-react";
 
 import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 
 export default function WorkshopCard({ workshop }) {
-
-  const learningMode =
-    workshop.learningMode === "online"
-      ? "Online"
-      : workshop.learningMode === "both"
-        ? "Online & In Person"
-        : workshop.learningMode === "in-person"
-          ? "In Person"
-          : "Format not listed";
 
   const eligibilityLabel =
     workshop.grade ||
@@ -33,17 +23,6 @@ export default function WorkshopCard({ workshop }) {
       <div className="student-workshop-image-wrapper">
         <WorkshopArtwork workshop={workshop} sizes="(max-width: 700px) 100vw, 340px" className="student-workshop-image" />
 
-        <span className="workshop-mode-badge">
-          {workshop.learningMode === "online" ? (
-            <Monitor size={13} />
-          ) : workshop.learningMode === "in-person" ? (
-            <MapPin size={13} />
-          ) : (
-            <CalendarDays size={13} />
-          )}
-
-          {learningMode}
-        </span>
       </div>
 
       <div className="student-workshop-content">
@@ -61,7 +40,7 @@ export default function WorkshopCard({ workshop }) {
 
         <p className="workshop-card-description">
           {workshop.description ||
-            "Explore this SAIT Youth Initiative learning opportunity."}
+            "Explore this SAIT Youth Initiatives learning opportunity."}
         </p>
 
         <div className="workshop-card-details">
@@ -86,8 +65,9 @@ export default function WorkshopCard({ workshop }) {
         )}
 
         <div className="workshop-card-footer">
-          <span>
-            Earn <strong>{workshop.xpReward || 100} XP</strong>
+          <span className="workshop-card-reward">
+            Earn <strong>{workshop.xpReward ?? 100} XP</strong>
+            <small className="workshop-program-area"><BookOpen size={13} aria-hidden="true" /> {workshop.programArea || "Program area not listed"}</small>
           </span>
 
           <Link href={`/workshops/${workshop.id}`}>

@@ -161,7 +161,7 @@ export default function HomePage() {
           <div className="impressive-hero-content">
             <div className="hero-eyebrow hero-reveal-one">
               <Sparkles size={17} />
-              SAIT Youth Initiative
+              SAIT Youth Initiatives
             </div>
 
             <h1 className="hero-reveal-two">
@@ -665,7 +665,7 @@ export default function HomePage() {
         </div>
 
         <div className="site-container landing-footer-bottom">
-          <span>SAIT Youth Initiative prototype</span>
+          <span>SAIT Youth Initiatives prototype</span>
           <span>Designed for mobile and desktop</span>
         </div>
       </footer>

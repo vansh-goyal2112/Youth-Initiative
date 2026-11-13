@@ -30,6 +30,10 @@ export async function GET(
     } =
       await context.params;
 
+    if (!student.schoolGrade) {
+      return Response.json({ success: false, message: "Add your school grade in My Identity to explore workshops." }, { status: 409 });
+    }
+
     if (
       typeof id !== "string" ||
       !id.trim()

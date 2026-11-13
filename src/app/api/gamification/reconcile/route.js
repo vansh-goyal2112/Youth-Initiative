@@ -12,6 +12,7 @@ import {
 } from "@/services/cosmosData";
 
 import { processWorkshopCompletion } from "@/services/gamificationAdmin";
+import { completionTransactionId } from "@/services/completionRules.mjs";
 import { classifyRewardRecovery } from "@/services/rewardRecovery.mjs";
 
 export const runtime = "nodejs";
@@ -52,7 +53,7 @@ export async function POST(request) {
     let moreToReview = false;
     for (const registration of completedRegistrations) {
       const workshopId = registration.workshopId;
-      const transactionId = `${studentId}_${workshopId}`;
+      const transactionId = completionTransactionId(studentId, workshopId, registration.sessionId || null);
 
       try {
         const existingTransaction = await readCosmosDocument(
@@ -103,6 +104,8 @@ export async function POST(request) {
             studentId,
             workshopId,
             workshop,
+            sessionId: registration.sessionId || null,
+            registrationId: registration.id,
           });
         }
 

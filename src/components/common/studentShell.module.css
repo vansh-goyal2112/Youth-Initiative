@@ -256,3 +256,9 @@
     scroll-behavior: auto !important;
   }
 }
+
+.gradeNotice {display:flex;align-items:center;justify-content:space-between;gap:16px;width:min(1380px,calc(100% - 36px));margin:16px auto 0;padding:13px 16px;background:#fff9e8;border:1px solid #ead49d;border-radius:14px;color:#6e4d14;font-size:13px;box-shadow:0 3px 10px #8b5e1d10;}
+.gradeNotice strong {font-weight:900;}
+.gradeNotice a {flex-shrink:0;padding:9px 13px;background:#9a233e;color:white;text-decoration:none;border-radius:9px;font-weight:800;}
+.gradeNotice a:focus-visible {outline:3px solid #2e63d7;outline-offset:3px;}
+@media(max-width:580px){.gradeNotice{flex-direction:column;align-items:flex-start;}.gradeNotice a{width:100%;text-align:center;}}

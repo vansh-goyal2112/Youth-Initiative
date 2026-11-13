@@ -82,3 +82,11 @@
 @media(prefers-reduced-motion:reduce) {
   .shell *, .shell *::before,.shell *::after,.mobileNav *, .mobileNav *::before,.mobileNav *::after {animation:none!important;transition:none!important;}
 }
+
+/* Shared student header: accessible logout without changing page-level navigation. */
+.logoutButton { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-height:40px; border:1px solid #ead4d9; border-radius:12px; padding:8px 12px; color:#9a233e; background:#fff7f8; font-size:12px; font-weight:800; white-space:nowrap; cursor:pointer; transition:background .2s ease,box-shadow .2s ease; }
+.logoutButton:hover:not(:disabled) { background:#ffecef; box-shadow:0 3px 12px #9a233e15; }
+.logoutButton:disabled { opacity:.65; cursor:wait; }
+.logoutButton:focus-visible { outline:3px solid #2e63d7; outline-offset:3px; }
+@media(max-width:520px) { .logoutButton { width:37px; padding:0; min-height:37px; border-radius:11px; } .logoutButton span { display:none; } }
+@media(prefers-reduced-motion:reduce) { .logoutButton { transition:none; } }

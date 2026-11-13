@@ -29,6 +29,7 @@ export async function POST(
 
     const {
       workshopId,
+      catalogSessionId = null,
       durationMinutes = 15,
     } = await request.json();
 
@@ -98,6 +99,13 @@ export async function POST(
       );
     }
 
+    const scheduled = Array.isArray(workshop.sessions) && workshop.sessions.length > 0
+      ? workshop.sessions.find(item => item.id === catalogSessionId && item.status === "active")
+      : null;
+    if (Array.isArray(workshop.sessions) && workshop.sessions.length > 0 && !scheduled) {
+      return Response.json({ success: false, message: "Choose an active scheduled date for the attendance QR." }, { status: 400 });
+    }
+
     const attendanceCode =
       crypto
         .randomBytes(24)
@@ -125,6 +133,7 @@ export async function POST(
 
         workshopId:
           normalizedWorkshopId,
+        catalogSessionId: scheduled?.id || null,
 
         code:
           attendanceCode,

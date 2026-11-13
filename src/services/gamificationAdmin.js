@@ -1,4 +1,7 @@
 import crypto from "crypto";
+import { completionTransactionId, awardForCompletion } from "@/services/completionRules.mjs";
+import { countMatchingSessions } from "@/services/customBadges.mjs";
+import { creditXp } from "@/services/xpBalance.mjs";
 
 import {
   cosmosNow,
@@ -11,7 +14,7 @@ import {
   replaceCosmosDocument,
 } from "@/services/cosmosData";
 
-function calculateLevel(totalXp) {
+export function calculateLevel(totalXp) {
   if (totalXp >= 1000) return 6;
   if (totalXp >= 700) return 5;
   if (totalXp >= 450) return 4;
@@ -21,7 +24,7 @@ function calculateLevel(totalXp) {
   return 1;
 }
 
-function getLevelName(level) {
+export function getLevelName(level) {
   const levels = {
     1: "New Explorer",
     2: "Skill Starter",
@@ -74,9 +77,11 @@ export async function processWorkshopCompletion({
   studentId,
   workshopId,
   workshop,
+  completionSource = "qr",
+  sessionId = null,
+  registrationId = null,
 }) {
-  const transactionId =
-    `${studentId}_${workshopId}`;
+  const transactionId = completionTransactionId(studentId, workshopId, sessionId);
 
   /*
     Retry if the student document
@@ -105,10 +110,7 @@ export async function processWorkshopCompletion({
       );
     }
 
-    const xpReward =
-      Number(
-        workshop.xpReward
-      ) || 100;
+    const xpReward = awardForCompletion(workshop, completionSource);
 
     const currentXp =
       Number(
@@ -153,9 +155,8 @@ export async function processWorkshopCompletion({
       };
     }
 
-    const newTotalXp =
-      currentXp +
-      xpReward;
+    const newBalances = creditXp(student, xpReward);
+    const newTotalXp = newBalances.totalXp;
 
     const newLevel =
       calculateLevel(
@@ -202,8 +203,8 @@ export async function processWorkshopCompletion({
         ]
       );
 
-    const completedCategories =
-      new Set();
+    const completedCategories = new Set();
+    const completedWithSnapshots = [];
 
     for (
       const registration of
@@ -218,9 +219,8 @@ export async function processWorkshopCompletion({
       const completedWorkshop = registration.workshopSnapshot ||
         await readCosmosDocument("workshops", registration.workshopId);
 
-      if (
-        completedWorkshop
-      ) {
+      if (completedWorkshop) {
+        completedWithSnapshots.push({ ...registration, workshopSnapshot: completedWorkshop });
         const category =
           completedWorkshop.category;
 
@@ -249,18 +249,11 @@ export async function processWorkshopCompletion({
           ]
         : [];
 
-    const newBadges =
-      [];
+    const newBadges = [];
+    const suppressedBadges = new Set(Array.isArray(student.suppressedBadgeIds) ? student.suppressedBadgeIds : []);
 
-    function awardBadge(
-      id,
-      name
-    ) {
-      if (
-        !currentBadges.includes(
-          id
-        )
-      ) {
+    function awardBadge(id, name) {
+      if (!suppressedBadges.has(id) && !currentBadges.includes(id)) {
         currentBadges.push(
           id
         );
@@ -312,14 +305,20 @@ export async function processWorkshopCompletion({
       );
     }
 
-    if (
-      completedWorkshopCount >=
-      5
-    ) {
-      awardBadge(
-        "workshop-champion",
-        "Workshop Champion"
-      );
+    if (completedWorkshopCount >= 5) {
+      awardBadge("workshop-champion", "Workshop Champion");
+    }
+
+    // Staff-configured badge definitions live alongside admin records but
+    // have a distinct role and cannot grant administrator privileges.
+    const customDefinitions = await queryCosmosDocuments("admins",
+      "SELECT * FROM c WHERE c.role = @role AND c.status = @status",
+      [{ name: "@role", value: "badge_definition" }, { name: "@status", value: "active" }]
+    );
+    for (const definition of customDefinitions) {
+      if (countMatchingSessions(definition.rule, completedWithSnapshots) >= Number(definition.rule?.minCount || 1)) {
+        awardBadge(definition.badgeId, definition.name);
+      }
     }
 
     /*
@@ -351,6 +350,9 @@ export async function processWorkshopCompletion({
             studentId,
 
             workshopId,
+            sessionId,
+            registrationId,
+            completionSource,
 
             action:
               "workshop_completion",
@@ -436,6 +438,8 @@ export async function processWorkshopCompletion({
           {
             totalXp:
               newTotalXp,
+            currentXp: newBalances.currentXp,
+            xpCorrectionDebt: newBalances.xpCorrectionDebt,
 
             level:
               newLevel,

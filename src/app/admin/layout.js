@@ -17,7 +17,10 @@ const navigation = [
   { title: "Operations", items: [
     { href: "/admin/students", label: "Students", icon: Users, permission: "students.view" },
     { href: "/admin/workshops", label: "Workshops", icon: BookOpen, permission: "workshops.view" },
+    { href: "/admin/badges", label: "Badges", icon: ShieldCheck, permission: "badges.manage" },
+    { href: "/admin/media", label: "Media library", icon: BookOpen, permission: "workshops.edit" },
     { href: "/admin/attendance", label: "Attendance", icon: QrCode, permission: "attendance.manage" },
+    { href: "/admin/completions", label: "Completion reviews", icon: ClipboardList, permission: "completion.review" },
     { href: "/admin/reports", label: "Student reports", icon: FileText, permission: "reports.generate" },
     { href: "/admin/engagement", label: "Engagement insights", icon: BarChart3, permission: "attendance.view" },
     { href: "/admin/feedback", label: "Workshop feedback", icon: ClipboardList, permission: "reports.generate" },
@@ -65,9 +68,9 @@ export default function AdminLayout({ children }) {
 
   const sidebar = <div className="admin-app-sidebar-inner flex h-full flex-col">
     <div className="flex min-h-24 items-center justify-between border-b border-white/10 px-5">
-      <Link href="/admin" className="flex min-w-0 items-center gap-3" aria-label="Youth Initiative admin home">
+      <Link href="/admin" className="flex min-w-0 items-center gap-3" aria-label="Youth Initiatives admin home">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#e83a2d] text-lg font-black tracking-tight text-white shadow-lg shadow-red-950/30">S</span>
-        {!collapsed && <span className="min-w-0"><strong className="block text-base font-extrabold tracking-tight text-white">Youth Initiative</strong><small className="block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Administration</small></span>}
+        {!collapsed && <span className="min-w-0"><strong className="block text-base font-extrabold tracking-tight text-white">Youth Initiatives</strong><small className="block text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">Administration</small></span>}
       </Link>
       <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-slate-300 hover:bg-white/10 lg:hidden" aria-label="Close menu"><X size={20}/></button>
       <button type="button" onClick={() => setCollapsed(v => !v)} className="hidden rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white lg:block" aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}><PanelLeftClose size={19}/></button>
@@ -107,9 +110,12 @@ export default function AdminLayout({ children }) {
         <header className="sticky top-0 z-30 flex h-[72px] items-center justify-between gap-4 border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-md md:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button type="button" onClick={() => setMobileOpen(true)} className="rounded-xl border border-slate-200 p-2.5 text-slate-700 lg:hidden" aria-label="Open navigation"><Menu size={21}/></button>
-            <div><p className="text-[10px] font-bold uppercase tracking-[0.19em] text-slate-400">Administration / Youth Initiative</p><p className="mt-0.5 truncate text-base font-bold text-slate-900">{currentItem?.label || "Admin workspace"}</p></div>
+            <div><p className="text-[10px] font-bold uppercase tracking-[0.19em] text-slate-400">Administration / Youth Initiatives</p><p className="mt-0.5 truncate text-base font-bold text-slate-900">{currentItem?.label || "Admin workspace"}</p></div>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800"><span className="h-2 w-2 rounded-full bg-emerald-500"/>Secure workspace</div>
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 sm:flex"><span className="h-2 w-2 rounded-full bg-emerald-500"/>Secure workspace</div>
+            <button type="button" onClick={logoutAdmin} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-extrabold text-rose-700 hover:bg-rose-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600" aria-label="Log out of the admin portal"><LogOut size={17}/> <span className="hidden sm:inline">Log out</span></button>
+          </div>
         </header>
         <div className="min-w-0">{children}</div>
       </div>

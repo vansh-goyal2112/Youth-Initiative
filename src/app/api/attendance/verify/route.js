@@ -1,4 +1,5 @@
 import { workshopCompletionSnapshot } from "@/services/workshopHistory.mjs";
+import { completionTransactionId } from "@/services/completionRules.mjs";
 import {
   processWorkshopCompletion,
 } from "@/services/gamificationAdmin";
@@ -146,7 +147,7 @@ export async function POST(request) {
       await queryCosmosDocuments(
         "registrations",
         `
-          SELECT TOP 1 *
+          SELECT *
           FROM c
           WHERE c.studentId = @studentId
             AND c.workshopId = @workshopId
@@ -169,10 +170,10 @@ export async function POST(request) {
         ]
       );
 
-    if (
-      registrations.length ===
-      0
-    ) {
+    const matching = registrations.find(item =>
+      (item.sessionId || null) === (session.catalogSessionId || null) && item.status === "upcoming"
+    );
+    if (!matching) {
       return Response.json(
         {
           success: false,
@@ -186,8 +187,7 @@ export async function POST(request) {
       );
     }
 
-    const registration =
-      registrations[0];
+    const registration = matching;
 
     if (
       registration.status ===
@@ -254,6 +254,8 @@ export async function POST(request) {
             "verified",
 
           attendanceSessionId,
+          completionSource: "qr",
+          sessionId: registration.sessionId || null,
 
           attendedAt:
             completedAt,
@@ -305,13 +307,16 @@ export async function POST(request) {
         studentId,
         workshopId: session.workshopId,
         workshop,
+        completionSource: "qr",
+        sessionId: registration.sessionId || null,
+        registrationId: registration.id,
       });
 
       // A duplicate or in-progress transaction can report zero new XP.
       // Do not mark the registration paid unless the ledger confirms it.
       const rewardTransaction = await readCosmosDocument(
         "xpTransactions",
-        `${studentId}_${session.workshopId}`
+        completionTransactionId(studentId, session.workshopId, registration.sessionId || null)
       );
 
       if (rewardTransaction?.status !== "completed") {

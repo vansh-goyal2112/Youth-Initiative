@@ -88,9 +88,10 @@ export default function WorkshopDetailsPage() {
     );
   }
 
-  const registrationUrl =
-    workshop.registrationUrl ||
-    "https://saitdigitalyouth.campbrainregistration.com/";
+  const registrationUrl = workshop.registrationUrl || "https://saitdigitalyouth.campbrainregistration.com/";
+  const activeSessions = Array.isArray(workshop.sessions)
+    ? workshop.sessions.filter(session => session.status === "active")
+    : [];
 
   return (
     <main className="workshop-details-page">
@@ -230,7 +231,24 @@ export default function WorkshopDetailsPage() {
             </div>
           </div>
 
-          {workshop.availabilityStatus === "closed" ? (
+          {activeSessions.length > 0 ? (
+            <>
+              <h2>Choose your session</h2>
+              <p>Each scheduled date has its own registration link. Select a date that works for you.</p>
+              <div className="space-y-3">
+                {activeSessions.map(session => (
+                  <article key={session.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <h3 className="mb-1 text-sm font-extrabold text-slate-900">{session.startDate}{session.endDate && session.endDate !== session.startDate ? " – " + session.endDate : ""}</h3>
+                    <p className="mb-3 text-xs text-slate-600">{[session.time,session.location,session.capacity != null ? "Capacity " + session.capacity : ""].filter(Boolean).join(" · ")}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <a href={session.registrationUrl || registrationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-rose-700 px-3 py-2 text-xs font-extrabold text-white hover:bg-rose-800">Register <ExternalLink size={15}/></a>
+                      <Link href={`/registration-success/${workshop.id}?sessionId=${encodeURIComponent(session.id)}`} className="inline-flex min-h-10 items-center rounded-xl border border-rose-200 px-3 py-2 text-xs font-extrabold text-rose-800 hover:bg-rose-50">I completed registration</Link>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
+          ) : workshop.availabilityStatus === "closed" ? (
             <>
               <h2>Registration unavailable</h2>
               <p>

@@ -794,6 +794,10 @@ export async function POST(
           onboardingCompleted:
             false,
 
+          // New students see the welcome tutorial once. Legacy accounts are unaffected.
+          tutorialCompleted:
+            false,
+
           totalXp:
             0,
 

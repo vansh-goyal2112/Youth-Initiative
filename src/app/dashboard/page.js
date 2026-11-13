@@ -76,6 +76,7 @@ export default function DashboardPage() {
     pathwayRecommendations,
     setPathwayRecommendations,
   ] = useState([]);
+  const [bannerUrl, setBannerUrl] = useState(null);
 
   const [
     loading,
@@ -86,6 +87,14 @@ export default function DashboardPage() {
     errorMessage,
     setErrorMessage,
   ] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/media").then(r => r.ok ? r.json() : null).then(data => {
+      if (active && data?.bannerUrl) setBannerUrl(data.bannerUrl);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (
@@ -418,7 +427,10 @@ export default function DashboardPage() {
 
       {/* HERO / PLAYER PROFILE */}
 
-      <section className="dashboard-game-hero">
+      <section className="dashboard-game-hero" style={bannerUrl ? {
+        backgroundImage: "linear-gradient(90deg, rgba(23,34,63,.91), rgba(34,46,78,.76)), url(" + JSON.stringify(bannerUrl) + ")",
+        backgroundSize: "cover", backgroundPosition: "center",
+      } : undefined}>
         <div className="dashboard-hero-orb dashboard-orb-one" />
         <div className="dashboard-hero-orb dashboard-orb-two" />
 
@@ -545,22 +557,16 @@ export default function DashboardPage() {
       {/* MAIN CONTENT */}
 
       <section className="student-content-container dashboard-main">
-        {/* SKILL QUEST HQ: saved focus missions and verified learning journal */}
-        <SkillQuestHub
-          gameData={gameData}
-          student={student}
-          registrations={registrations}
+        {/* 1. SKILL QUEST HQ */}
+        <SkillQuestHub section="hq"
+          gameData={gameData} student={student} registrations={registrations}
           onRegistrationsRefresh={refreshRegistrations}
         />
 
-        <UpcomingAdventures
-          workshops={workshops}
-          registrations={registrations}
-        />
-
-        <DiscoverySpinner
-          workshops={workshops}
-          registrations={registrations}
+        {/* 2. LEVEL PROGRESS */}
+        <SkillQuestHub section="level"
+          gameData={gameData} student={student} registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
         />
 
         <section className="dashboard-section dashboard-next-adventure">
@@ -744,7 +750,10 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* FUTURE SAIT PATHWAYS */}
+        {/* More upcoming opportunities, grouped with workshop recommendations. */}
+        <UpcomingAdventures workshops={workshops} registrations={registrations} />
+
+        {/* 4. FUTURE SAIT PATHWAYS */}
         {pathwayRecommendations.length > 0 && (
           <section className="dashboard-section">
             <div className="dashboard-section-heading">
@@ -801,7 +810,22 @@ export default function DashboardPage() {
           </section>
         )}
 
-        {/* CTA */}
+        {/* 5. DISCOVERY CORNER */}
+        <DiscoverySpinner workshops={workshops} registrations={registrations} />
+
+        {/* 6. MAKE IT YOUR QUEST */}
+        <SkillQuestHub section="mission"
+          gameData={gameData} student={student} registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
+        />
+
+        {/* 7. MY LEARNING JOURNAL */}
+        <SkillQuestHub section="journal"
+          gameData={gameData} student={student} registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
+        />
+
+        {/* CTA footer */}
 
         <section className="dashboard-journey-cta">
           <div className="dashboard-cta-icon">

@@ -1,4 +1,4 @@
-// Central authorization policy for SAIT Youth Initiative administrators.
+// Central authorization policy for SAIT Youth Initiatives administrators.
 // Never use client-supplied role or permission data for authorization.
 // Permission overrides can only be applied by a separately authorized super admin.
 
@@ -16,6 +16,11 @@ export const ADMIN_PERMISSIONS = Object.freeze([
   "workshops.import",
   "attendance.view",
   "attendance.manage",
+  "completion.review",
+  "completion.reverse",
+  "badges.manage",
+  "xp.adjust",
+  "xp.redeem",
   "admins.view",
   "admins.approve",
   "admins.manage",
@@ -29,10 +34,14 @@ export const ADMIN_ROLES = Object.freeze({
     "reports.generate", "reports.export",
     "workshops.view", "workshops.create", "workshops.edit",
     "workshops.import", "attendance.view", "attendance.manage",
+    "completion.review", "completion.reverse", "badges.manage", "xp.adjust", "xp.redeem",
   ]),
   workshop_coordinator: Object.freeze([
     "workshops.view", "workshops.create", "workshops.edit",
     "workshops.import", "attendance.view", "attendance.manage",
+  ]),
+  event_staff: Object.freeze([
+    "students.view", "xp.redeem",
   ]),
   viewer: Object.freeze([
     "students.view", "workshops.view", "attendance.view",

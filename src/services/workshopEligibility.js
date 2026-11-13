@@ -6,26 +6,29 @@ const GRADE_LEVELS = new Set([
 ]);
 
 function getGradeBounds(workshop) {
-  if (
-    Number.isInteger(workshop.minGrade) ||
-    Number.isInteger(workshop.maxGrade)
-  ) {
+  if (Number.isInteger(workshop.minGrade) || Number.isInteger(workshop.maxGrade)) {
     return {
       min: workshop.minGrade ?? workshop.maxGrade,
       max: workshop.maxGrade ?? workshop.minGrade,
     };
   }
 
-  const match = String(workshop.grade || "").match(
-    /grades?\s*(\d{1,2})(?:\s*(?:-|to|through|and|or|&|,)\s*(\d{1,2}))?/i
-  );
-
-  return match
-    ? {
-        min: Number(match[1]),
-        max: Number(match[2] || match[1]),
-      }
-    : null;
+  // SAIT catalogue grades can be "Grade 6", "Grades 6–9", "K-6" or "6 to 12".
+  // Never infer grade eligibility from a bare unrelated number in the title.
+  const value = String(workshop.grade || "").trim().replace(/[–—]/g, "-");
+  const tokenToGrade = token => /^k$/i.test(token) ? 0 : Number(token);
+  const range = value.match(/^(?:grades?\s*)?(K|\d{1,2})\s*(?:-|to|through|and|&)\s*(?:grades?\s*)?(K|\d{1,2})\b/i);
+  if (range) {
+    const first = tokenToGrade(range[1]);
+    const last = tokenToGrade(range[2]);
+    return first <= last && last <= 12 ? { min: first, max: last } : null;
+  }
+  const single = value.match(/^(?:grades?\s*)?(K|\d{1,2})\b$/i);
+  if (single) {
+    const grade = tokenToGrade(single[1]);
+    return grade <= 12 ? { min: grade, max: grade } : null;
+  }
+  return null;
 }
 
 function parseStudentGrade(schoolGrade) {

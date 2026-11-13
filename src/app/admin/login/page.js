@@ -357,7 +357,7 @@ export default function AdminLoginPage() {
                 <div><CheckCircle2 size={20}/><span>Secure, role-based team access</span></div>
               </div>
             </div>
-            <div className="admin-auth-story-footer"><span className="admin-auth-story-dot"/> DESIGNED FOR THE PEOPLE BEHIND THE IMPACT <span>© SAIT Youth Initiative</span></div>
+            <div className="admin-auth-story-footer"><span className="admin-auth-story-dot"/> DESIGNED FOR THE PEOPLE BEHIND THE IMPACT <span>© SAIT Youth Initiatives</span></div>
           </div>
           <div className="admin-auth-decoration admin-auth-decoration-one" aria-hidden="true"/>
           <div className="admin-auth-decoration admin-auth-decoration-two" aria-hidden="true"/>

@@ -3,6 +3,8 @@ import {
   studentAccessResponse,
 } from "@/services/studentAccess";
 
+import { getXpBalances } from "@/services/xpBalance.mjs";
+import { countMatchingSessions } from "@/services/customBadges.mjs";
 import {
   queryCosmosDocuments,
   readCosmosDocument,
@@ -338,6 +340,22 @@ export async function GET(request) {
         technologyCount,
       });
 
+    // Badge catalogue is dynamic, so future rules do not require a redeploy.
+    const customDefinitions = await queryCosmosDocuments("admins",
+      "SELECT * FROM c WHERE c.role = @role",
+      [{ name: "@role", value: "badge_definition" }]
+    );
+    const customBadgeCatalog = customDefinitions.map(definition => ({
+      id: definition.badgeId,
+      name: definition.name,
+      description: definition.description || "",
+      artworkUrl: definition.artworkUrl || "",
+      rule: definition.rule,
+      status: definition.status,
+      target: Number(definition.rule?.minCount) || 1,
+      current: countMatchingSessions(definition.rule, completedRegistrations),
+    }));
+
     /*
       Load earned badge records.
     */
@@ -380,12 +398,14 @@ export async function GET(request) {
       getLevelInformation(
         totalXp
       );
+    const { currentXp } = getXpBalances(student);
 
     return Response.json({
       success: true,
 
       gamification: {
         totalXp,
+        currentXp,
 
         activeQuestId: student.activeQuestId || null,
 
@@ -414,6 +434,7 @@ export async function GET(request) {
 
         badgeCount:
           badges.length,
+        customBadgeCatalog,
 
         skillTracks,
 

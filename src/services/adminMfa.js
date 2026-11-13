@@ -34,8 +34,8 @@ export function verifyTotp(secret, code, now = Date.now()) {
  return -1;
 }
 export function totpUri(secret, email) {
- const label = encodeURIComponent("SAIT Youth Initiative Admin:" + email);
- return "otpauth://totp/" + label + "?secret=" + base32(Buffer.from(secret,"hex")) + "&issuer=" + encodeURIComponent("SAIT Youth Initiative Admin") + "&algorithm=SHA1&digits=6&period=30";
+ const label = encodeURIComponent("SAIT Youth Initiatives Admin:" + email);
+ return "otpauth://totp/" + label + "?secret=" + base32(Buffer.from(secret,"hex")) + "&issuer=" + encodeURIComponent("SAIT Youth Initiatives Admin") + "&algorithm=SHA1&digits=6&period=30";
 }
 function base32(input) { const abc="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"; let bits=0, value=0, out=""; for (const b of input) {value=(value<<8)|b;bits+=8;while(bits>=5){out+=abc[(value>>>(bits-5))&31];bits-=5;}} if(bits)out+=abc[(value<<(5-bits))&31];return out; }
 function signature(payload) {return b64(createHmac("sha256",key()).update(payload).digest());}

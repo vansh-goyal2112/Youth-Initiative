@@ -225,7 +225,7 @@ export default function ProfilePage() {
             <p>Every adventure begins with you. Discover the skills you&apos;ve built and where your curiosity can take you next.</p>
           </div>
           <Link href="/edit-profile" className={styles.editButton}>
-            <Edit3 size={17} aria-hidden="true"/> Edit My Preferences
+            <Edit3 size={17} aria-hidden="true"/> Edit My Identity
           </Link>
         </div>
 
@@ -293,8 +293,9 @@ export default function ProfilePage() {
             <div className={styles.panelHeading}>
               <span className={styles.panelIcon}><UserRound size={23} aria-hidden="true"/></span>
               <div><span>MY IDENTITY</span><h2 id="identity-heading">Explorer Information</h2></div>
+              <Link href="/edit-profile" className={styles.miniEdit} aria-label="Edit my identity"><Edit3 size={16} aria-hidden="true"/> Edit</Link>
             </div>
-            <p className={styles.panelLead}>Your own student details, securely loaded from your SAIT Youth Initiative account.</p>
+            <p className={styles.panelLead}>Your own student details, securely loaded from your SAIT Youth Initiatives account.</p>
             <div className={styles.infoList}>
               <InfoRow Icon={GraduationCap} label="Youth Initiative ID" value={youthId} placeholder="Please contact the program team" emphasized/>
               <InfoRow Icon={Mail} label="Contact Email" value={email} placeholder="No contact email is recorded"/>
@@ -381,6 +382,9 @@ export default function ProfilePage() {
 
         <div className={styles.bottomActions}>
           <Link href="/workshops" className={styles.exploreLink}><Sparkles size={18} aria-hidden="true"/> Explore New Workshops <ArrowRight size={17} aria-hidden="true"/></Link>
+          <button type="button" className={styles.editButton} onClick={() => window.dispatchEvent(new Event("student-tutorial-replay"))}>
+            <Sparkles size={17} aria-hidden="true"/> Replay Welcome Tutorial
+          </button>
           <button type="button" className={styles.logoutButton} onClick={handleLogout} disabled={loggingOut}>
             <LogOut size={17} aria-hidden="true"/>{loggingOut ? "Logging Out..." : "Log Out"}
           </button>
