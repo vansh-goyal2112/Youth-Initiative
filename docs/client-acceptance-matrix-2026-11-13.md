@@ -29,7 +29,7 @@
 | 12 | Store QR vs self-report source | QR attendance and self-report APIs set `completionSource` in registrations and XP transactions | In code |
 | 13 | Admin review / approve / reverse self-reports | `admin/completions` UI/API; audit log; ETag updates; XP reversal debt | In code; live test needed |
 | 14 | Automatically earned custom badges and artwork | `admin/badges`, `customBadges.mjs`, `gamificationAdmin.js`, media upload | In code; custom badge reversal reconciliation **fixed on review branch** |
-| 15 | Workshop create/edit/archive/deletion | `admin/workshops` UI/API; Cosmos persist and history-aware retirement | In code; live deletion test required |
+| 15 | Workshop create/edit/archive/deletion and duplication | `admin/workshops` UI/API; Cosmos persist, history-aware retirement; safe duplicate action creates new inactive workshop details without copying registrations or sessions | Duplication **added on review branch**; live creation/deletion test required |
 | 16 | Multiple session dates with edit/archive/duplicate | `WorkshopSessionsPanel.jsx`, `api/admin/workshops/sessions`, persisted `workshops.sessions` | In code; live test required |
 | 17 | Session registration/info URLs | HTTPS URL validation; student workshop details render per-session links | In code |
 | 18 | Upload/replace workshop, badge, reward and banner images | `api/admin/media/upload/route.js`, media/workshop/badge admin views | In code; requires configured Firebase Storage and live permission checks |
