@@ -106,14 +106,14 @@ export default function AccountCreatedPage() {
 
         <p>
           The student account is now active.
-          Use the Youth Initiative ID below
+          Use the Youth ID below
           with the password that was just
           created.
         </p>
 
         <div className="youth-id-result">
           <span>
-            Youth Initiative ID
+            Youth ID
           </span>
 
           <div>

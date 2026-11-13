@@ -13,7 +13,7 @@ export const metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Youth Initiative",
+    title: "Youth Initiatives",
     statusBarStyle: "default",
   },
 };

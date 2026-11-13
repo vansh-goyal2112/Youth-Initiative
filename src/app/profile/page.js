@@ -297,7 +297,7 @@ export default function ProfilePage() {
             </div>
             <p className={styles.panelLead}>Your own student details, securely loaded from your SAIT Youth Initiatives account.</p>
             <div className={styles.infoList}>
-              <InfoRow Icon={GraduationCap} label="Youth Initiative ID" value={youthId} placeholder="Please contact the program team" emphasized/>
+              <InfoRow Icon={GraduationCap} label="Youth ID" value={youthId} placeholder="Please contact the program team" emphasized/>
               <InfoRow Icon={Mail} label="Contact Email" value={email} placeholder="No contact email is recorded"/>
               <InfoRow Icon={CalendarDays} label="Date of Birth" value={birthDate} placeholder="No date recorded"/>
               <InfoRow Icon={BookOpen} label="Current School Grade" value={student.schoolGrade === "K" ? "Kindergarten" : student.schoolGrade ? `Grade ${student.schoolGrade}` : ""} placeholder="Not provided"/>

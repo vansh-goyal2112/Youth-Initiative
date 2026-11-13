@@ -45,19 +45,19 @@ const loginSchema = Yup.object({
   youthId: Yup.string()
     .trim()
     .required(
-      "Youth Initiative ID is required."
+      "Youth ID is required."
     )
     .min(
       6,
-      "Youth Initiative ID must contain at least 6 characters."
+      "Youth ID must contain at least 6 characters."
     )
     .max(
       20,
-      "Youth Initiative ID cannot exceed 20 characters."
+      "Youth ID cannot exceed 20 characters."
     )
     .matches(
       /^[A-Za-z0-9-]+$/,
-      "Youth Initiative ID can only contain letters, numbers and hyphens."
+      "Youth ID can only contain letters, numbers and hyphens."
     ),
 
   password: Yup.string()
@@ -284,7 +284,7 @@ export default function LoginPage() {
       */
 
       setLoginError(
-        "Invalid Youth Initiative ID or password."
+        "Invalid Youth ID or password."
       );
     } finally {
       setSubmitting(
@@ -372,7 +372,7 @@ export default function LoginPage() {
                         htmlFor="youthId"
                         className="auth-form-label"
                       >
-                        Youth Initiative ID
+                        Youth ID
                       </label>
 
                       <Field
@@ -527,7 +527,7 @@ export default function LoginPage() {
                     </p>
 
                     <p className="forgot-password-text">
-                      Forgot Youth Initiative ID?{" "}
+                      Forgot Youth ID?{" "}
                       <Link href="/forgot-youth-id">
                         Click here
                       </Link>

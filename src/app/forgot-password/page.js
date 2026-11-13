@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
 
       if (!cleanedYouthId) {
         setErrorMessage(
-          "Youth Initiative ID is required."
+          "Youth ID is required."
         );
 
         return;
@@ -120,7 +120,7 @@ export default function ForgotPasswordPage() {
         </h1>
 
         <p>
-          Enter your Youth Initiative ID.
+          Enter your Youth ID.
           If the account is eligible for
           recovery, we&apos;ll send a secure
           recovery link to the appropriate
@@ -144,7 +144,7 @@ export default function ForgotPasswordPage() {
           className="password-flow-form"
         >
           <label>
-            Youth Initiative ID
+            Youth ID
 
             <input
               type="text"

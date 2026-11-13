@@ -157,7 +157,7 @@ export default function ForgotYouthIdPage() {
           <p>
             If this email is
             associated with an
-            eligible Youth Initiative
+            eligible Youth Initiatives
             account, the Youth ID has
             been sent.
           </p>
@@ -218,7 +218,7 @@ export default function ForgotYouthIdPage() {
 
         <p>
           Enter the email associated
-          with the Youth Initiative
+          with the Youth Initiatives
           account. If the account is
           eligible, we&apos;ll send
           the Youth ID to the
