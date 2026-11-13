@@ -40,6 +40,7 @@ import {
 import {
   adminFetch,
 } from "@/services/adminApi";
+import { appCheckFetch } from "@/services/appCheckApi";
 
 function readableAuthError(error, fallback) {
   switch (error?.code) {
@@ -151,6 +152,31 @@ export default function AdminLoginPage() {
     } finally { setResending(false); }
   }
 
+  // Independent recovery option if a SAIT mailbox blocks Azure messages.
+  // The Firebase Auth action never approves or elevates admin accounts.
+  async function sendFirebaseReset() {
+    if (resending || loading) return;
+    setResending(true);
+    setErrorMessage("");
+    setInfoMessage("");
+    try {
+      const address = email.trim().toLowerCase();
+      if (!/^[^@\\s]+@(?:edu\\.)?sait\\.ca$/i.test(address)) {
+        throw new Error("Enter your @sait.ca or @edu.sait.ca email.");
+      }
+      await sendPasswordResetEmail(auth, address);
+      setInfoMessage("Firebase accepted the password reset request. Delivery is not confirmed. Check Inbox/Junk; if neither service reaches your SAIT mailbox, contact SAIT IT for a message trace.");
+    } catch (error) {
+      if (["auth/user-not-found", "auth/invalid-email"].includes(error?.code)) {
+        setInfoMessage("If your SAIT email has a Firebase account, recovery instructions will be sent.");
+      } else {
+        setErrorMessage(readableAuthError(error, "Firebase reset email could not be sent. Contact SAIT IT."));
+      }
+    } finally {
+      setResending(false);
+    }
+  }
+
   async function handleLogin(
     event
   ) {
@@ -176,8 +202,19 @@ export default function AdminLoginPage() {
         throw new Error("Use a SAIT email ending in @sait.ca or @edu.sait.ca.");
       }
       if (mode === "reset") {
-        await sendPasswordResetEmail(auth, email.trim());
-        setInfoMessage("If this email has an account, a reset message will be sent.");
+        // Admin passwords are recovered via Firebase-authorized one-time
+        // links, delivered with the same Azure sender as admin verification.
+        // No existing sign-in is necessary. This is a consumed App Check token.
+        const response = await appCheckFetch("/api/admin/password-reset/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email.trim() }),
+        }, { limitedUse: true });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || "Could not start administrator password recovery.");
+        }
+        setInfoMessage(data.message);
         return;
       }
       if (mode === "register") {
@@ -382,6 +419,13 @@ export default function AdminLoginPage() {
               {errorMessage && <div className="admin-auth-alert error" role="alert"><ShieldCheck size={19}/><span>{errorMessage}</span></div>}
               <button className="admin-auth-submit" type="submit" disabled={loading}>{loading ? <><LoaderCircle size={19} className="animate-spin"/> Processing...</> : <>{mode === "register" ? <UserRoundPlus size={19}/> : <LockKeyhole size={18}/>} {content.action}<ArrowRight size={19}/></>}</button>
             </form>
+            {mode === "reset" && <>
+              <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={sendFirebaseReset}>
+                {resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>}
+                Send with Firebase instead
+              </button>
+              <p className="admin-auth-hint">Admin password recovery uses your SAIT email. If neither Azure nor Firebase email arrives, contact SAIT IT to check message quarantine. Never create a second admin account.</p>
+            </>}
             {(mode === "request" || mode === "register") && <>
               <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={resendVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Resend via Azure Email</button>
               <button type="button" disabled={resending || loading} className="admin-auth-secondary" onClick={sendFirebaseVerification}>{resending ? <LoaderCircle size={17} className="animate-spin"/> : <Mail size={17}/>} Send with Firebase instead</button>
