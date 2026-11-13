@@ -13,7 +13,7 @@ import {
   replaceCosmosDocument,
 } from "@/services/cosmosData";
 
-function calculateLevel(totalXp) {
+export function calculateLevel(totalXp) {
   if (totalXp >= 1000) return 6;
   if (totalXp >= 700) return 5;
   if (totalXp >= 450) return 4;
@@ -23,7 +23,7 @@ function calculateLevel(totalXp) {
   return 1;
 }
 
-function getLevelName(level) {
+export function getLevelName(level) {
   const levels = {
     1: "New Explorer",
     2: "Skill Starter",
