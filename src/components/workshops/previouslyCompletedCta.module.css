@@ -1,5 +1,5 @@
-/* The global unlayered a { color: inherit } can override Tailwind's
-   text-white utility. Keep the actionable CTA colors in a scoped rule. */
+/* Keep these button styles in an unlayered CSS module so global anchor
+   colors cannot override the accessible light-lavender treatment. */
 .button,
 .button:link,
 .button:visited {
@@ -9,26 +9,27 @@
   gap: 9px;
   min-height: 46px;
   padding: 12px 21px;
-  border: 1px solid #b61f2b;
+  border: 1px solid #c9b5ef;
   border-radius: 13px;
-  color: #ffffff;
-  background: #d02633;
-  box-shadow: 0 4px 0 #9f202b;
+  color: #4d347c;
+  background: #eee5ff;
+  box-shadow: 0 3px 0 #d8c9f3;
   font-size: 14px;
   font-weight: 850;
   line-height: 1.35;
   text-align: center;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 150ms ease, box-shadow 150ms ease;
+  transition: background-color 150ms ease, border-color 150ms ease;
 }
 .button:hover,
 .button:focus-visible {
-  color: #ffffff;
-  background: #b81d2b;
+  color: #40276e;
+  background: #e1d2ff;
+  border-color: #b99ae9;
 }
 .button:focus-visible {
-  outline: 3px solid #2563eb;
+  outline: 3px solid #6c49aa;
   outline-offset: 3px;
 }
 .fullWidth {
