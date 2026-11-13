@@ -1,4 +1,5 @@
 import { workshopCompletionSnapshot } from "@/services/workshopHistory.mjs";
+import { completionTransactionId } from "@/services/completionRules.mjs";
 import { cosmosNow, queryCosmosDocuments, readCosmosDocument, replaceCosmosDocument, deleteCosmosDocument } from "@/services/cosmosData";
 
 export async function retireWorkshopPermanently(existingWorkshop) {
@@ -12,7 +13,7 @@ export async function retireWorkshopPermanently(existingWorkshop) {
     );
     for (const registration of completed) {
       const transaction = await readCosmosDocument(
-        "xpTransactions", `${registration.studentId}_${id}`
+        "xpTransactions", completionTransactionId(registration.studentId, id, registration.sessionId || null)
       );
       if (!transaction || transaction.status !== "completed") {
         throw new Error("Finalize pending student XP awards before workshop removal.");

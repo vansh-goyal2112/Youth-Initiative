@@ -569,6 +569,118 @@ export default function DashboardPage() {
           onRegistrationsRefresh={refreshRegistrations}
         />
 
+        {/* 3. RECOMMENDED FOR YOU */}
+
+        <section className="dashboard-section dashboard-recommendation-section">
+          <div className="dashboard-section-heading">
+            <div>
+              <span>
+                RECOMMENDED FOR YOU
+              </span>
+
+              <h2>
+                Discover What&apos;s
+                Next
+              </h2>
+            </div>
+
+            <Link href="/workshops">
+              Browse all
+              <ChevronRight
+                size={16}
+              />
+            </Link>
+          </div>
+
+          <div className="dashboard-recommendation-grid">
+            {recommendedWorkshops.map(
+              (workshop) => (
+                <RecommendedWorkshop
+                  key={
+                    workshop.id
+                  }
+                  workshop={
+                    workshop
+                  }
+                />
+              )
+            )}
+          </div>
+        </section>
+
+        {/* 4. FUTURE SAIT PATHWAYS */}
+        {pathwayRecommendations.length > 0 && (
+          <section className="dashboard-section">
+            <div className="dashboard-section-heading">
+              <div>
+                <span>FUTURE PATHWAYS</span>
+                <h2>Recommended SAIT Programs</h2>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
+              {pathwayRecommendations.slice(0, 3).map((rec) => (
+                <div
+                  key={rec.program.id}
+                  className="bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <Sparkles size={12} />
+                        {rec.score}% MATCH
+                      </span>
+                      <GraduationCap size={18} className="text-slate-400" />
+                    </div>
+
+                    <h3 className="text-base font-bold text-slate-800 line-clamp-2 mb-2">
+                      {rec.program.title}
+                    </h3>
+
+                    <div className="space-y-1.5 mb-4">
+                      {rec.reasons?.map((reason, idx) => (
+                        <p
+                          key={idx}
+                          className="text-xs text-slate-600 flex items-start gap-1.5"
+                        >
+                          <span className="text-emerald-500 font-bold mt-0.5">•</span>
+                          <span>{reason}</span>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+
+                  <a
+                    href={rec.program.informationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={playfulSkin.programLink}
+                  >
+                    <span>View SAIT Program</span>
+                    <ExternalLink size={14} />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 5. DISCOVERY CORNER */}
+        <DiscoverySpinner workshops={workshops} registrations={registrations} />
+
+        {/* 6. MAKE IT YOUR QUEST */}
+        <SkillQuestHub section="mission"
+          gameData={gameData} student={student} registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
+        />
+
+        {/* 7. MY LEARNING JOURNAL */}
+        <SkillQuestHub section="journal"
+          gameData={gameData} student={student} registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
+        />
+
+        {/* Additional workshop and skill progress, after the client-requested main sections. */}
         <section className="dashboard-section dashboard-next-adventure">
           <div className="dashboard-section-heading">
             <div>
@@ -711,119 +823,7 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* RECOMMENDATIONS */}
-
-        <section className="dashboard-section dashboard-recommendation-section">
-          <div className="dashboard-section-heading">
-            <div>
-              <span>
-                RECOMMENDED FOR YOU
-              </span>
-
-              <h2>
-                Discover What&apos;s
-                Next
-              </h2>
-            </div>
-
-            <Link href="/workshops">
-              Browse all
-              <ChevronRight
-                size={16}
-              />
-            </Link>
-          </div>
-
-          <div className="dashboard-recommendation-grid">
-            {recommendedWorkshops.map(
-              (workshop) => (
-                <RecommendedWorkshop
-                  key={
-                    workshop.id
-                  }
-                  workshop={
-                    workshop
-                  }
-                />
-              )
-            )}
-          </div>
-        </section>
-
-        {/* More upcoming opportunities, grouped with workshop recommendations. */}
         <UpcomingAdventures workshops={workshops} registrations={registrations} />
-
-        {/* 4. FUTURE SAIT PATHWAYS */}
-        {pathwayRecommendations.length > 0 && (
-          <section className="dashboard-section">
-            <div className="dashboard-section-heading">
-              <div>
-                <span>FUTURE PATHWAYS</span>
-                <h2>Recommended SAIT Programs</h2>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
-              {pathwayRecommendations.slice(0, 3).map((rec) => (
-                <div
-                  key={rec.program.id}
-                  className="bg-white/80 backdrop-blur-md rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <Sparkles size={12} />
-                        {rec.score}% MATCH
-                      </span>
-                      <GraduationCap size={18} className="text-slate-400" />
-                    </div>
-
-                    <h3 className="text-base font-bold text-slate-800 line-clamp-2 mb-2">
-                      {rec.program.title}
-                    </h3>
-
-                    <div className="space-y-1.5 mb-4">
-                      {rec.reasons?.map((reason, idx) => (
-                        <p
-                          key={idx}
-                          className="text-xs text-slate-600 flex items-start gap-1.5"
-                        >
-                          <span className="text-emerald-500 font-bold mt-0.5">•</span>
-                          <span>{reason}</span>
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  <a
-                    href={rec.program.informationUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={playfulSkin.programLink}
-                  >
-                    <span>View SAIT Program</span>
-                    <ExternalLink size={14} />
-                  </a>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* 5. DISCOVERY CORNER */}
-        <DiscoverySpinner workshops={workshops} registrations={registrations} />
-
-        {/* 6. MAKE IT YOUR QUEST */}
-        <SkillQuestHub section="mission"
-          gameData={gameData} student={student} registrations={registrations}
-          onRegistrationsRefresh={refreshRegistrations}
-        />
-
-        {/* 7. MY LEARNING JOURNAL */}
-        <SkillQuestHub section="journal"
-          gameData={gameData} student={student} registrations={registrations}
-          onRegistrationsRefresh={refreshRegistrations}
-        />
 
         {/* CTA footer */}
 

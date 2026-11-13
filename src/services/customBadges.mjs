@@ -44,3 +44,22 @@ export function countMatchingSessions(rule, registrations) {
     return false;
   }).length;
 }
+
+/**
+ * Only active rule-driven badges can become unearned after a completion reversal.
+ * Keep an existing topic/program badge when older workshop metadata is missing,
+ * rather than revoking a valid achievement based on incomplete history.
+ */
+export function findUnmetCustomBadgeIds(definitions, registrations) {
+  const completed = (Array.isArray(registrations) ? registrations : [])
+    .filter(record => record.status === "completed");
+  const hasUnknownWorkshop = completed.some(record => !record.workshopSnapshot);
+  return (Array.isArray(definitions) ? definitions : [])
+    .filter(definition => definition.status === "active" &&
+      typeof definition.badgeId === "string" && definition.badgeId.startsWith("custom:") &&
+      definition.rule && Number.isSafeInteger(Number(definition.rule.minCount)) &&
+      Number(definition.rule.minCount) > 0 &&
+      !(hasUnknownWorkshop && definition.rule.type !== "sessions_any") &&
+      countMatchingSessions(definition.rule, completed) < Number(definition.rule.minCount))
+    .map(definition => definition.badgeId);
+}
