@@ -37,6 +37,14 @@
 .admin-auth-submit:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 14px 28px #ed503e40}.admin-auth-submit svg:last-child{margin-left:auto}.admin-auth-submit svg:first-child{margin-left:auto}
 .admin-auth-secondary{display:flex;justify-content:center;align-items:center;gap:9px;width:100%;padding:13px;margin-top:15px;color:#d84b3d;font-weight:750;font-size:13px;border:1px solid #f1cdc6;border-radius:12px;background:#fff}
 .admin-auth-secondary:hover{background:#fff2ef}
+/* Keep the verification resend action separate from the sign-up form.
+   Unlike the standard inline password hints, this text must never have a
+   negative top margin that can overlap the button on narrow screens. */
+.admin-auth-verification-actions{display:grid;gap:12px;margin-top:24px;min-width:0}
+.admin-auth-verification-actions .admin-auth-secondary{margin-top:0;min-height:50px;line-height:1.45;text-align:center;white-space:normal;overflow-wrap:anywhere}
+.admin-auth-verification-actions .admin-auth-secondary svg{flex-shrink:0}
+.admin-auth-verification-actions .admin-auth-hint{margin-top:0;max-width:100%;line-height:1.7;overflow-wrap:anywhere}
+
 .admin-auth-back{display:block;margin:21px auto;color:#53617a;font-size:13px;font-weight:750;text-decoration:underline;text-underline-offset:4px}.admin-auth-back:hover{color:#e33e32}
 .admin-auth-alert{display:flex;gap:11px;padding:14px;border-radius:12px;font-size:13px;line-height:1.6}.admin-auth-alert svg{flex-shrink:0}.admin-auth-alert.success{background:#e9f9f0;color:#206543;border:1px solid #bfead1}.admin-auth-alert.error{background:#fff1ef;color:#af3328;border:1px solid #facbc3}
 .admin-auth-trust{margin-top:37px;padding-top:23px;border-top:1px solid #e4e8ef;display:flex;align-items:center;justify-content:center;gap:9px;font-size:11px;font-weight:650;color:#8a95a7}
