@@ -38,6 +38,8 @@ import {
 import {
   useAuth,
 } from "@/contexts/AuthContext";
+import { formatStudentBirthDate, studentContactEmail } from "@/utils/studentProfileDisplay.mjs";
+import styles from "./editProfile.module.css";
 
 const availableInterests = [
   "coding",
