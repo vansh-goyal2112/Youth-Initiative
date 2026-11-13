@@ -557,22 +557,16 @@ export default function DashboardPage() {
       {/* MAIN CONTENT */}
 
       <section className="student-content-container dashboard-main">
-        {/* SKILL QUEST HQ: saved focus missions and verified learning journal */}
-        <SkillQuestHub
-          gameData={gameData}
-          student={student}
-          registrations={registrations}
+        {/* 1. SKILL QUEST HQ */}
+        <SkillQuestHub section="hq"
+          gameData={gameData} student={student} registrations={registrations}
           onRegistrationsRefresh={refreshRegistrations}
         />
 
-        <UpcomingAdventures
-          workshops={workshops}
-          registrations={registrations}
-        />
-
-        <DiscoverySpinner
-          workshops={workshops}
-          registrations={registrations}
+        {/* 2. LEVEL PROGRESS */}
+        <SkillQuestHub section="level"
+          gameData={gameData} student={student} registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
         />
 
         <section className="dashboard-section dashboard-next-adventure">
@@ -756,7 +750,10 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* FUTURE SAIT PATHWAYS */}
+        {/* More upcoming opportunities, grouped with workshop recommendations. */}
+        <UpcomingAdventures workshops={workshops} registrations={registrations} />
+
+        {/* 4. FUTURE SAIT PATHWAYS */}
         {pathwayRecommendations.length > 0 && (
           <section className="dashboard-section">
             <div className="dashboard-section-heading">
@@ -813,7 +810,22 @@ export default function DashboardPage() {
           </section>
         )}
 
-        {/* CTA */}
+        {/* 5. DISCOVERY CORNER */}
+        <DiscoverySpinner workshops={workshops} registrations={registrations} />
+
+        {/* 6. MAKE IT YOUR QUEST */}
+        <SkillQuestHub section="mission"
+          gameData={gameData} student={student} registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
+        />
+
+        {/* 7. MY LEARNING JOURNAL */}
+        <SkillQuestHub section="journal"
+          gameData={gameData} student={student} registrations={registrations}
+          onRegistrationsRefresh={refreshRegistrations}
+        />
+
+        {/* CTA footer */}
 
         <section className="dashboard-journey-cta">
           <div className="dashboard-cta-icon">

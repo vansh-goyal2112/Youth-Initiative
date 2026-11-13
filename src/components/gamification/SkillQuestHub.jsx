@@ -49,6 +49,7 @@ export default function SkillQuestHub({
   registrations = [],
   student,
   onRegistrationsRefresh,
+  section = "all",
 }) {
   const quests = Array.isArray(gameData?.quests) ? gameData.quests : [];
   const stats = useMemo(() => getReflectionStats(registrations), [registrations]);
@@ -135,7 +136,8 @@ export default function SkillQuestHub({
   }
 
   return (
-    <section className={styles.hub} aria-labelledby="quest-hub-title">
+    <div className={styles.hub}>
+      {(section === "all" || section === "hq") && (
       <div className={styles.intro}>
         <div className={styles.introDecor} aria-hidden="true"><Sparkles size={65}/></div>
         <div className={styles.introText}>
@@ -155,7 +157,9 @@ export default function SkillQuestHub({
           <div className={styles.islandXp}>{xp} XP</div>
         </div>
       </div>
+      )}
 
+      {(section === "all" || section === "level") && (
       <div className={styles.overview} aria-label="Your learning progress">
         <div className={styles.xpPanel}>
           <div className={styles.xpTop}>
@@ -188,8 +192,11 @@ export default function SkillQuestHub({
           <span>Journal Stamps</span>
         </div>
       </div>
+      )}
 
-      <div className={styles.twoColumns}>
+      {(section === "all" || section === "mission" || section === "journal") && (
+      <div className={`${styles.twoColumns} ${section === "all" ? "" : styles.singleColumn}`}>
+        {(section === "all" || section === "mission") && (
         <section className={styles.panel} aria-labelledby="my-mission-heading">
           <div className={styles.sectionHeading}>
             <span className={styles.sectionSymbol}><Flag size={22} aria-hidden="true"/></span>
@@ -230,12 +237,14 @@ export default function SkillQuestHub({
               );
             })}
           </div>
-          <p className={styles.helpText}><ShieldCheck size={16} aria-hidden="true"/> Only verified workshop participation earns XP. Missions track genuine progress.</p>
+          <p className={styles.helpText}><ShieldCheck size={16} aria-hidden="true"/> QR-verified attendance earns full XP; self-reported workshops earn half XP and may be reviewed.</p>
           {focusError && <p role="alert" className={styles.error}>{focusError}</p>}
           {focusSuccess && <p role="status" className={styles.success}>{focusSuccess}</p>}
           <Link href="/journey" className={styles.panelLink}>See the full Adventure Map <ArrowRight size={16} aria-hidden="true"/></Link>
         </section>
+        )}
 
+        {(section === "all" || section === "journal") && (
         <section className={styles.panel} aria-labelledby="reflection-heading">
           <div className={styles.sectionHeading}>
             <span className={styles.sectionSymbol}><Sparkles size={22} aria-hidden="true"/></span>
@@ -321,8 +330,11 @@ export default function SkillQuestHub({
             </div>
           )}
         </section>
+        )}
       </div>
+      )}
 
+      {(section === "all" || section === "level") && (
       <div className={styles.milestoneStrip} aria-label="Your Skill Quest milestones">
         <div><Rocket size={23} aria-hidden="true"/><strong>{completedMissions}</strong><span>Quests Reached</span></div>
         <span className={styles.stripDivider} aria-hidden="true">✦</span>
@@ -331,6 +343,7 @@ export default function SkillQuestHub({
         <div><Award size={23} aria-hidden="true"/><strong>{stats.reflectedCount}</strong><span>Journal Stamps</span></div>
         <Link href="/journey">Keep Adventuring <ArrowRight size={17} aria-hidden="true"/></Link>
       </div>
-    </section>
+      )}
+    </div>
   );
 }

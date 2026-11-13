@@ -190,3 +190,6 @@
 @media (prefers-reduced-motion:reduce) {
   .hub *, .hub *::before, .hub *::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}
 }
+
+/* The same Skill Quest panel can be placed independently in the client's fixed homepage order. */
+.singleColumn {grid-template-columns:minmax(0,1fr);}
