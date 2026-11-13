@@ -296,6 +296,19 @@ export default function WorkshopDetailsPage() {
               </div>
             </>
           )}
+          <div className="mt-6 border-t border-slate-200 pt-5">
+            <h2 className="mb-2 text-base font-extrabold text-slate-900">Already attended this workshop?</h2>
+            <p className="mb-3 text-sm leading-relaxed text-slate-600">
+              If you attended in the past, you can claim half XP without a QR code. SAIT staff may review your claim.
+            </p>
+            <Link
+              href={`/completed-workshops?workshop=${encodeURIComponent(workshop.id)}#previously-completed`}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-violet-200 bg-violet-50 px-4 py-3 text-center text-sm font-extrabold text-violet-800 transition-colors hover:border-violet-300 hover:bg-violet-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-700"
+            >
+              <CalendarDays size={18} aria-hidden="true" />
+              Previously Completed
+            </Link>
+          </div>
         </aside>
       </div>
     </main>
