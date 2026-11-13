@@ -14,8 +14,21 @@ import {
 
 import {
   ArrowLeft,
+  AlertCircle,
+  BookOpen,
+  CalendarDays,
   Check,
+  GraduationCap,
+  Heart,
+  Info,
   LoaderCircle,
+  LockKeyhole,
+  Mail,
+  MonitorPlay,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
 } from "lucide-react";
 
 import {
@@ -259,7 +272,9 @@ function EditProfileForm({
       );
 
       setErrorMessage(
-        "Your profile could not be updated."
+        error instanceof Error && error.message
+          ? error.message
+          : "Your profile could not be updated."
       );
     } finally {
       setSaving(
@@ -268,217 +283,156 @@ function EditProfileForm({
     }
   }
 
-  return (
-    <main className="edit-profile-page">
-      <section className="edit-profile-card">
-        <button
-          type="button"
-          className="edit-profile-back"
-          onClick={() =>
-            router.back()
-          }
-        >
-          <ArrowLeft
-            size={19}
-          />
+  const initialInterests = Array.isArray(student.interests) ? student.interests : [];
+  const isDirty =
+    firstName.trim() !== (student.firstName || "").trim() ||
+    lastName.trim() !== (student.lastName || "").trim() ||
+    schoolGrade !== (student.schoolGrade || "") ||
+    learningMode !== (student.learningMode || "") ||
+    JSON.stringify(interests) !== JSON.stringify(initialInterests);
 
-          Back
+  return (
+    <main className={styles.page}>
+      <div className={styles.shell}>
+        <button type="button" className={styles.back} onClick={() => router.push("/profile")}>
+          <ArrowLeft size={18} aria-hidden="true" /> Back to My Profile
         </button>
 
-        <span className="edit-profile-label">
-          PROFILE SETTINGS
-        </span>
-
-        <h1>
-          Edit Preferences
-        </h1>
-
-        <p>
-          Update how you prefer
-          to learn and the areas
-          you want to explore.
-        </p>
-
-        <form
-          onSubmit={
-            saveProfile
-          }
-          className="edit-profile-form"
-        >
-          <div className="edit-identity-name-grid">
-            <div className="edit-profile-field">
-              <label htmlFor="firstName">First Name</label>
-              <input id="firstName" className="edit-profile-text-input" autoComplete="given-name" maxLength={40} required value={firstName} onChange={(event) => setFirstName(event.target.value)} />
-            </div>
-            <div className="edit-profile-field">
-              <label htmlFor="lastName">Last Name</label>
-              <input id="lastName" className="edit-profile-text-input" autoComplete="family-name" maxLength={40} required value={lastName} onChange={(event) => setLastName(event.target.value)} />
-            </div>
+        <header className={styles.hero}>
+          <div className={styles.heroCopy}>
+            <span className={styles.eyebrow}><Sparkles size={16} aria-hidden="true" /> YOUR SKILL QUEST PASSPORT</span>
+            <h1>Edit My Identity</h1>
+            <p>Make your learning journey yours. Keep your school details up to date and choose what you love exploring.</p>
           </div>
+          <span className={styles.heroIcon} aria-hidden="true"><UserRound size={45} /></span>
+        </header>
 
-          <div className="edit-profile-field">
-            <label htmlFor="schoolGrade">
-              Current School Grade
-            </label>
+        <form onSubmit={saveProfile} className={styles.form}>
+          <section className={styles.card} aria-labelledby="edit-basics-title">
+            <div className={styles.cardHeader}>
+              <span className={styles.sectionIcon} aria-hidden="true"><GraduationCap size={23}/></span>
+              <div>
+                <h2 id="edit-basics-title">A little about you</h2>
+                <p>These details help us show workshops suited to your grade.</p>
+              </div>
+            </div>
+            <div className={styles.nameGrid}>
+              <div className={styles.field}>
+                <label htmlFor="firstName">First name</label>
+                <input id="firstName" type="text" autoComplete="given-name" minLength={2} maxLength={40} required value={firstName} onChange={event => setFirstName(event.target.value)} />
+              </div>
+              <div className={styles.field}>
+                <label htmlFor="lastName">Last name</label>
+                <input id="lastName" type="text" autoComplete="family-name" minLength={2} maxLength={40} required value={lastName} onChange={event => setLastName(event.target.value)} />
+              </div>
+            </div>
+            <div className={[styles.field, styles.gradeField].join(" ")}>
+              <label htmlFor="schoolGrade">Current school grade</label>
+              <select id="schoolGrade" required value={schoolGrade} onChange={event => setSchoolGrade(event.target.value)}>
+                <option value="">Choose your grade</option>
+                <option value="K">Kindergarten</option>
+                {Array.from({ length: 12 }, (_, index) => (
+                  <option key={index + 1} value={String(index + 1)}>Grade {index + 1}</option>
+                ))}
+              </select>
+              <p className={styles.fieldHint}>Your grade helps us find age-appropriate workshops.</p>
+            </div>
+          </section>
 
-            <select
-              id="schoolGrade"
-              required
-              value={schoolGrade}
-              onChange={(event) =>
-                setSchoolGrade(event.target.value)
-              }
-            >
-              <option value="">Select your grade</option>
-              <option value="K">Kindergarten</option>
-              {Array.from({ length: 12 }, (_, index) => (
-                <option key={index + 1} value={String(index + 1)}>
-                  Grade {index + 1}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="edit-profile-field">
-            <label>
-              Learning Preference
-            </label>
-
-            <div className="edit-learning-grid">
+          <section className={styles.card} aria-labelledby="edit-learning-title">
+            <div className={styles.cardHeader}>
+              <span className={[styles.sectionIcon, styles.iconMint].join(" ")} aria-hidden="true"><MonitorPlay size={23}/></span>
+              <div>
+                <h2 id="edit-learning-title">How do you like to learn?</h2>
+                <p>Pick your preferred workshop format. You can change this anytime.</p>
+              </div>
+            </div>
+            <div className={styles.choiceGrid} role="group" aria-label="Learning preference">
               {[
-                [
-                  "in-person",
-                  "In Person",
-                ],
-                [
-                  "online",
-                  "Online",
-                ],
-                [
-                  "both",
-                  "Both",
-                ],
-              ].map(
-                ([
-                  value,
-                  label,
-                ]) => (
+                ["in-person", "In person"],
+                ["online", "Online"],
+                ["both", "I like both"],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={[styles.choice, learningMode === value && styles.selected].filter(Boolean).join(" ")}
+                  aria-pressed={learningMode === value}
+                  onClick={() => setLearningMode(value)}
+                >
+                  {learningMode === value ? <Check size={18} aria-hidden="true"/> : <BookOpen size={18} aria-hidden="true"/>}
+                  {label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className={styles.card} aria-labelledby="edit-interests-title">
+            <div className={styles.cardHeader}>
+              <span className={[styles.sectionIcon, styles.iconGold].join(" ")} aria-hidden="true"><Heart size={23}/></span>
+              <div>
+                <h2 id="edit-interests-title">What sparks your curiosity?</h2>
+                <p>Choose up to five interests to personalize your recommendations.</p>
+              </div>
+            </div>
+            <div className={styles.interestHeading}>
+              <span className={styles.fieldLabel}>My interests</span>
+              <span className={styles.counter} aria-live="polite">{interests.length} of 5 selected</span>
+            </div>
+            <div className={styles.interestGrid} role="group" aria-label="Student interests">
+              {availableInterests.map(interest => {
+                const selected = interests.includes(interest);
+                return (
                   <button
-                    key={value}
+                    key={interest}
                     type="button"
-                    className={
-                      learningMode ===
-                      value
-                        ? "selected"
-                        : ""
-                    }
-                    onClick={() =>
-                      setLearningMode(
-                        value
-                      )
-                    }
+                    className={[styles.interest, selected && styles.selected].filter(Boolean).join(" ")}
+                    aria-pressed={selected}
+                    disabled={!selected && interests.length >= 5}
+                    onClick={() => toggleInterest(interest)}
                   >
-                    {learningMode ===
-                      value && (
-                      <Check
-                        size={14}
-                      />
-                    )}
-
-                    {label}
+                    {selected && <Check size={15} aria-hidden="true"/>}
+                    {formatInterest(interest)}
                   </button>
-                )
-              )}
+                );
+              })}
+            </div>
+            <p className={styles.interestHelp}><Info size={15} aria-hidden="true"/> You can unselect an interest to make room for a new one.</p>
+          </section>
+
+          <section className={styles.card} aria-labelledby="edit-private-title">
+            <div className={styles.cardHeader}>
+              <span className={[styles.sectionIcon, styles.iconGrey].join(" ")} aria-hidden="true"><ShieldCheck size={23}/></span>
+              <div>
+                <h2 id="edit-private-title">Your account details</h2>
+                <p>These details are protected and cannot be changed here.</p>
+              </div>
+            </div>
+            <div className={styles.privateGrid}>
+              <div className={styles.privateItem}>
+                <span><Mail size={15} aria-hidden="true"/> Email address <LockKeyhole size={13} aria-label="Locked"/></span>
+                <strong>{studentContactEmail(student) || user.email || "Not available"}</strong>
+              </div>
+              <div className={styles.privateItem}>
+                <span><CalendarDays size={15} aria-hidden="true"/> Date of birth <LockKeyhole size={13} aria-label="Locked"/></span>
+                <strong>{formatStudentBirthDate(student.dateOfBirth) || "Not available"}</strong>
+              </div>
+            </div>
+            <p className={styles.privateNote}><LockKeyhole size={16} aria-hidden="true"/> Contact SAIT Youth Initiatives staff if your protected account details need correcting.</p>
+          </section>
+
+          {errorMessage && <div className={styles.error} role="alert"><AlertCircle size={19} aria-hidden="true"/>{errorMessage}</div>}
+          <div className={styles.actionBar}>
+            <p className={styles.actionNote}>{isDirty ? "You have unsaved changes." : "Everything is up to date."}</p>
+            <div className={styles.actions}>
+              <button type="button" className={styles.cancel} disabled={saving} onClick={() => router.push("/profile")}>Cancel</button>
+              <button type="submit" className={styles.save} disabled={saving || !isDirty}>
+                {saving ? <><LoaderCircle size={18} className="button-spinner" aria-hidden="true"/> Saving…</> : <><Save size={18} aria-hidden="true"/> Save changes</>}
+              </button>
             </div>
           </div>
-
-          <div className="edit-profile-field">
-            <div className="edit-interest-heading">
-              <label>
-                Interests
-              </label>
-
-              <span>
-                {
-                  interests.length
-                }{" "}
-                / 5
-              </span>
-            </div>
-
-            <div className="edit-interest-grid">
-              {availableInterests.map(
-                (
-                  interest
-                ) => {
-                  const selected =
-                    interests.includes(
-                      interest
-                    );
-
-                  return (
-                    <button
-                      key={
-                        interest
-                      }
-                      type="button"
-                      className={
-                        selected
-                          ? "selected"
-                          : ""
-                      }
-                      onClick={() =>
-                        toggleInterest(
-                          interest
-                        )
-                      }
-                    >
-                      {selected && (
-                        <Check
-                          size={13}
-                        />
-                      )}
-
-                      {formatInterest(
-                        interest
-                      )}
-                    </button>
-                  );
-                }
-              )}
-            </div>
-          </div>
-
-          {errorMessage && (
-            <div className="onboarding-error">
-              {
-                errorMessage
-              }
-            </div>
-          )}
-
-          <button
-            type="submit"
-            className="edit-profile-save"
-            disabled={
-              saving
-            }
-          >
-            {saving ? (
-              <>
-                <LoaderCircle
-                  size={18}
-                  className="button-spinner"
-                />
-
-                Saving...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </button>
         </form>
-      </section>
+      </div>
     </main>
   );
 }
