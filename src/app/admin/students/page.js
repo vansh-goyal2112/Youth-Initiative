@@ -574,6 +574,10 @@ export default function AdminStudentsPage() {
             setSelectedStudent(current => current ? { ...current, ...balances } : null);
             setStudents(current => current.map(item => item.id === selectedStudent.id ? { ...item, ...balances } : item));
           }}
+          onBadgeRemoved={badgeId => {
+            setSelectedStudent(current => current ? { ...current, badges: current.badges.filter(item=>item!==badgeId), badgeCount: Math.max(0,(current.badgeCount||0)-1) } : null);
+            setStudents(current => current.map(item => item.id === selectedStudent.id ? { ...item, badges: item.badges?.filter(b=>b!==badgeId)||[], badgeCount:Math.max(0,(item.badgeCount||0)-1) } : item));
+          }}
         />
       )}
 
@@ -604,6 +608,7 @@ function StudentViewModal({
   student,
   onClose,
   onRedeemed,
+  onBadgeRemoved,
 }) {
   return (
     <div className="admin-student-modal-overlay">
@@ -685,6 +690,7 @@ function StudentViewModal({
         </div>
 
         <XpRedemptionPanel student={student} onRedeemed={onRedeemed} />
+        <AdminBadgeRemoval student={student} onBadgeRemoved={onBadgeRemoved} />
 
         <div className="admin-student-interests">
           <span>
@@ -806,6 +812,66 @@ function XpRedemptionPanel({ student, onRedeemed }) {
             </div>
           ))}</div>}
       </div>
+    </section>
+  );
+}
+
+function AdminBadgeRemoval({ student, onBadgeRemoved }) {
+  const [allowed, setAllowed] = useState(false);
+  const [selected, setSelected] = useState("");
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [customNames, setCustomNames] = useState({});
+  useEffect(()=>{
+    let active = true;
+    queueMicrotask(()=>{
+      if (!active) return;
+      try {setAllowed(JSON.parse(sessionStorage.getItem("adminSession") || "{}").permissions?.includes("badges.manage")===true);}
+      catch {setAllowed(false);}
+    });
+    adminFetch("/api/admin/badges").then(async response=>{
+      if (!response.ok) return;
+      const result=await response.json();
+      if (active) setCustomNames(Object.fromEntries((result.badges||[]).map(item=>[item.badgeId,item.name])));
+    }).catch(()=>{});
+    return()=>{active=false;};
+  },[]);
+  if (!allowed) return null;
+  const badges = Array.isArray(student.badges) ? student.badges : [];
+  const known = {"first-step":"First Step","tech-explorer":"Tech Explorer","skill-builder":"Skill Builder","curious-learner":"Curious Learner","workshop-champion":"Workshop Champion"};
+  async function revoke(event){
+    event.preventDefault();
+    if (saving || !selected || reason.trim().length<5) return;
+    setSaving(true);setError("");setNotice("");
+    try{
+      const response=await adminFetch("/api/admin/badges/revoke",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({studentId:student.id,badgeId:selected,reason})});
+      const result=await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message||"Badge removal failed.");
+      onBadgeRemoved?.(selected);
+      setNotice(result.message);setSelected("");setReason("");
+    }catch(cause){setError(cause.message||"Badge removal failed.");}finally{setSaving(false);}
+  }
+  return (
+    <section className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4" aria-label="Remove student badges">
+      <h3 className="mb-2 flex items-center gap-2 text-sm font-extrabold text-slate-800"><ShieldCheck size={18}/> Badge management</h3>
+      <p className="mb-3 text-xs text-slate-600">Authorized removal records a suppression so the same badge is not immediately re-awarded by an automatic rule.</p>
+      {!badges.length ? <p className="text-xs text-slate-500">No badges awarded yet.</p> :
+        <form onSubmit={revoke} className="space-y-3">
+          <label className="grid gap-1 text-xs font-bold text-slate-700">Awarded badge
+            <select required value={selected} onChange={event=>setSelected(event.target.value)} className="min-h-10 rounded-xl border border-slate-300 bg-white p-2 text-sm">
+              <option value="">Choose a badge</option>
+              {badges.map(id=><option key={id} value={id}>{customNames[id]||known[id]||id}</option>)}
+            </select>
+          </label>
+          <label className="grid gap-1 text-xs font-bold text-slate-700">Reason (required)
+            <input required minLength={5} maxLength={250} value={reason} onChange={event=>setReason(event.target.value)} className="min-h-10 rounded-xl border border-slate-300 bg-white p-2 text-sm" placeholder="Incorrect badge award"/>
+          </label>
+          <button disabled={saving||!selected||reason.trim().length<5} className="min-h-10 rounded-xl border border-rose-300 bg-white px-4 py-2 text-xs font-extrabold text-rose-800 hover:bg-rose-50 disabled:opacity-50" type="submit">{saving?"Removing…":"Remove badge"}</button>
+        </form>}
+      {notice&&<p className="mt-3 text-xs font-semibold text-emerald-700" role="status">{notice}</p>}
+      {error&&<p className="mt-3 text-xs font-semibold text-rose-700" role="alert">{error}</p>}
     </section>
   );
 }

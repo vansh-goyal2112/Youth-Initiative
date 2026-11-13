@@ -398,6 +398,7 @@ export async function GET(
           schoolGrade: student.schoolGrade || null,
           level: student.level || 1,
           badgeCount: student.badgeCount || 0,
+          badges: Array.isArray(student.badges) ? student.badges : [],
           completedWorkshopCount: student.completedWorkshopCount || 0,
           accountStatus: student.accountStatus,
           createdAt: student.createdAt,
