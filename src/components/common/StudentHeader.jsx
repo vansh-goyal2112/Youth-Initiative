@@ -2,8 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, BookOpen, Compass, Home, Sparkles, Trophy, UserRound } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { ArrowLeft, BookOpen, Compass, Home, LogOut, Sparkles, Trophy, UserRound } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { signOut } from "firebase/auth";
+import { auth } from "@/services/firebase";
 import styles from "./studentNavigation.module.css";
 
 const navigation = [
@@ -25,6 +28,30 @@ function activeRoute(pathname) {
 export default function StudentHeader({ backHref, backLabel = "Back", studentName }) {
   const pathname = usePathname();
   const current = activeRoute(pathname);
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState("");
+
+  async function handleLogout() {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    setLogoutError("");
+    try {
+      try {
+        await fetch("/api/admin/mfa/logout", { method: "POST" });
+      } catch {
+        // An unavailable admin endpoint must not block student sign-out.
+      }
+      await signOut(auth);
+      sessionStorage.removeItem("adminSession");
+      sessionStorage.removeItem("pendingRegistration");
+      router.replace("/login");
+      router.refresh();
+    } catch {
+      setLogoutError("Could not log out. Please try again.");
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <header className={styles.shell}>
@@ -68,6 +95,18 @@ export default function StudentHeader({ backHref, backLabel = "Back", studentNam
               {String(studentName).trim().charAt(0).toUpperCase()}
             </Link>
           )}
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className={styles.logoutButton}
+            aria-label={loggingOut ? "Logging out" : "Log out"}
+            title="Log out"
+          >
+            <LogOut size={17} aria-hidden="true" />
+            <span>{loggingOut ? "Logging out" : "Log out"}</span>
+          </button>
+          {logoutError && <span role="alert" className={styles.logoutError}>{logoutError}</span>}
         </div>
       </div>
 
