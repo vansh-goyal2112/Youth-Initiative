@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ctaStyles from "@/components/workshops/previouslyCompletedCta.module.css";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -303,7 +304,7 @@ export default function WorkshopDetailsPage() {
             </p>
             <Link
               href={`/completed-workshops?workshop=${encodeURIComponent(workshop.id)}#previously-completed`}
-              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-900 bg-slate-900 px-4 py-3 text-center text-sm font-extrabold text-white shadow-sm transition-colors hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              className={`${ctaStyles.button} ${ctaStyles.fullWidth}`}
             >
               <CalendarDays size={18} aria-hidden="true" />
               Previously Completed
