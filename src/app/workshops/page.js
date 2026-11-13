@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import ctaStyles from "@/components/workshops/previouslyCompletedCta.module.css";
 import { useEffect, useMemo, useState } from "react";
 
 import {
@@ -227,7 +228,7 @@ export default function WorkshopsPage() {
           </div>
           <Link
             href="/completed-workshops?claim=1#previously-completed"
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-900 px-5 py-3 text-center text-sm font-extrabold text-white shadow-sm transition-colors hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+            className={ctaStyles.button}
           >
             Previously Completed
           </Link>
