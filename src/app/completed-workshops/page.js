@@ -264,7 +264,9 @@ export default function CompletedWorkshopsPage() {
       </section>
 
       <section className="student-content-container completed-workshops-content">
-        <SelfReportWorkshop onClaimed={() => setRefreshKey(value => value + 1)} />
+        <div id="previously-completed" className="scroll-mt-24">
+          <SelfReportWorkshop onClaimed={() => setRefreshKey(value => value + 1)} />
+        </div>
         <div className="registered-workshop-tabs">
           <Link href="/registered-workshops">
             Upcoming
