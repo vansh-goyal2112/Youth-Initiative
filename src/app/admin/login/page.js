@@ -360,9 +360,14 @@ export default function AdminLoginPage() {
               {(mode === "mfa" || mode === "appMfa") && <label className="admin-auth-field"><span>Authenticator code</span><div className="admin-auth-input-wrap"><KeyRound size={19}/><input type="text" inputMode="text" minLength={6} maxLength={19} autoComplete="one-time-code" value={totpCode} onChange={event => setTotpCode(event.target.value.replace(/[^0-9a-fA-F-]/g, "").slice(0, 19))} placeholder="6-digit code or recovery code" required/></div></label>}
               {infoMessage && <div className="admin-auth-alert success" role="status"><CheckCircle2 size={19}/><span>{infoMessage}</span></div>}
               {errorMessage && <div className="admin-auth-alert error" role="alert"><ShieldCheck size={19}/><span>{errorMessage}</span></div>}
-              <button className="admin-auth-submit" type="submit" disabled={loading}>{loading ? <><LoaderCircle size={19} className="animate-spin"/> Processing...</> : <>{mode === "register" ? <UserRoundPlus size={19}/> : <LockKeyhole size={18}/>} {content.action}<ArrowRight size={19}/></>}</button>
+              <button className="admin-auth-submit" type="submit" disabled={loading}>
+                {loading
+                  ? <><LoaderCircle size={19} className="animate-spin" aria-hidden="true"/><span className="admin-auth-submit-label">Processing...</span></>
+                  : <>{mode === "register" ? <UserRoundPlus size={19} aria-hidden="true"/> : <LockKeyhole size={18} aria-hidden="true"/>}<span className="admin-auth-submit-label">{content.action}</span><ArrowRight size={19} aria-hidden="true"/></>}
+              </button>
             </form>
-            {mode === "reset" && (
+            <div className="admin-auth-actions-stack">
+              {mode === "reset" && (
               <p className="admin-auth-hint">Recovery instructions are sent through the SAIT Youth Initiatives email service. If nothing arrives, check Inbox/Junk and ask SAIT IT to check message trace. Do not create a second admin account.</p>
             )}
             {mode === "request" && (
@@ -384,7 +389,8 @@ export default function AdminLoginPage() {
             )}
             {mode === "reset" || mode === "mfa" || mode === "appMfa" ? <button type="button" className="admin-auth-back" onClick={() => {setMode("login");setErrorMessage("");setInfoMessage("");}}>← Back to sign in</button> :
               <button type="button" className="admin-auth-back" onClick={() => {setMode("reset");setErrorMessage("");setInfoMessage("");}}>Forgot your password?</button>}
-            <div className="admin-auth-trust"><ShieldCheck size={16}/><span>Protected access · SAIT verified accounts only</span></div>
+              <div className="admin-auth-trust"><ShieldCheck size={16} aria-hidden="true"/><span>Protected access · SAIT verified accounts only</span></div>
+            </div>
           </div>
         </section>
       </div>
