@@ -33,7 +33,7 @@ jobs:
 
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
 
-      EMAIL_FROM: "SAIT Youth Initiative <onboarding@resend.dev>"
+      EMAIL_FROM: "SAIT Youth Initiatives <onboarding@resend.dev>"
       EMAIL_REPLY_TO: "youth.programs@sait.ca"
 
       NEXT_PUBLIC_APP_URL: "http://localhost:3000"
