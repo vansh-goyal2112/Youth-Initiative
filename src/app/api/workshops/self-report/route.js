@@ -6,6 +6,7 @@ import {
 import { workshopCompletionSnapshot } from "@/services/workshopHistory.mjs";
 import { processWorkshopCompletion } from "@/services/gamificationAdmin";
 import { completionTransactionId, awardForCompletion } from "@/services/completionRules.mjs";
+import { resolveWorkshopSessions } from "@/services/workshopSessions.mjs";
 
 export const runtime = "nodejs";
 
@@ -16,24 +17,39 @@ export async function GET(request) {
     const { uid } = await requireActiveStudent(request);
     const [workshops, registrations] = await Promise.all([
       queryCosmosDocuments("workshops",
-        "SELECT c.id, c.title, c.programArea, c.category, c.status, c.xpReward, c.startDate, c.endDate, c.grade FROM c WHERE NOT IS_DEFINED(c.status) OR c.status != 'deleted'"),
+        "SELECT c.id, c.title, c.programArea, c.category, c.status, c.xpReward, c.startDate, c.endDate, c.grade, c.sessions FROM c WHERE NOT IS_DEFINED(c.status) OR c.status != 'deleted'"),
       queryCosmosDocuments("registrations",
         "SELECT c.workshopId, c.sessionId, c.status, c.reviewStatus FROM c WHERE c.studentId = @id",
         [{ name: "@id", value: uid }]),
     ]);
-    const previouslyClaimed = new Set(registrations.filter(item =>
+    const claimed = new Set(registrations.filter(item =>
       item.status === "completed" || item.status === "reversed"
-    ).map(item => item.workshopId));
+    ).map(item => item.workshopId + ":" + (item.sessionId || "legacy")));
+    const today = new Date().toISOString().slice(0, 10);
     return Response.json({
       success: true,
       workshops: workshops
-        .filter(item => item.id && item.title && !previouslyClaimed.has(item.id))
-        .sort((a, b) => a.title.localeCompare(b.title))
-        .map(item => ({
-          id: item.id, title: item.title, programArea: item.programArea || "",
-          grade: item.grade || "", xpReward: awardForCompletion(item, "self_reported"),
-          startDate: item.startDate || null, status: item.status || "active",
-        })),
+        .filter(item => item.id && item.title)
+        .map(item => {
+          const sessions = resolveWorkshopSessions(item)
+            .filter(session => !session.startDate || session.startDate <= today)
+            .filter(session => !claimed.has(item.id + ":" + session.id));
+          const hasSessions = resolveWorkshopSessions(item).length > 0;
+          if (!hasSessions && claimed.has(item.id + ":legacy")) return null;
+          if (hasSessions && sessions.length === 0) return null;
+          return {
+            id: item.id, title: item.title, programArea: item.programArea || "",
+            grade: item.grade || "", xpReward: awardForCompletion(item, "self_reported"),
+            startDate: item.startDate || null, status: item.status || "active",
+            sessions: hasSessions ? sessions.map(session => ({
+              id: session.id, startDate: session.startDate,
+              endDate: session.endDate || session.startDate, time: session.time || "",
+              status: session.status || "active",
+            })) : [],
+          };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.title.localeCompare(b.title)),
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return studentAccessResponse(error) ||
@@ -48,6 +64,7 @@ export async function POST(request) {
     const { uid } = await requireActiveStudent(request, { consumeAppCheck: true });
     const body = await request.json().catch(() => null);
     const workshopId = typeof body?.workshopId === "string" ? body.workshopId.trim() : "";
+    const requestedSessionId = typeof body?.sessionId === "string" ? body.sessionId.trim() : null;
     const completedOn = typeof body?.completedOn === "string" ? body.completedOn.trim() : "";
     if (!workshopId || workshopId.length > 128 || !/^\d{4}-\d{2}-\d{2}$/.test(completedOn) || body?.attested !== true) {
       return Response.json({ message: "Select a workshop, enter its completion date and confirm that you attended." }, { status: 400 });
@@ -64,24 +81,38 @@ export async function POST(request) {
       return Response.json({ message: "This workshop is no longer available for a new completion claim." }, { status: 404 });
     }
 
+    const knownSessions = resolveWorkshopSessions(workshop);
+    const scheduled = knownSessions.find(session => session.id === requestedSessionId);
+    if (knownSessions.length > 0 && !scheduled) {
+      return Response.json({ message: "Select the session date you attended." }, { status: 400 });
+    }
+    if (knownSessions.length === 0 && requestedSessionId && requestedSessionId !== "legacy") {
+      return Response.json({ message: "This workshop has no matching session." }, { status: 400 });
+    }
+    if (scheduled && (completedOn < scheduled.startDate || completedOn > (scheduled.endDate || scheduled.startDate))) {
+      return Response.json({ message: "Enter a completion date within the selected workshop session." }, { status: 400 });
+    }
+    const sessionId = scheduled?.id === "legacy" ? null : scheduled?.id || null;
+
     const registrations = await queryCosmosDocuments("registrations",
       "SELECT * FROM c WHERE c.studentId = @studentId AND c.workshopId = @workshopId",
       [{ name: "@studentId", value: uid }, { name: "@workshopId", value: workshopId }]);
-    if (registrations.some(item => item.status === "completed" || item.status === "reversed")) {
+    if (registrations.some(item => (item.sessionId || null) === sessionId &&
+        (item.status === "completed" || item.status === "reversed"))) {
       return Response.json({ message: "A completion already exists for this workshop. Ask the program team if it needs correction." }, { status: 409 });
     }
-    const transactionId = completionTransactionId(uid, workshopId);
+    const transactionId = completionTransactionId(uid, workshopId, sessionId);
     if (await readCosmosDocument("xpTransactions", transactionId)) {
       return Response.json({ message: "An XP award already exists for this workshop and requires review." }, { status: 409 });
     }
 
-    const existing = registrations.find(item => item.status === "upcoming");
-    const registrationId = existing?.id || "self:" + uid + ":" + workshopId;
+    const existing = registrations.find(item => item.status === "upcoming" && (item.sessionId || null) === sessionId);
+    const registrationId = existing?.id || "self:" + uid + ":" + workshopId + ":" + (sessionId || "legacy");
     const now = cosmosNow();
     const completedAt = new Date(timestamp).toISOString();
     const award = awardForCompletion(workshop, "self_reported");
     const changes = {
-      studentId: uid, workshopId, status: "completed",
+      studentId: uid, workshopId, sessionId, status: "completed",
       completionSource: "self_reported", attendanceStatus: "self_reported",
       reviewStatus: "pending_review", completedOn,
       reportedAt: now, attendedAt: completedAt, completedAt,
@@ -91,6 +122,10 @@ export async function POST(request) {
           id: registrationId, workshopId, status: "completed", completedAt,
         }, null),
         xpReward: award,
+        ...(scheduled ? {
+          startDate: scheduled.startDate, endDate: scheduled.endDate,
+          time: scheduled.time || workshop.time,
+        } : {}),
       },
       updatedAt: now,
     };
@@ -114,7 +149,7 @@ export async function POST(request) {
     try {
       await processWorkshopCompletion({
         studentId: uid, workshopId, workshop,
-        completionSource: "self_reported", registrationId,
+        completionSource: "self_reported", registrationId, sessionId,
       });
       const tx = await readCosmosDocument("xpTransactions", transactionId);
       if (tx?.status === "completed") {

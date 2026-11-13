@@ -8,6 +8,7 @@ import styles from "./selfReportWorkshop.module.css";
 export default function SelfReportWorkshop({ onClaimed }) {
   const [workshops, setWorkshops] = useState([]);
   const [selected, setSelected] = useState("");
+  const [sessionId, setSessionId] = useState("");
   const [completedOn, setCompletedOn] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -39,13 +40,13 @@ export default function SelfReportWorkshop({ onClaimed }) {
     try {
       const response = await studentFetch("/api/workshops/self-report", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ workshopId: selected, completedOn, attested: confirmed }),
+        body: JSON.stringify({ workshopId: selected, sessionId: sessionId || null, completedOn, attested: confirmed }),
       });
       const result = await response.json();
       if (!response.ok || !result.success) throw new Error(result.message || "Could not save your completion.");
       setMessage(result.message);
       setWorkshops(current => current.filter(item => item.id !== selected));
-      setSelected(""); setCompletedOn(""); setConfirmed(false);
+      setSelected(""); setSessionId(""); setCompletedOn(""); setConfirmed(false);
       if (typeof onClaimed === "function") onClaimed();
     } catch (cause) {
       setError(cause.message || "Could not save your completion. Please try again.");
@@ -74,11 +75,17 @@ export default function SelfReportWorkshop({ onClaimed }) {
           workshops.length === 0 ? <p className={styles.status}>You&apos;ve already recorded all currently available workshop choices.</p> :
           <form onSubmit={submit} className={styles.form}>
             <label className={styles.field}>Workshop
-              <select required value={selected} onChange={event => setSelected(event.target.value)}>
+              <select required value={selected} onChange={event => {setSelected(event.target.value);setSessionId("");setCompletedOn("");}}>
                 <option value="">Choose a workshop you&apos;ve attended</option>
                 {workshops.map(item => <option key={item.id} value={item.id}>{item.title}{item.programArea ? " · " + item.programArea : ""}</option>)}
               </select>
             </label>
+            {workshop?.sessions?.length > 0 && <label className={styles.field}>Session date
+              <select required value={sessionId} onChange={event=>{const id=event.target.value;setSessionId(id);setCompletedOn(workshop.sessions.find(session=>session.id===id)?.startDate||"");}}>
+                <option value="">Choose the date you attended</option>
+                {workshop.sessions.map(session=><option key={session.id} value={session.id}>{session.startDate}{session.time?" · "+session.time:""}{session.status==="archived"?" (past)":""}</option>)}
+              </select>
+            </label>}
             <label className={styles.field}>When did you attend?
               <input type="date" max={new Date().toISOString().slice(0, 10)} required value={completedOn} onChange={event => setCompletedOn(event.target.value)}/>
             </label>
@@ -87,7 +94,7 @@ export default function SelfReportWorkshop({ onClaimed }) {
               <input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} required />
               <span>I confirm that I actually attended this workshop. SAIT staff may review or reverse this claim.</span>
             </label>
-            <button type="submit" disabled={submitting || !selected || !completedOn || !confirmed} className={styles.save}>
+            <button type="submit" disabled={submitting || !selected || !completedOn || !confirmed || (workshop?.sessions?.length > 0 && !sessionId)} className={styles.save}>
               {submitting ? <><LoaderCircle size={18} aria-hidden="true"/> Saving…</> : <><CheckCircle2 size={18} aria-hidden="true"/> Save my completion</>}
             </button>
           </form>}
