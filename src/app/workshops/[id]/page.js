@@ -130,7 +130,7 @@ export default function WorkshopDetailsPage() {
             <h1>{workshop.title}</h1>
             {dateLabel && <p className="text-sm font-semibold text-slate-700">
               <CalendarDays size={16} aria-hidden="true" className="mr-2 inline" />{dateLabel}
-            </p>
+            </p>}
 
             <p className="workshop-details-description">
               {workshop.description}
