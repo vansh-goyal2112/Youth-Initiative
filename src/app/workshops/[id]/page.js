@@ -87,9 +87,11 @@ export default function WorkshopDetailsPage() {
   }
 
   const registrationUrl = workshop.registrationUrl || "https://saitdigitalyouth.campbrainregistration.com/";
-  const activeSessions = Array.isArray(workshop.sessions)
-    ? workshop.sessions.filter(session => session.status === "active")
+  const managedSessions = Array.isArray(workshop.sessions) && workshop.sessions.length > 0;
+  const activeSessions = managedSessions
+    ? workshop.sessions.filter(session => session.status === "active" && workshopDateRange(session))
     : [];
+  const sessionsUnavailable = managedSessions && activeSessions.length === 0;
   const schedule = getWorkshopSchedule(workshop);
   const dateLabel = workshopDateRange(schedule);
 
@@ -223,21 +225,21 @@ export default function WorkshopDetailsPage() {
                 ))}
               </div>
             </>
-          ) : workshop.availabilityStatus === "closed" ? (
+          ) : (sessionsUnavailable || workshop.availabilityStatus === "closed") ? (
             <>
               <h2>Registration unavailable</h2>
               <p>
-                SAIT currently lists this workshop&apos;s sessions as closed.
+                {sessionsUnavailable ? "No active sessions are available. Check SAIT for future dates." : "Registration is closed. Check SAIT for future dates."}
               </p>
-              <a
+              {workshop.informationUrl && <a
                 href={workshop.informationUrl}
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="official-workshop-link"
               >
                 Check SAIT for future dates
                 <ExternalLink size={17} />
-              </a>
+              </a>}
             </>
           ) : (
             <>
