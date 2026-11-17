@@ -10,6 +10,7 @@ import {
 import {
   getWorkshopEligibility,
 } from "@/services/workshopEligibility";
+import { ensureWorkshopCatalogueXp } from "@/services/workshopXpMigration";
 
 export const runtime = "nodejs";
 
@@ -47,8 +48,9 @@ export async function GET(request) {
         ]
       );
 
+    const updatedCatalogue = await ensureWorkshopCatalogueXp(workshopDocuments);
     const workshops =
-      workshopDocuments
+      updatedCatalogue
         .map((workshop) => {
           const eligibility = getWorkshopEligibility(
             workshop,

@@ -7,6 +7,7 @@ import { workshopCompletionSnapshot } from "@/services/workshopHistory.mjs";
 import { processWorkshopCompletion } from "@/services/gamificationAdmin";
 import { completionTransactionId, awardForCompletion } from "@/services/completionRules.mjs";
 import { resolveWorkshopSessions } from "@/services/workshopSessions.mjs";
+import { ensureWorkshopCatalogueXp, ensureWorkshopXpAssigned } from "@/services/workshopXpMigration";
 
 export const runtime = "nodejs";
 
@@ -17,18 +18,19 @@ export async function GET(request) {
     const { uid } = await requireActiveStudent(request);
     const [workshops, registrations] = await Promise.all([
       queryCosmosDocuments("workshops",
-        "SELECT c.id, c.title, c.programArea, c.category, c.status, c.xpReward, c.startDate, c.endDate, c.grade, c.sessions FROM c WHERE NOT IS_DEFINED(c.status) OR c.status != 'deleted'"),
+        "SELECT * FROM c WHERE NOT IS_DEFINED(c.status) OR c.status != 'deleted'"),
       queryCosmosDocuments("registrations",
         "SELECT c.workshopId, c.sessionId, c.status, c.reviewStatus FROM c WHERE c.studentId = @id",
         [{ name: "@id", value: uid }]),
     ]);
+    const resolvedWorkshops = await ensureWorkshopCatalogueXp(workshops);
     const claimed = new Set(registrations.filter(item =>
       item.status === "completed" || item.status === "reversed"
     ).map(item => item.workshopId + ":" + (item.sessionId || "legacy")));
     const today = new Date().toISOString().slice(0, 10);
     return Response.json({
       success: true,
-      workshops: workshops
+      workshops: resolvedWorkshops
         .filter(item => item.id && item.title)
         .map(item => {
           const sessions = resolveWorkshopSessions(item)
@@ -76,7 +78,7 @@ export async function POST(request) {
       return Response.json({ message: "Completion date must be a real date in the past." }, { status: 400 });
     }
 
-    const workshop = await readCosmosDocument("workshops", workshopId);
+    const workshop = await ensureWorkshopXpAssigned(await readCosmosDocument("workshops", workshopId));
     if (!workshop || !["active", "inactive"].includes(workshop.status || "active")) {
       return Response.json({ message: "This workshop is no longer available for a new completion claim." }, { status: 404 });
     }

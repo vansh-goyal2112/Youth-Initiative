@@ -2,6 +2,7 @@ import { retireWorkshopPermanently } from "@/services/workshopRetirement";
 import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
 import { automaticWorkshopXp } from "@/services/workshopXpAssignment.mjs";
+import { ensureWorkshopCatalogueXp } from "@/services/workshopXpMigration";
 
 import {
   adminAccessResponse,
@@ -157,7 +158,7 @@ export async function GET(
 
     return Response.json({
       success: true,
-      workshops,
+      workshops: await ensureWorkshopCatalogueXp(workshops),
     });
   } catch (error) {
     const accessResponse =

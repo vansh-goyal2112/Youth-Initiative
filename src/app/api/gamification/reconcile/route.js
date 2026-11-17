@@ -14,6 +14,7 @@ import {
 import { processWorkshopCompletion } from "@/services/gamificationAdmin";
 import { completionTransactionId } from "@/services/completionRules.mjs";
 import { classifyRewardRecovery } from "@/services/rewardRecovery.mjs";
+import { ensureWorkshopXpAssigned } from "@/services/workshopXpMigration";
 
 export const runtime = "nodejs";
 
@@ -86,9 +87,8 @@ export async function POST(request) {
         handled++;
 
         if (action === "award") {
-          const workshop = await readCosmosDocument(
-            "workshops",
-            workshopId
+          const workshop = await ensureWorkshopXpAssigned(
+            await readCosmosDocument("workshops", workshopId)
           );
 
           if (!workshop) {

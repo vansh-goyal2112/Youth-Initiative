@@ -1,5 +1,6 @@
 import { workshopCompletionSnapshot } from "@/services/workshopHistory.mjs";
 import { completionTransactionId } from "@/services/completionRules.mjs";
+import { ensureWorkshopXpAssigned } from "@/services/workshopXpMigration";
 import {
   processWorkshopCompletion,
 } from "@/services/gamificationAdmin";
@@ -210,11 +211,9 @@ export async function POST(request) {
       Load workshop information.
     */
 
-    const workshop =
-      await readCosmosDocument(
-        "workshops",
-        session.workshopId
-      );
+    const workshop = await ensureWorkshopXpAssigned(
+      await readCosmosDocument("workshops", session.workshopId)
+    );
 
     if (!workshop) {
       return Response.json(

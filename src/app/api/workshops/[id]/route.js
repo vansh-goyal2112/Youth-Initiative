@@ -10,6 +10,7 @@ import {
 import {
   getWorkshopEligibility,
 } from "@/services/workshopEligibility";
+import { ensureWorkshopXpAssigned } from "@/services/workshopXpMigration";
 
 export const runtime = "nodejs";
 
@@ -54,11 +55,9 @@ export async function GET(
     const normalizedWorkshopId =
       id.trim();
 
-    const workshop =
-      await readCosmosDocument(
-        "workshops",
-        normalizedWorkshopId
-      );
+    const workshop = await ensureWorkshopXpAssigned(
+      await readCosmosDocument("workshops", normalizedWorkshopId)
+    );
 
     if (!workshop) {
       return Response.json(
