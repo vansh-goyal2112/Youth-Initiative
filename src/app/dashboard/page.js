@@ -293,8 +293,8 @@ export default function DashboardPage() {
         </h2>
 
         <p>
-          Getting your workshops,
-          XP and achievements ready.
+          Loading your workshops,
+          XP and badges.
         </p>
       </main>
     );
@@ -699,7 +699,7 @@ export default function DashboardPage() {
               <section>
                 <span>A NEW ADVENTURE AWAITS</span>
                 <h3>Find a workshop you like!</h3>
-                <p>Try something new. Earn XP and build your Learning Journey.</p>
+                <p>Try something new. Earn XP. Build your learning journey.</p>
                 <Link href="/workshops">
                   Explore Workshops <ChevronRight size={16} aria-hidden="true"/>
                 </Link>
@@ -845,11 +845,8 @@ export default function DashboardPage() {
             </h2>
 
             <p>
-              Build skills, unlock
-              achievements and
-              discover pathways that
-              match what you&apos;re
-              interested in.
+              Build skills. Unlock badges.
+              Find out what you like.
             </p>
           </div>
 
