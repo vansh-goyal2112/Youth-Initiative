@@ -7,7 +7,7 @@ test("one shared Back link handles student pages without duplicated in-page cont
  assert.match(src("../src/components/common/StudentShell.jsx"),/studentBackDestination\(pathname, originPath\)/);
  assert.match(src("../src/components/common/StudentShell.jsx"),/studentBackOrigin/);
  assert.match(src("../src/components/common/StudentShell.jsx"),/historyNavigation/);
- assert.match(src("../src/components/common/StudentShell.jsx"),/anchor\\.dataset\\.studentBackLink/);
+ assert.match(src("../src/components/common/StudentShell.jsx"),/anchor\.dataset\.studentBackLink/);
  assert.match(src("../src/components/common/StudentHeader.jsx"),/data-student-back-link="true"/);
  assert.doesNotMatch(src("../src/app/edit-profile/page.js"),/Back to My Profile/);
  assert.doesNotMatch(src("../src/app/scan-attendance/page.js"),/Back to Upcoming Workshops/);
