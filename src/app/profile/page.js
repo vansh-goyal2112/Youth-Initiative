@@ -222,7 +222,7 @@ export default function ProfilePage() {
           <div className={styles.heroIntro}>
             <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true"/> MY LEARNING JOURNEY PASSPORT</span>
             <h1 id="profile-heading">My Explorer Profile</h1>
-            <p>See what you've learned. Find what comes next.</p>
+            <p>See what you&apos;ve learned. Find what comes next.</p>
           </div>
           <Link href="/edit-profile" className={styles.editButton}>
             <Edit3 size={17} aria-hidden="true"/> Edit My Identity
@@ -326,7 +326,7 @@ export default function ProfilePage() {
               <div className={styles.emptyInterests}>
                 <span aria-hidden="true">🪐</span>
                 <strong>Your Skill Universe is waiting!</strong>
-                <p>Pick up to five interests. We'll find workshops for you.</p>
+                <p>Pick up to five interests. We&apos;ll find workshops for you.</p>
                 <Link href="/edit-profile">Choose Interests <ArrowRight size={16} aria-hidden="true"/></Link>
               </div>
             )}
