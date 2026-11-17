@@ -310,7 +310,7 @@ function EditProfileForm({
               <span className={styles.sectionIcon} aria-hidden="true"><GraduationCap size={23}/></span>
               <div>
                 <h2 id="edit-basics-title">A little about you</h2>
-                <p>These details help us show workshops suited to your grade.</p>
+                <p>Your grade helps us find workshops for you.</p>
               </div>
             </div>
             <div className={styles.nameGrid}>
@@ -332,7 +332,7 @@ function EditProfileForm({
                   <option key={index + 1} value={String(index + 1)}>Grade {index + 1}</option>
                 ))}
               </select>
-              <p className={styles.fieldHint}>Your grade helps us find age-appropriate workshops.</p>
+              <p className={styles.fieldHint}>Add your grade to find workshops for you.</p>
             </div>
           </section>
 
@@ -341,7 +341,7 @@ function EditProfileForm({
               <span className={[styles.sectionIcon, styles.iconMint].join(" ")} aria-hidden="true"><MonitorPlay size={23}/></span>
               <div>
                 <h2 id="edit-learning-title">How do you like to learn?</h2>
-                <p>Pick your preferred workshop format. You can change this anytime.</p>
+                <p>Choose how you like to learn. You can change it later.</p>
               </div>
             </div>
             <div className={styles.choiceGrid} role="group" aria-label="Learning preference">
@@ -369,7 +369,7 @@ function EditProfileForm({
               <span className={[styles.sectionIcon, styles.iconGold].join(" ")} aria-hidden="true"><Heart size={23}/></span>
               <div>
                 <h2 id="edit-interests-title">What sparks your curiosity?</h2>
-                <p>Choose up to five interests to personalize your recommendations.</p>
+                <p>Pick up to five interests. Find workshops you like.</p>
               </div>
             </div>
             <div className={styles.interestHeading}>
@@ -394,7 +394,7 @@ function EditProfileForm({
                 );
               })}
             </div>
-            <p className={styles.interestHelp}><Info size={15} aria-hidden="true"/> You can unselect an interest to make room for a new one.</p>
+            <p className={styles.interestHelp}><Info size={15} aria-hidden="true"/> Remove an interest to pick a new one.</p>
           </section>
 
           <section className={styles.card} aria-labelledby="edit-private-title">
@@ -415,7 +415,7 @@ function EditProfileForm({
                 <strong>{formatStudentBirthDate(student.dateOfBirth) || "Not available"}</strong>
               </div>
             </div>
-            <p className={styles.privateNote}><LockKeyhole size={16} aria-hidden="true"/> Contact SAIT Youth Initiatives staff if your protected account details need correcting.</p>
+            <p className={styles.privateNote}><LockKeyhole size={16} aria-hidden="true"/> Need to change these details? Ask SAIT Youth Initiatives staff.</p>
           </section>
 
           {errorMessage && <div className={styles.error} role="alert"><AlertCircle size={19} aria-hidden="true"/>{errorMessage}</div>}
