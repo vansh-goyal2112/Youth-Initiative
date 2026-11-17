@@ -227,7 +227,7 @@ export default function WorkshopDetailsPage() {
             <div>
               <span>Workshop Reward</span>
               <strong>
-                +{workshop.xpReward || 100} XP
+                +{workshop.xpReward ?? 100} XP
               </strong>
             </div>
           </div>

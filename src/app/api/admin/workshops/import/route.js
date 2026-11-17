@@ -230,7 +230,9 @@ function buildImportedWorkshop(
       null,
 
     xpReward:
-      100,
+      workshop.xpReward == null ? 100 : Number(workshop.xpReward),
+    // Distinguish explicit Excel values from the legacy default on reimports.
+    xpConfiguredByImport: workshop.xpReward != null,
 
     status:
       "active",
@@ -318,6 +320,11 @@ async function saveImportedWorkshop(
         { ...workshopData,
           // Reimports must not erase scheduling, status or manual edits.
           ...existingWorkshop,
+          // When the sheet specifies XP, update the existing workshop too.
+          // An absent XP column must never reset staff-edited rewards to 100.
+          ...(workshopData.xpConfiguredByImport
+            ? { xpReward: workshopData.xpReward }
+            : {}),
           // Explicit catalogue replacement treats supplied Excel content as authoritative.
           ...(overwriteExcelFields ? {
             title: workshopData.title,
@@ -408,6 +415,15 @@ export async function POST(
       return Response.json({ success: false, message: "Replacement stopped: spreadsheet includes incomplete workshop rows. Correct the data before trying again." }, { status: 400 });
     }
 
+    const invalidXp = workshops.find(w => w && w.xpReward !== null &&
+      w.xpReward !== undefined && w.xpReward !== "" &&
+      (!Number.isInteger(Number(w.xpReward)) || Number(w.xpReward) < 1 || Number(w.xpReward) > 100000));
+    if (invalidXp) {
+      return Response.json({ success: false,
+        message: "XP Reward must be a positive whole number (1–100000) when provided in the spreadsheet."
+      }, { status: 400 });
+    }
+
     const validWorkshops =
       workshops.filter(
         (
@@ -450,7 +466,7 @@ export async function POST(
       : [];
     const planToken = crypto.createHash("sha256").update(JSON.stringify({
       catalogue: oldCatalog.map(w => [w.id, w.title, w.status, w.updatedAt]).sort((a,b)=>a[0].localeCompare(b[0])),
-      incoming: validWorkshops.map(w => [createWorkshopId(w.title,w.programArea,w.offeringYear || "",w.grade || ""),w.grade,w.description,w.startDate,w.endDate,w.time]).sort((a,b)=>a[0].localeCompare(b[0])),
+      incoming: validWorkshops.map(w => [createWorkshopId(w.title,w.programArea,w.offeringYear || "",w.grade || ""),w.grade,w.description,w.startDate,w.endDate,w.time,w.xpReward ?? null]).sort((a,b)=>a[0].localeCompare(b[0])),
     })).digest("hex");
     if (preview) {
       return Response.json({ success: true, preview: true, mode,

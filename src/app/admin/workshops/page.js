@@ -227,7 +227,7 @@ export default function AdminWorkshopsPage() {
         workshop.capacity ?? "",
 
       xpReward:
-        workshop.xpReward || 100,
+        workshop.xpReward ?? 100,
 
       status:
         workshop.status || "active",
@@ -439,6 +439,13 @@ export default function AdminWorkshopsPage() {
 
           informationUrl:
             String(row["Link"] || "").trim(),
+          // A staff-specified XP value takes precedence over the legacy
+          // 100-XP default. Leave it absent to retain existing settings.
+          xpReward: row["XP Reward"] !== "" && row["XP Reward"] != null
+            ? row["XP Reward"]
+            : row["XP"] !== "" && row["XP"] != null
+              ? row["XP"]
+              : null,
         }));
 
       const response = await adminFetch(
@@ -685,8 +692,7 @@ export default function AdminWorkshopsPage() {
                       </td>
 
                       <td>
-                        {workshop.xpReward ||
-                          100}
+                        {workshop.xpReward ?? 100}
                       </td>
 
                       <td>
@@ -970,7 +976,7 @@ export default function AdminWorkshopsPage() {
                 />
 
                 <FormField
-                  label="XP Reward"
+                  label="XP Reward (for this workshop)"
                   name="xpReward"
                   type="number"
                   value={
