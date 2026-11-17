@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { automaticWorkshopXp, WORKSHOP_XP_OPTIONS } from "../src/services/workshopXpAssignment.mjs";
 
 import {
   runSaitIngestion,
@@ -88,7 +89,9 @@ test("discovers workshop topics and offering pages while excluding navigation pa
 
   assert.match(record.id, /^digital-youth-cybersecurity-[0-9a-f]{8}$/);
   assert.equal(record.grade, "Grades 6 - 12");
-  assert.equal(record.xpReward, 100);
+  assert.equal(record.xpReward, automaticWorkshopXp(record.id));
+  assert.ok(WORKSHOP_XP_OPTIONS.includes(record.xpReward));
+  assert.equal(record.xpRewardSource, "automatic");
   assert.equal(record.startDate, null);
   assert.equal(record.learningMode, null);
   assert.equal(record.location, null);
