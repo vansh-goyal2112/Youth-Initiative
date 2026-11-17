@@ -47,7 +47,7 @@ export async function POST(request) {
     const transactionId=`${uid}_feedback_${registration.id}`;
     if(registration.workshopFeedback) {
       const existingReward=await readCosmosDocument("xpTransactions",transactionId);
-      if(existingReward?.status==="completed") return Response.json({success:true,alreadyCompleted:true,message:"Thank you! Your 20 XP was already awarded."});
+      if(existingReward?.status==="completed") return Response.json({success:true,alreadyCompleted:true,message:"Thank you! Your XP was already awarded."});
       if(existingReward) return Response.json({success:true,rewardPending:true,message:"Your feedback was saved. Your reward still needs verification."},{status:202});
     }
 
@@ -87,10 +87,10 @@ export async function POST(request) {
       }
       if(!awarded) throw new Error("Concurrent student update");
       await replaceCosmosDocument("xpTransactions",reserved,{status:"completed",updatedAt:cosmosNow()});
-      return Response.json({success:true,pointsAwarded:WORKSHOP_FEEDBACK_XP,message:"Thanks for helping improve our workshops! +20 XP earned."});
+      return Response.json({success:true,pointsAwarded:WORKSHOP_FEEDBACK_XP,message:"Thanks for helping improve our workshops! XP earned."});
     } catch(error) {
       console.error("Feedback reward requires ledger review",transactionId,error);
-      return Response.json({success:true,rewardPending:true,message:"Feedback saved. Your 20 XP reward needs review."},{status:202});
+      return Response.json({success:true,rewardPending:true,message:"Feedback saved. Your XP reward needs review."},{status:202});
     }
   } catch(error) {
     return studentAccessResponse(error)||Response.json({success:false,message:"Feedback could not be saved. Please retry."},{status:500});

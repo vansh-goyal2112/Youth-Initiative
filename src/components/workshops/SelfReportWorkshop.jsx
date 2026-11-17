@@ -43,7 +43,6 @@ export default function SelfReportWorkshop({ onClaimed }) {
   }, []);
 
   const workshop = workshops.find(item => item.id === selected);
-  const halfXp = workshop?.xpReward ?? 0;
 
   async function submit(event) {
     event.preventDefault();
@@ -109,7 +108,7 @@ export default function SelfReportWorkshop({ onClaimed }) {
             <label className={styles.field}>When did you attend?
               <input type="date" max={new Date().toISOString().slice(0, 10)} required value={completedOn} onChange={event => setCompletedOn(event.target.value)}/>
             </label>
-            {workshop && <p className={styles.xpPreview}><Sparkles size={17} aria-hidden="true"/> Earn <strong>{halfXp} XP</strong> for this self-reported completion.</p>}
+            {workshop && <p className={styles.xpPreview}><Sparkles size={17} aria-hidden="true"/> Earn <strong>XP</strong> for this self-reported completion.</p>}
             <label className={styles.attestation}>
               <input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} required />
               <span>I confirm that I actually attended this workshop. SAIT staff may review or reverse this claim.</span>

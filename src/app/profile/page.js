@@ -345,7 +345,7 @@ export default function ProfilePage() {
           <div className={styles.actionGrid}>
             <Link href="/tasks" className={styles.actionCard}>
               <span className={styles.actionArtwork}><Sparkles size={31} aria-hidden="true"/></span>
-              <strong>My Tasks · Earn 20 XP</strong>
+              <strong>My Tasks · Earn XP</strong>
               <small>Quick workshop feedback and rewards</small>
               <ChevronRight size={19}/>
             </Link>

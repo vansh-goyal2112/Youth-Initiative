@@ -36,7 +36,7 @@ export default function StudentAnnouncements({userId}) {
   return <aside role="status" aria-label="Your latest opportunities" className="relative mx-auto my-3 max-w-6xl rounded-2xl border border-indigo-200 bg-gradient-to-r from-indigo-50 via-pink-50 to-amber-50 p-4 text-slate-900 shadow-sm">
     <button type="button" onClick={()=>{setHidden(true);try{sessionStorage.setItem("youth-announcement-dismissed:"+userId,"1");}catch{}}}
       className="absolute right-3 top-2 text-xl" aria-label="Dismiss announcements">×</button>
-    {pending>0&&<p className="mb-2 pr-5 text-sm font-semibold">✨ {pending} workshop feedback {pending===1?"task":"tasks"} waiting! <Link href="/tasks" className="font-bold text-indigo-700 underline">Earn 20 XP each →</Link></p>}
+    {pending>0&&<p className="mb-2 pr-5 text-sm font-semibold">✨ {pending} workshop feedback {pending===1?"task":"tasks"} waiting! <Link href="/tasks" className="font-bold text-indigo-700 underline">Earn XP →</Link></p>}
     {upcoming&&<p className="pr-5 text-sm">🚀 Coming up: <strong>{upcoming.title}</strong> · {new Date(upcoming.startDate+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})} <Link href={`/workshops/${encodeURIComponent(upcoming.id)}`} className="ml-2 font-bold text-indigo-700 underline">Explore and register →</Link></p>}
   </aside>;
 }

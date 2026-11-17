@@ -285,7 +285,7 @@ export default function HomePage() {
               <div>
                 <span>Achievement unlocked</span>
                 <strong>Tech Explorer</strong>
-                <small>+75 bonus XP</small>
+                <small>Earn XP as you explore</small>
               </div>
             </div>
 
@@ -534,7 +534,7 @@ export default function HomePage() {
                 <div className="skill-progress-value" />
               </div>
 
-              <p>180 XP until Innovation Builder</p>
+              <p>Keep earning XP to reach your next level</p>
             </div>
 
             <div className="skill-stat-grid">
@@ -568,7 +568,7 @@ export default function HomePage() {
                 <p>Register for a workshop in a new category.</p>
               </div>
 
-              <strong className="weekly-reward">+50 XP</strong>
+              <strong className="weekly-reward">Earn XP</strong>
             </div>
 
             <div className="badge-preview-row">

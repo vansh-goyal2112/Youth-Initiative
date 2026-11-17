@@ -36,7 +36,7 @@ const CARDS = [
     id: "xp",
     eyebrow: "STEP 3 · EARN AND GROW",
     heading: "Earn XP. Unlock badges.",
-    text: "Earn XP from workshops and unlock badges as you progress. After a verified workshop, complete the short feedback task to earn 20 more XP. Check your Total XP and Current XP in Badges & Rewards.",
+    text: "Earn XP from workshops and unlock badges as you progress. After a verified workshop, complete the short feedback task to earn XP. Check your Total XP and Current XP in Badges & Rewards.",
     Icon: Trophy,
     color: "gold",
   },
