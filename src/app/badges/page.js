@@ -379,7 +379,7 @@ export default function BadgesPage() {
             </h1>
 
             <p>
-              Complete workshops. Earn XP. Unlock badges. Bring your XP to SAIT events to see the rewards.
+              Complete workshops. Earn XP. Unlock badges. Ask SAIT staff about rewards at events.
             </p>
           </div>
 
