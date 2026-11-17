@@ -149,17 +149,21 @@ export default function RegistrationSuccessPage() {
     router,
   ]);
 
-  const requestedSessionId = typeof window !== "undefined"
-    ? new URL(window.location.href).searchParams.get("sessionId")
-    : null;
+  // Read URL search parameters after mount to keep server and client HTML aligned.
+  const [requestedSessionId, setRequestedSessionId] = useState(null);
+  const [urlReady, setUrlReady] = useState(false);
+  useEffect(() => {
+    setRequestedSessionId(new URL(window.location.href).searchParams.get("sessionId"));
+    setUrlReady(true);
+  }, []);
   const managedSessions = Array.isArray(workshop?.sessions) && workshop.sessions.length > 0;
   const activeSelectedSession = managedSessions
     ? workshop.sessions.find(item => item.id === requestedSessionId && item.status === "active")
     : null;
   const registrationUnavailable = Boolean(workshop && (
     workshop.availabilityStatus === "closed" ||
-    (managedSessions && !activeSelectedSession) ||
-    (!managedSessions && requestedSessionId && requestedSessionId !== "legacy")
+    (urlReady && managedSessions && !activeSelectedSession) ||
+    (urlReady && !managedSessions && requestedSessionId && requestedSessionId !== "legacy")
   ));
 
   async function confirmRegistration() {
@@ -172,7 +176,7 @@ export default function RegistrationSuccessPage() {
         return;
       }
 
-      if (registrationUnavailable) {
+      if (!urlReady || registrationUnavailable) {
         setErrorMessage("This session is no longer available. Choose an active session on the workshop page.");
         return;
       }
@@ -369,6 +373,7 @@ export default function RegistrationSuccessPage() {
           type="button"
           className="registration-confirm-button"
           disabled={
+            !urlReady ||
             registrationUnavailable ||
             saving ||
             Boolean(
