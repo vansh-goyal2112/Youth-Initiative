@@ -17,16 +17,19 @@ export function formatWorkshopDate(value) {
 
 /** Prefer the chosen session, then the earliest upcoming active session. */
 export function getWorkshopSchedule(workshop = {}, sessionId = null, today = new Date()) {
-  const sessions = Array.isArray(workshop.sessions) ? workshop.sessions
-    .filter(item => item && item.status !== "archived" && item.status !== "inactive" && formatWorkshopDate(item.startDate))
+  const hasSessionRecords = Array.isArray(workshop.sessions) && workshop.sessions.length > 0;
+  const sessions = hasSessionRecords ? workshop.sessions
+    .filter(item => item && (item.status === "active" || !item.status) && formatWorkshopDate(item.startDate))
     .sort((a,b) => String(a.startDate).localeCompare(String(b.startDate))) : [];
   const selected = sessionId ? sessions.find(item => item.id === sessionId) : null;
   const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
   const next = selected || sessions.find(item => item.startDate >= todayKey) || sessions[0] || null;
   return {
-    startDate: next?.startDate || workshop.startDate || null,
-    endDate: next?.endDate || workshop.endDate || null,
-    time: next?.time || workshop.time || "",
+    // Once sessions are explicitly managed, never display a stale parent
+    // date from an archived session or another active session's end date.
+    startDate: next?.startDate || (hasSessionRecords ? null : workshop.startDate || null),
+    endDate: next ? (next.endDate || null) : (hasSessionRecords ? null : workshop.endDate || null),
+    time: next ? (next.time || "") : (hasSessionRecords ? "" : workshop.time || ""),
   };
 }
 

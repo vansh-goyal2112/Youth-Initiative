@@ -81,9 +81,7 @@ export default function WorkshopDetailsPage() {
         <h1>Workshop unavailable</h1>
         <p>{errorMessage}</p>
 
-        <Link href="/workshops">
-          Return to Workshops
-        </Link>
+
       </main>
     );
   }
@@ -140,8 +138,7 @@ export default function WorkshopDetailsPage() {
               <div className="workshop-availability-notice" role="status">
                 <strong>Registration closed</strong>
                 <p>
-                  SAIT currently lists all sessions for this camp as closed.
-                  Check the official page for future dates.
+                  Registration is closed for now. Check SAIT for new dates.
                 </p>
               </div>
             )}
@@ -212,7 +209,7 @@ export default function WorkshopDetailsPage() {
           {activeSessions.length > 0 ? (
             <>
               <h2>Choose your session</h2>
-              <p>Each scheduled date has its own registration link. Select a date that works for you.</p>
+              <p>Pick a date that works for you. Register on the SAIT website.</p>
               <div className="space-y-3">
                 {activeSessions.map(session => (
                   <article key={session.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -247,8 +244,7 @@ export default function WorkshopDetailsPage() {
               <h2>Ready to register?</h2>
 
               <p>
-                Registration is completed through the official
-                SAIT Youth Programs registration portal.
+                Register on the SAIT website. Then come back here.
               </p>
 
               <a
@@ -269,8 +265,7 @@ export default function WorkshopDetailsPage() {
               </Link>
 
               <div className="workshop-registration-note">
-                After registering on the official portal,
-                return here and confirm your registration.
+                Registered on SAIT? Confirm it here.
               </div>
             </>
           )}

@@ -21,3 +21,23 @@ test("scheduled workshops use the next active session when the parent has no dat
  assert.equal(getWorkshopSchedule(workshop,"past",today).startDate,"2026-11-10");
  assert.equal(workshopDateRange({startDate:"2026-12-05",endDate:"2026-12-07"}),"5 Dec 2026 – 7 Dec 2026");
 });
+
+test("archived sessions never leak old parent dates or times into student cards", () => {
+ const workshop = {
+  startDate: "2026-11-06", endDate:"2026-11-07", time:"9:00",
+  sessions:[{id:"old",status:"archived",startDate:"2026-11-06",endDate:"2026-11-07",time:"9:00"}]
+ };
+ assert.deepEqual(getWorkshopSchedule(workshop,null,new Date("2026-11-17T12:00:00Z")),{
+  startDate:null,endDate:null,time:""
+ });
+ assert.equal(workshopDateRange(getWorkshopSchedule(workshop)),"");
+});
+test("an active session supplies its own date and time, not stale legacy values", () => {
+ const workshop = {
+  startDate:"2026-11-06",endDate:"2026-11-07",time:"9:00",
+  sessions:[{id:"dec",status:"active",startDate:"2026-12-05",time:"13:00"}]
+ };
+ const schedule=getWorkshopSchedule(workshop,null,new Date("2026-11-17T12:00:00Z"));
+ assert.deepEqual(schedule,{startDate:"2026-12-05",endDate:null,time:"13:00"});
+ assert.equal(workshopDateRange(schedule),"5 Dec 2026");
+});

@@ -185,7 +185,7 @@ export default function ScanAttendancePage() {
       setScanning(false);
 
       setErrorMessage(
-        "Camera could not be started. Please allow camera permission."
+        "Can't open the camera. Allow camera access and try again."
       );
     }
   }
@@ -222,7 +222,7 @@ export default function ScanAttendancePage() {
           </h1>
 
           <p>
-            Scan the QR code provided by
+            Scan the QR code from
             the workshop instructor.
           </p>
         </div>
@@ -250,7 +250,7 @@ export default function ScanAttendancePage() {
               className="button-spinner"
             />
 
-            Verifying Attendance...
+            Checking your attendance...
           </button>
         ) : (
           <button

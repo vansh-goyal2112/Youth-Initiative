@@ -169,7 +169,7 @@ export default function ProfilePage() {
       <main className={styles.statusPage} role="status">
         <Sparkles size={34} className={styles.statusSparkle} aria-hidden="true" />
         <h1>Preparing your explorer passport...</h1>
-        <p>Gathering your student details and achievements.</p>
+        <p>Loading your profile and badges.</p>
       </main>
     );
   }
@@ -192,7 +192,7 @@ export default function ProfilePage() {
       <main className={styles.statusPage}>
         <CircleHelp size={35} aria-hidden="true" />
         <h1>We could not load your profile</h1>
-        <p>{profileError || "Your student information is temporarily unavailable."}</p>
+        <p>{profileError || "We couldn't load your profile. Try again."}</p>
         <button type="button" className={styles.primaryAction} onClick={() => setRefreshKey(value => value + 1)}>
           <RefreshCcw size={17} aria-hidden="true" /> Try Again
         </button>
@@ -222,7 +222,7 @@ export default function ProfilePage() {
           <div className={styles.heroIntro}>
             <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true"/> MY LEARNING JOURNEY PASSPORT</span>
             <h1 id="profile-heading">My Explorer Profile</h1>
-            <p>This is your Learning Journey. See what you learned and what comes next.</p>
+            <p>See what you&apos;ve learned. Find what comes next.</p>
           </div>
           <Link href="/edit-profile" className={styles.editButton}>
             <Edit3 size={17} aria-hidden="true"/> Edit My Identity
@@ -279,7 +279,7 @@ export default function ProfilePage() {
             <div className={styles.progressTrack} role="progressbar" aria-label="Progress to next explorer level" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.progressPercentage}>
               <span style={{width: `${progress.progressPercentage}%`}}/>
             </div>
-            <p>{xpToGo == null ? "Amazing! You have reached the current highest level." : "Keep attending workshops and earning verified XP to reach your next level."}</p>
+            <p>{xpToGo == null ? "You reached the highest level. Great work!" : "Attend workshops. Earn XP. Reach your next level."}</p>
           </div>
           <Link href="/journey" className={styles.progressLink}>View Map <ArrowRight size={16} aria-hidden="true"/></Link>
         </section>
@@ -326,7 +326,7 @@ export default function ProfilePage() {
               <div className={styles.emptyInterests}>
                 <span aria-hidden="true">🪐</span>
                 <strong>Your Skill Universe is waiting!</strong>
-                <p>Pick up to five interests to make your adventure more personal.</p>
+                <p>Pick up to five interests. We&apos;ll find workshops for you.</p>
                 <Link href="/edit-profile">Choose Interests <ArrowRight size={16} aria-hidden="true"/></Link>
               </div>
             )}
@@ -340,7 +340,7 @@ export default function ProfilePage() {
         <section className={styles.adventureSection} aria-labelledby="continue-heading">
           <div className={styles.adventureHeading}>
             <div><span><Sparkles size={16} aria-hidden="true"/> KEEP EXPLORING</span><h2 id="continue-heading">Where will your next adventure take you?</h2></div>
-            <p>Every workshop, badge, and challenge helps you discover more about yourself.</p>
+            <p>Try a workshop. Earn a badge. Discover something new.</p>
           </div>
           <div className={styles.actionGrid}>
             <Link href="/tasks" className={styles.actionCard}>

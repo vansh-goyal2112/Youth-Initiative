@@ -85,7 +85,7 @@ export default function StudentHeader({ backHref, backLabel = "Back", studentNam
 
       {backHref && (
         <div className={styles.breadcrumbRow}>
-          <Link href={backHref} className={styles.backLink}>
+          <Link href={backHref} className={styles.backLink} data-student-back-link="true">
             <ArrowLeft size={17} aria-hidden="true"/>
             {backLabel}
           </Link>
