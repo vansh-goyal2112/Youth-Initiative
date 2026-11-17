@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Archive, CalendarDays, Copy, Edit3, LoaderCircle, Plus, Save, X } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
+import { workshopDateRange } from "@/utils/workshopDate.mjs";
 
 const empty = {
   startDate: "", endDate: "", time: "", location: "",
@@ -96,7 +97,7 @@ export default function WorkshopSessionsPanel({ workshop, onClose, onUpdated }) 
               <div key={session.id} className="rounded-2xl border border-slate-200 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <strong className="text-sm font-black text-slate-900">{session.startDate}{session.endDate && session.endDate !== session.startDate ? " – " + session.endDate : ""}</strong>
+                    <strong className="text-sm font-black text-slate-900">{workshopDateRange(session)}</strong>
                     <span className={"ml-2 rounded-full px-2 py-1 text-[10px] font-extrabold uppercase " +
                       (session.status === "archived" ? "bg-slate-100 text-slate-600" : "bg-emerald-50 text-emerald-800")}>{session.status}</span>
                     <p className="mt-1 text-xs text-slate-600">{[session.time, session.location, session.capacity != null ? "Capacity " + session.capacity : ""].filter(Boolean).join(" · ")}</p>
