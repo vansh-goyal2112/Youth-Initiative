@@ -59,6 +59,13 @@ function validateWorkshop(
     return "Workshop status is invalid.";
   }
 
+  if (workshop.xpReward !== undefined && workshop.xpReward !== null && workshop.xpReward !== "") {
+    const xp = Number(workshop.xpReward);
+    if (!Number.isSafeInteger(xp) || xp < 1 || xp > 100000) {
+      return "XP reward must be a positive whole number (1–100000).";
+    }
+  }
+
   return null;
 }
 
@@ -129,8 +136,7 @@ function buildWorkshopData(
         ? capacity
         : null,
 
-    xpReward: Number.isFinite(xpReward) && xpReward >= 0
-      ? xpReward : automaticWorkshopXp(workshopId),
+    xpReward: explicitlySetXp ? xpReward : automaticWorkshopXp(workshopId),
     xpRewardSource: explicitlySetXp ? "manual" : "automatic",
 
     status:

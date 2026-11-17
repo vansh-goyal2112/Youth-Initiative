@@ -8,8 +8,12 @@ export function completionTransactionId(studentId, workshopId, sessionId = null)
 }
 
 export function awardForCompletion(workshop, method = "qr") {
-  const raw = Number(workshop?.xpReward);
-  const base = Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 100;
+  const missing = workshop?.xpReward === undefined || workshop?.xpReward === null;
+  const raw = missing ? 100 : Number(workshop.xpReward);
+  if (!Number.isSafeInteger(raw) || raw <= 0) {
+    throw new RangeError("Workshop XP must be a positive whole number.");
+  }
+  const base = raw;
   if (method === "qr") return base;
   if (method === "self_reported") return Math.max(1, Math.floor(base / 2));
   throw new Error("Unknown workshop completion method.");

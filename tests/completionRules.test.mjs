@@ -13,6 +13,15 @@ test("self reported attendance awards half XP, rounded down to a whole XP", () =
   assert.equal(awardForCompletion({ xpReward: 75 }, "self_reported"), 37);
   assert.equal(awardForCompletion({ xpReward: 100 }, "qr"), 100);
 });
+test("never silently awards 100 when a configured workshop XP is zero, fractional, or invalid", () => {
+  assert.throws(() => awardForCompletion({ xpReward: 0 }, "qr"), RangeError);
+  assert.throws(() => awardForCompletion({ xpReward: 42.5 }, "qr"), RangeError);
+  assert.throws(() => awardForCompletion({ xpReward: "invalid" }, "qr"), RangeError);
+  assert.equal(awardForCompletion({ xpReward: 175 }, "qr"), 175);
+  assert.equal(awardForCompletion({ xpReward: 175 }, "self_reported"), 87);
+  assert.equal(awardForCompletion({}, "qr"), 100); // Legacy missing field only.
+});
+
 test("rejects unknown award sources", () => {
   assert.throws(() => awardForCompletion({ xpReward: 100 }, "invented"));
 });
