@@ -370,7 +370,7 @@ function RegisteredWorkshopCard({
 
         <div className="registered-workshop-information">
           {dateLabel && <div><CalendarDays size={17} />{dateLabel}</div>}
-          {schedule.time && <div><Clock size={17} />{schedule.time}</div>}
+          {dateLabel && schedule.time && <div><Clock size={17} />{schedule.time}</div>}
 
           <div>
             <MapPin size={17} />
