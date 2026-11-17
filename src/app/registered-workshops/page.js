@@ -213,9 +213,7 @@ export default function RegisteredWorkshopsPage() {
           </h1>
 
           <p>
-            View workshops you have registered
-            for and scan the attendance QR code
-            when the workshop begins.
+            See your workshops here. Scan the QR code when you attend.
           </p>
         </div>
       </section>
@@ -274,9 +272,7 @@ export default function RegisteredWorkshopsPage() {
             </h2>
 
             <p>
-              Browse available workshops and
-              register for an experience that
-              interests you.
+              Explore workshops. Find one you like.
             </p>
 
             <Link href="/workshops">

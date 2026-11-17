@@ -237,10 +237,7 @@ export default function CompletedWorkshopsPage() {
             </h1>
 
             <p>
-              Every completed
-              workshop builds your
-              skills, XP and
-              achievement collection.
+              See what you completed. Keep earning XP and badges.
             </p>
           </div>
 
@@ -332,10 +329,7 @@ export default function CompletedWorkshopsPage() {
             </h2>
 
             <p>
-              Complete your first
-              registered workshop and
-              scan the attendance QR to
-              unlock XP and badges.
+              Attend a workshop. Scan the QR code. Earn XP and badges.
             </p>
 
             <Link href="/workshops">

@@ -49,4 +49,5 @@ test("contextual Back follows the actual student origin and tabs highlight profi
   assert.equal(studentActiveTab("/tasks"), "/profile");
   assert.equal(studentActiveTab("/completed-workshops"), "/profile");
   assert.equal(studentActiveTab("/scan-attendance", "/dashboard"), "/dashboard");
+  assert.equal(studentActiveTab("/scan-attendance", "/registered-workshops"), "/profile");
 });

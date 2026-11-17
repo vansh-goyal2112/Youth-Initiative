@@ -40,6 +40,24 @@ export default function StudentShell({ children }) {
     }
   }, [pathname]);
 
+  useEffect(() => {
+    // Capture navigation before Next.js handles it. This also works if the
+    // shared shell remounts, or if the student refreshes on the destination.
+    function rememberInternalLink(event) {
+      const anchor = event.target?.closest?.("a[href]");
+      if (!anchor || event.defaultPrevented) return;
+      try {
+        const destination = new URL(anchor.href, window.location.href);
+        if (destination.origin !== window.location.origin ||
+            destination.pathname === pathname || !isStudentRoute(destination.pathname) ||
+            !isStudentRoute(pathname)) return;
+        sessionStorage.setItem("studentBackOrigin", JSON.stringify({ path: destination.pathname, from: pathname }));
+      } catch {}
+    }
+    document.addEventListener("click", rememberInternalLink, true);
+    return () => document.removeEventListener("click", rememberInternalLink, true);
+  }, [pathname]);
+
   if (!isStudentRoute(pathname)) {
     return children;
   }

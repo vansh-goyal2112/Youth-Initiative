@@ -367,8 +367,7 @@ export default function JourneyPage() {
             </div>
 
             <p>
-              Each workshop strengthens a
-              different skill pathway.
+              Explore new subjects. Each workshop helps you grow.
             </p>
 
           </div>
@@ -383,8 +382,7 @@ export default function JourneyPage() {
               </h3>
 
               <p>
-                Complete workshops to start
-                exploring different program areas.
+                Complete a workshop. See what you can learn next.
               </p>
 
               <Link href="/workshops">
@@ -420,7 +418,7 @@ export default function JourneyPage() {
                 <h2>Recommended SAIT Programs</h2>
               </div>
               <p>
-                Possible post-secondary pathways after Grade 12 tailored to your interests and completed workshops.
+                Explore SAIT programs that match your interests.
               </p>
             </div>
 
@@ -487,9 +485,7 @@ export default function JourneyPage() {
             </h2>
 
             <p>
-              Every verified workshop gives
-              you XP and helps you reach
-              new levels and badges.
+              Earn XP. Reach new levels. Unlock badges.
             </p>
           </div>
 

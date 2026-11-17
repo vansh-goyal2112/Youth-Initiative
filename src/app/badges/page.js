@@ -379,10 +379,7 @@ export default function BadgesPage() {
             </h1>
 
             <p>
-              Complete workshops,
-              explore new skill areas
-              and unlock achievements
-              as your journey grows. Use your XP to redeem real rewards and SAIT swag at events!
+              Complete workshops. Earn XP. Unlock badges. Bring your XP to SAIT events to see the rewards.
             </p>
           </div>
 
@@ -618,10 +615,7 @@ export default function BadgesPage() {
             </h2>
 
             <p>
-              Explore another
-              workshop, build a new
-              skill and continue your
-              Learning Journey.
+              Try another workshop. Keep earning XP.
             </p>
           </div>
 

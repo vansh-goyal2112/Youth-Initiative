@@ -19,7 +19,8 @@ export function studentActiveTab(pathname, originPath = null) {
   if (pathname === "/badges") return "/badges";
   if (["/profile", "/edit-profile", "/tasks", "/registered-workshops", "/completed-workshops"].includes(pathname)) return "/profile";
   if (pathname === "/scan-attendance") {
-    return originPath === "/dashboard" ? "/dashboard" : originPath === "/profile" ? "/profile" : "/workshops";
+    return originPath === "/dashboard" ? "/dashboard" :
+      ["/profile", "/registered-workshops", "/completed-workshops", "/edit-profile"].includes(originPath) ? "/profile" : "/workshops";
   }
   return "/workshops";
 }
