@@ -15,7 +15,7 @@ export default function JournalStamps({ registrations = [] }) {
         <div className={styles.headingIcon}><BookOpen size={25} aria-hidden="true"/></div>
         <div>
           <span><Sparkles size={14} aria-hidden="true"/> MY LEARNING STORY</span>
-          <h2 id="learning-stamps-heading">Journal Stamp Collection</h2>
+          <h2 id="learning-stamps-heading">Workshop Reflections</h2>
           <p>Remember what you explored, created, and learned after each verified workshop.</p>
         </div>
         <div className={styles.counter} aria-label={`${stats.reflectedCount} of ${stats.completedCount} verified workshops have reflections`}>
@@ -34,7 +34,7 @@ export default function JournalStamps({ registrations = [] }) {
               <article className={styles.stamp} key={registration.id}>
                 <div className={styles.stampArt} aria-hidden="true">{mood?.emoji || "🌟"}</div>
                 <div>
-                  <span>LEARNING STAMP UNLOCKED</span>
+                  <span>REFLECTION SAVED</span>
                   <h3>{registration.workshop?.title || "Completed Workshop"}</h3>
                   <p>{moment?.label || "A new thing learned"}</p>
                   <small>{mood?.label || "Learning remembered"}</small>
@@ -47,7 +47,7 @@ export default function JournalStamps({ registrations = [] }) {
         <div className={styles.empty}>
           <span aria-hidden="true">✦</span>
           <div>
-            <strong>Your journal is ready for its first stamp!</strong>
+            <strong>Your workshop reflections start here.</strong>
             <p>After completing a workshop, visit your Dashboard and save a quick reflection.</p>
           </div>
         </div>
@@ -55,7 +55,7 @@ export default function JournalStamps({ registrations = [] }) {
       {stats.pending.length > 0 && (
         <div className={styles.pending}>
           <span>You have {stats.pending.length} completed {stats.pending.length === 1 ? "workshop" : "workshops"} to reflect on.</span>
-          <Link href="/dashboard">Add a Journal Stamp <ArrowRight size={16} aria-hidden="true"/></Link>
+          <Link href="/dashboard">Share What I Learned <ArrowRight size={16} aria-hidden="true"/></Link>
         </div>
       )}
     </section>

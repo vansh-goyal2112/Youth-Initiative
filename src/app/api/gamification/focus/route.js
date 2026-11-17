@@ -23,7 +23,7 @@ export async function POST(request) {
 
     if (!isValidQuestId(questId)) {
       return Response.json(
-        { success: false, message: "Choose a valid Learning Journey mission." },
+        { success: false, message: "Choose a valid workshop interest." },
         { status: 400 }
       );
     }
@@ -58,15 +58,15 @@ export async function POST(request) {
     return Response.json({
       success: true,
       activeQuestId: questId,
-      message: "Mission selected! Your quest is ready.",
+      message: "Saved! Your workshop interests are updated.",
     });
   } catch (error) {
     const accessResponse = studentAccessResponse(error);
     if (accessResponse) return accessResponse;
 
-    console.error("Select Learning Journey focus error:", error);
+    console.error("Select Learning Journey interest error:", error);
     return Response.json(
-      { success: false, message: "Could not save your mission." },
+      { success: false, message: "Could not save your selection." },
       { status: 500 }
     );
   }

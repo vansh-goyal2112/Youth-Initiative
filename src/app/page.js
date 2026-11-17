@@ -486,7 +486,7 @@ export default function HomePage() {
 
             <p>
               Every verified workshop builds your Learning Journey. Earn XP,
-              unlock badges, complete personal challenges and see which skill
+              unlock badges, reach new levels and see which skill
               areas are becoming your strongest.
             </p>
 

@@ -23,7 +23,7 @@ const questIcons = {
   trophy: Trophy,
 };
 
-export default function AdventureTrail({ quests = [], totalXp = 0 }) {
+export default function AdventureTrail({ quests = [] }) {
   const firstIncomplete = quests.findIndex((quest) => !quest.completed);
   const activeIndex = firstIncomplete === -1 ? -1 : firstIncomplete;
   const completedCount = quests.filter((quest) => quest.completed).length;
@@ -120,7 +120,7 @@ export default function AdventureTrail({ quests = [], totalXp = 0 }) {
         <div className={styles.footerIcon}><Trophy size={29} aria-hidden="true" /></div>
         <div>
           <strong>{completedCount === quests.length && quests.length > 0 ? "You finished the adventure!" : "Your story is just getting started!"}</strong>
-          <p>{totalXp} XP earned through verified learning. New adventures are waiting for you.</p>
+          <p>XP earned through learning. New adventures are waiting for you.</p>
         </div>
         <Link href="/badges">See my badges <ArrowRight size={16} aria-hidden="true" /></Link>
       </div>

@@ -72,7 +72,6 @@ export default function SkillQuestHub({
   const nextReflection = stats.pending[0];
   const reflectionWorkshop = stats.pending.find((item) => item.id === reflectionId) || nextReflection;
   const reflectionOpen = Boolean(reflectionId) && Boolean(reflectionWorkshop);
-  const completedMissions = quests.filter((quest) => quest.completed).length;
   const firstName = String(student?.firstName || "Explorer").trim().split(/\s+/)[0];
   const xp = Number(gameData?.totalXp) || 0;
   const xpProgress = Math.max(0, Math.min(100, Number(gameData?.progressPercentage) || 0));
@@ -90,11 +89,11 @@ export default function SkillQuestHub({
         body: JSON.stringify({ questId: id }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Could not save mission.");
+      if (!response.ok) throw new Error(data.message || "Could not save your selection.");
       setSelectedQuestId(id);
-      setFocusSuccess("Mission saved! You can follow it at your own pace.");
+      setFocusSuccess("Saved! Keep exploring workshops to earn XP and badges.");
     } catch (error) {
-      setFocusError(error.message || "Could not save your mission.");
+      setFocusError(error.message || "Could not save your selection.");
     } finally {
       setFocusSaving(false);
     }
@@ -124,7 +123,7 @@ export default function SkillQuestHub({
       setReflectionId(null);
       setMood("");
       setMoment("");
-      setReflectionSuccess("Learning stamp saved! Your workshop story has grown.");
+      setReflectionSuccess("Your workshop reflection was saved.");
       if (typeof onRegistrationsRefresh === "function") {
         await onRegistrationsRefresh();
       }
@@ -143,7 +142,7 @@ export default function SkillQuestHub({
         <div className={styles.introText}>
           <span className={styles.kicker}><WandSparkles size={18} aria-hidden="true"/> LEARNING JOURNEY HQ</span>
           <h2 id="quest-hub-title">Ready for your next adventure, {firstName}?</h2>
-          <p>Choose a mission, discover workshops, and collect real achievements as you learn. Every step tells your story!</p>
+          <p>Discover workshops, earn XP, reach new levels, and unlock badges as you learn.</p>
           <div className={styles.introActions}>
             <Link href="/journey" className={styles.mainAction}><Map size={18} aria-hidden="true"/> Explore My Map <ArrowRight size={16} aria-hidden="true"/></Link>
             <Link href="/badges" className={styles.secondAction}><Award size={18} aria-hidden="true"/> My Badge Album</Link>
@@ -189,7 +188,7 @@ export default function SkillQuestHub({
         <div className={styles.overviewStat}>
           <Gift size={22} aria-hidden="true"/>
           <strong>{stats.reflectedCount}</strong>
-          <span>Journal Stamps</span>
+          <span>Reflections</span>
         </div>
       </div>
       )}
@@ -200,13 +199,13 @@ export default function SkillQuestHub({
         <section className={styles.panel} aria-labelledby="my-mission-heading">
           <div className={styles.sectionHeading}>
             <span className={styles.sectionSymbol}><Flag size={22} aria-hidden="true"/></span>
-            <div><span className={styles.eyebrow}>MAKE IT YOUR QUEST</span><h3 id="my-mission-heading">Choose Your Mission</h3></div>
+            <div><span className={styles.eyebrow}>EXPLORE WHAT INTERESTS YOU</span><h3 id="my-mission-heading">Pick What to Explore</h3></div>
           </div>
-          <p className={styles.panelLead}>Pick a challenge to focus on. You can change it anytime—your verified progress always stays saved.</p>
+          <p className={styles.panelLead}>Choose what you want to explore next. Changing your choice does not affect your XP, level, or badges.</p>
           {focusQuest && (
             <div className={styles.featuredMission}>
               <div className={styles.featuredTop}>
-                <span><Sparkles size={16} aria-hidden="true"/> MY ACTIVE MISSION</span>
+                <span><Sparkles size={16} aria-hidden="true"/> MY PICK</span>
                 {focusQuest.completed && <span className={styles.doneTag}><Check size={14} aria-hidden="true"/> Complete</span>}
               </div>
               <strong>{focusQuest.title}</strong>
@@ -232,7 +231,7 @@ export default function SkillQuestHub({
                 >
                   <span className={styles.choiceIcon}><Icon size={20} aria-hidden="true"/></span>
                   <span className={styles.choiceCopy}><strong>{quest.title}</strong><small>{Math.min(quest.target,quest.current)} / {quest.target} milestones</small></span>
-                  {active ? <CheckCircle2 size={21} aria-label="Selected mission"/> : <ChevronRight size={19} aria-hidden="true"/>}
+                  {active ? <CheckCircle2 size={21} aria-label="Selected"/> : <ChevronRight size={19} aria-hidden="true"/>}
                 </button>
               );
             })}
@@ -248,14 +247,14 @@ export default function SkillQuestHub({
         <section className={styles.panel} aria-labelledby="reflection-heading">
           <div className={styles.sectionHeading}>
             <span className={styles.sectionSymbol}><Sparkles size={22} aria-hidden="true"/></span>
-            <div><span className={styles.eyebrow}>AFTER YOUR WORKSHOP</span><h3 id="reflection-heading">My Learning Journal</h3></div>
+            <div><span className={styles.eyebrow}>AFTER YOUR WORKSHOP</span><h3 id="reflection-heading">Workshop Reflections</h3></div>
           </div>
           <p className={styles.panelLead}>Every workshop is more than a date. Save how you felt and what you tried—your personal story grows with you.</p>
           <div className={styles.stampProgress}>
             <span className={styles.stampIcon}><Award size={25} aria-hidden="true"/></span>
             <div>
-              <strong>{stats.reflectedCount} learning {stats.reflectedCount === 1 ? "stamp" : "stamps"}</strong>
-              <p>{stats.completedCount ? `${stats.reflectedCount} of ${stats.completedCount} verified workshops reflected on` : "Complete your first workshop to start your journal"}</p>
+              <strong>{stats.reflectedCount} {stats.reflectedCount === 1 ? "reflection" : "reflections"} saved</strong>
+              <p>{stats.completedCount ? `${stats.reflectedCount} of ${stats.completedCount} verified workshops reflected on` : "Complete your first workshop to share what you learned"}</p>
             </div>
           </div>
 
@@ -267,7 +266,7 @@ export default function SkillQuestHub({
               <p>You attended this workshop! Ready to remember what you learned?</p>
               {!reflectionOpen && (
                 <button className={styles.reflectButton} type="button" onClick={() => {setReflectionId(nextReflection.id);setReflectionError("");}}>
-                  Add a Journal Stamp <ArrowRight size={17} aria-hidden="true"/>
+                  Share What I Learned <ArrowRight size={17} aria-hidden="true"/>
                 </button>
               )}
             </div>
@@ -275,7 +274,7 @@ export default function SkillQuestHub({
             <div className={styles.reflectionEmpty}>
               <span className={styles.bigStar} aria-hidden="true">{stats.reflectedCount > 0 ? "✦" : "★"}</span>
               <strong>{stats.reflectedCount > 0 ? "You're all caught up!" : "Your story starts here"}</strong>
-              <p>{stats.reflectedCount > 0 ? "Every verified workshop has a journal stamp. Keep exploring!" : "After attending a workshop, come back to reflect and collect your first stamp."}</p>
+              <p>{stats.reflectedCount > 0 ? "Your workshop reflections are saved. Keep exploring!" : "After attending a workshop, you can share what you learned."}</p>
               <Link href="/workshops">Discover Workshops <ArrowRight size={16} aria-hidden="true"/></Link>
             </div>
           )}
@@ -310,7 +309,7 @@ export default function SkillQuestHub({
                 </div>
               </fieldset>
               <button className={styles.reflectButton} type="submit" disabled={reflectionSaving || !mood || !moment}>
-                {reflectionSaving ? "Saving your stamp…" : "Save My Learning Stamp"} <Check size={17} aria-hidden="true"/>
+                {reflectionSaving ? "Saving your reflection…" : "Save My Reflection"} <Check size={17} aria-hidden="true"/>
               </button>
               {reflectionError && <p className={styles.error} role="alert">{reflectionError}</p>}
             </form>
@@ -318,7 +317,7 @@ export default function SkillQuestHub({
           {reflectionSuccess && <p role="status" className={styles.success}>{reflectionSuccess}</p>}
           {stats.recent.length > 0 && (
             <div className={styles.journalRecent}>
-              <h4>Recent Journal Stamps</h4>
+              <h4>Recent Reflections</h4>
               {stats.recent.map((item) => {
                 const moodOption = REFLECTION_MOODS.find((opt) => opt.id === item.reflection.mood);
                 return <div className={styles.journalEntry} key={item.id}>
@@ -336,11 +335,11 @@ export default function SkillQuestHub({
 
       {(section === "all" || section === "level") && (
       <div className={styles.milestoneStrip} aria-label="Your Learning Journey milestones">
-        <div><Rocket size={23} aria-hidden="true"/><strong>{completedMissions}</strong><span>Quests Reached</span></div>
+        <div><Rocket size={23} aria-hidden="true"/><strong>{gameData.completedWorkshops}</strong><span>Workshops Completed</span></div>
         <span className={styles.stripDivider} aria-hidden="true">✦</span>
         <div><Compass size={23} aria-hidden="true"/><strong>{gameData.categoryCount}</strong><span>Skill Areas</span></div>
         <span className={styles.stripDivider} aria-hidden="true">✦</span>
-        <div><Award size={23} aria-hidden="true"/><strong>{stats.reflectedCount}</strong><span>Journal Stamps</span></div>
+        <div><Award size={23} aria-hidden="true"/><strong>{stats.reflectedCount}</strong><span>Reflections Saved</span></div>
         <Link href="/journey">Keep Adventuring <ArrowRight size={17} aria-hidden="true"/></Link>
       </div>
       )}

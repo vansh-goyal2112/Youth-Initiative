@@ -64,7 +64,7 @@ export async function POST(request) {
         success: true,
         alreadyCompleted: true,
         reflection: registration.reflection,
-        message: "This workshop is already in your learning journal.",
+        message: "You already saved a reflection for this workshop.",
       });
     }
 
@@ -102,7 +102,7 @@ export async function POST(request) {
       success: true,
       alreadyCompleted: false,
       reflection,
-      message: "Reflection saved! You earned a learning journal stamp.",
+      message: "Your workshop reflection was saved.",
     });
   } catch (error) {
     const accessResponse = studentAccessResponse(error);

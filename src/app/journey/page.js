@@ -362,7 +362,7 @@ export default function JourneyPage() {
               </span>
 
               <h2>
-                Your Skill Tracks
+                Workshops by Area
               </h2>
             </div>
 
@@ -384,7 +384,7 @@ export default function JourneyPage() {
 
               <p>
                 Complete workshops to start
-                building your skill tracks.
+                exploring different program areas.
               </p>
 
               <Link href="/workshops">
@@ -488,9 +488,8 @@ export default function JourneyPage() {
 
             <p>
               Every verified workshop gives
-              you XP, builds a skill track
-              and brings you closer to your
-              next achievement.
+              you XP and helps you reach
+              new levels and badges.
             </p>
           </div>
 
@@ -602,7 +601,7 @@ function SkillTrackCard({
 
       <div className="skill-track-footer">
         <span>
-          {track.xp} Skill XP
+          {track.xp} XP
         </span>
 
         <span>

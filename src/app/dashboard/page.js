@@ -545,8 +545,7 @@ export default function DashboardPage() {
               ) : (
                 <p>
                   You reached the
-                  highest current Skill
-                  Quest level.
+                  highest current level.
                 </p>
               )}
             </div>
@@ -668,13 +667,13 @@ export default function DashboardPage() {
         {/* 5. DISCOVERY CORNER */}
         <DiscoverySpinner workshops={workshops} registrations={registrations} />
 
-        {/* 6. MAKE IT YOUR QUEST */}
+        {/* Student workshop choices (legacy source key retained) */}
         <SkillQuestHub section="mission"
           gameData={gameData} student={student} registrations={registrations}
           onRegistrationsRefresh={refreshRegistrations}
         />
 
-        {/* 7. MY LEARNING JOURNAL */}
+        {/* Workshop reflections (legacy source key retained) */}
         <SkillQuestHub section="journal"
           gameData={gameData} student={student} registrations={registrations}
           onRegistrationsRefresh={refreshRegistrations}
@@ -708,7 +707,7 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* SKILL TRACKS */}
+        {/* Workshop participation by area */}
 
         <section className="dashboard-section dashboard-skills-section">
           <div className="dashboard-section-heading">
@@ -718,7 +717,7 @@ export default function DashboardPage() {
               </span>
 
               <h2>
-                Skill Tracks
+                Workshops by Area
               </h2>
             </div>
 
@@ -787,8 +786,7 @@ export default function DashboardPage() {
 
                       <footer>
                         <span>
-                          {track.xp} Skill
-                          XP
+                          {track.xp} XP
                         </span>
 
                         <strong>
@@ -810,7 +808,7 @@ export default function DashboardPage() {
 
               <div>
                 <strong>
-                  No skill tracks yet
+                  No workshops completed yet
                 </strong>
 
                 <span>
