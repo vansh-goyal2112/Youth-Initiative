@@ -1,6 +1,7 @@
 import { retireWorkshopPermanently } from "@/services/workshopRetirement";
 import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
+import { automaticWorkshopXp } from "@/services/workshopXpAssignment.mjs";
 
 import {
   adminAccessResponse,
@@ -61,7 +62,7 @@ function validateWorkshop(
 }
 
 function buildWorkshopData(
-  workshop
+  workshop, workshopId
 ) {
   const capacity =
     workshop.capacity === "" ||
@@ -72,10 +73,9 @@ function buildWorkshopData(
           workshop.capacity
         );
 
-  const xpReward =
-    Number(
-      workshop.xpReward
-    );
+  const explicitlySetXp = workshop.xpReward !== "" &&
+    workshop.xpReward !== null && workshop.xpReward !== undefined;
+  const xpReward = explicitlySetXp ? Number(workshop.xpReward) : automaticWorkshopXp(workshopId);
 
   return {
     title:
@@ -128,11 +128,9 @@ function buildWorkshopData(
         ? capacity
         : null,
 
-    xpReward:
-      Number.isFinite(xpReward) &&
-      xpReward >= 0
-        ? xpReward
-        : 100,
+    xpReward: Number.isFinite(xpReward) && xpReward >= 0
+      ? xpReward : automaticWorkshopXp(workshopId),
+    xpRewardSource: explicitlySetXp ? "manual" : "automatic",
 
     status:
       workshop.status ||
@@ -237,7 +235,7 @@ export async function POST(
           workshopId,
 
         ...buildWorkshopData(
-          workshopData
+          workshopData, workshopId
         ),
 
         createdBy:
@@ -363,7 +361,7 @@ export async function PUT(
       existingWorkshop,
       {
         ...buildWorkshopData(
-          workshopData
+          workshopData, id
         ),
         // Reassign only automatically chosen images when topic changes.
         ...(existingWorkshop.imageStatus === "custom" ||

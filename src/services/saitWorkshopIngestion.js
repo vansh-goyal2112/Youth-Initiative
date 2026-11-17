@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { automaticWorkshopXp } from "./workshopXpAssignment.mjs";
 
 import {
   fetchOfficialPage,
@@ -51,6 +52,7 @@ const WORKSHOP_FIELDS = new Set([
   "time",
   "category",
   "xpReward",
+  "xpRewardSource",
   "registrationUrl",
   "startDate",
   "status",
@@ -446,7 +448,8 @@ export function extractSaitWorkshop(
     time:
       extractLabeledValue(mainText, ["time", "schedule"]) || "",
     category: findSaitCategory(`${programArea} ${title} ${sourceText}`),
-    xpReward: 100,
+    xpReward: automaticWorkshopXp(createWorkshopId(title, programArea)),
+    xpRewardSource: "automatic",
     registrationUrl: extractRegistrationUrl(
       html,
       informationUrl,

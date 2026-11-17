@@ -55,7 +55,7 @@ const emptyWorkshop = {
   time: "",
   location: "",
   capacity: "",
-  xpReward: 100,
+  xpReward: "",
   status: "active",
 };
 
@@ -96,6 +96,37 @@ export default function AdminWorkshopsPage() {
   useEffect(() => {
     loadWorkshops();
   }, []);
+
+  async function handleAssignXp() {
+    try {
+      setSaving(true);
+      setErrorMessage("");
+      setMessage("");
+      const previewResponse = await adminFetch("/api/admin/workshops/auto-xp", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preview: true }),
+      });
+      const preview = await previewResponse.json();
+      if (!previewResponse.ok) throw new Error(preview.message || "Could not preview XP updates.");
+      if (!preview.eligibleCount) {
+        setMessage("All workshops already have XP assigned or were edited by staff.");
+        return;
+      }
+      if (!window.confirm(`Assign varied XP to ${preview.eligibleCount} older workshops with default 100 XP? This changes FUTURE attendance awards only; previously earned XP is not modified.`)) return;
+      const response = await adminFetch("/api/admin/workshops/auto-xp", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preview: false }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || "XP assignment failed.");
+      setMessage(`Automatically assigned XP to ${result.updatedCount} workshops. ${result.skippedCount} were skipped.`);
+      await loadWorkshops();
+    } catch (error) {
+      setErrorMessage(error.message || "Could not assign workshop XP.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function loadWorkshops() {
     try {
@@ -528,6 +559,7 @@ export default function AdminWorkshopsPage() {
         <div><p className="admin-section-eyebrow"><BookOpen size={16}/> PROGRAM OPERATIONS</p><h1>Workshop studio<span>.</span></h1>
           <p>Build inspiring learning experiences. Plan, publish and manage every workshop from one workspace.</p></div>
         <div className="admin-workshop-actions">
+          <button type="button" className="admin-team-refresh" onClick={handleAssignXp} disabled={saving || importing || loading}>Auto-assign existing XP</button>
           <button type="button" className="admin-team-refresh" onClick={handleAssignImages} disabled={saving || importing}><Layers3 size={17}/> Assign artwork</button>
           <button type="button" className="admin-team-refresh" onClick={loadWorkshops} disabled={loading}><RefreshCw size={17} className={loading?"animate-spin":""}/> Refresh</button>
           <input aria-label="Workshop offering year" type="number" min="2000" max="2100" value={offeringYear} onChange={event => setOfferingYear(event.target.value)} style={{width: 100}} title="Year associated with imported workshop offerings" />

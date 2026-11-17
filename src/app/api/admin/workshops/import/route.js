@@ -1,5 +1,6 @@
 import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
+import { automaticWorkshopXp, needsLegacyXpAssignment } from "@/services/workshopXpAssignment.mjs";
 
 import {
   adminAccessResponse,
@@ -230,9 +231,10 @@ function buildImportedWorkshop(
       null,
 
     xpReward:
-      workshop.xpReward == null ? 100 : Number(workshop.xpReward),
+      workshop.xpReward == null ? automaticWorkshopXp(workshopId) : Number(workshop.xpReward),
     // Distinguish explicit Excel values from the legacy default on reimports.
     xpConfiguredByImport: workshop.xpReward != null,
+    xpRewardSource: workshop.xpReward == null ? "automatic" : "import",
 
     status:
       "active",
@@ -322,9 +324,13 @@ async function saveImportedWorkshop(
           ...existingWorkshop,
           // When the sheet specifies XP, update the existing workshop too.
           // An absent XP column must never reset staff-edited rewards to 100.
-          ...(workshopData.xpConfiguredByImport
-            ? { xpReward: workshopData.xpReward }
-            : {}),
+          ...(existingWorkshop.xpRewardSource === "manual"
+            ? {}
+            : workshopData.xpConfiguredByImport
+              ? { xpReward: workshopData.xpReward, xpRewardSource: "import" }
+              : needsLegacyXpAssignment(existingWorkshop)
+                ? { xpReward: workshopData.xpReward, xpRewardSource: "automatic" }
+                : {}),
           // Explicit catalogue replacement treats supplied Excel content as authoritative.
           ...(overwriteExcelFields ? {
             title: workshopData.title,
