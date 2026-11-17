@@ -20,25 +20,36 @@ export default function StudentShell({ children }) {
   const pathname = usePathname() || "";
   const { student, user } = useAuth();
   const previousRoute = useRef(pathname);
+  const historyNavigation = useRef(false);
   const [originPath, setOriginPath] = useState(null);
 
   useEffect(() => {
     const previous = previousRoute.current;
+    let saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem("studentBackOrigin") || "null"); } catch {}
+    const hasRecordedOrigin = saved?.path === pathname && Object.prototype.hasOwnProperty.call(saved, "from");
     if (previous !== pathname) {
-      const from = isStudentRoute(previous) ? previous : null;
-      setOriginPath(from);
+      // Link clicks record their origin before navigation. In particular, a
+      // shared Back link must not create a forward/back navigation loop.
+      const from = historyNavigation.current ? null
+        : hasRecordedOrigin ? saved.from
+        : isStudentRoute(previous) ? previous : null;
+      historyNavigation.current = false;
+      const safeFrom = isStudentRoute(from) && from !== pathname ? from : null;
+      setOriginPath(safeFrom);
       previousRoute.current = pathname;
-      try { sessionStorage.setItem("studentBackOrigin", JSON.stringify({ path: pathname, from })); } catch {}
-    } else {
-      // A page reload must keep the original Back destination too.
-      try {
-        const saved = JSON.parse(sessionStorage.getItem("studentBackOrigin") || "null");
-        if (saved?.path === pathname && isStudentRoute(saved.from)) {
-          setOriginPath(saved.from);
-        }
-      } catch {}
+      try { sessionStorage.setItem("studentBackOrigin", JSON.stringify({ path: pathname, from: safeFrom })); } catch {}
+    } else if (hasRecordedOrigin) {
+      // Preserve the origin after refresh, including an explicitly cleared origin.
+      setOriginPath(isStudentRoute(saved.from) && saved.from !== pathname ? saved.from : null);
     }
   }, [pathname]);
+
+  useEffect(() => {
+    function onHistoryNavigation() { historyNavigation.current = true; }
+    window.addEventListener("popstate", onHistoryNavigation);
+    return () => window.removeEventListener("popstate", onHistoryNavigation);
+  }, []);
 
   useEffect(() => {
     // Capture navigation before Next.js handles it. This also works if the
@@ -51,7 +62,8 @@ export default function StudentShell({ children }) {
         if (destination.origin !== window.location.origin ||
             destination.pathname === pathname || !isStudentRoute(destination.pathname) ||
             !isStudentRoute(pathname)) return;
-        sessionStorage.setItem("studentBackOrigin", JSON.stringify({ path: destination.pathname, from: pathname }));
+        const from = anchor.dataset.studentBackLink === "true" ? null : pathname;
+        sessionStorage.setItem("studentBackOrigin", JSON.stringify({ path: destination.pathname, from }));
       } catch {}
     }
     document.addEventListener("click", rememberInternalLink, true);
