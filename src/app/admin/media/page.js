@@ -32,7 +32,7 @@ export default function AdminMediaPage() {
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
           <div className="flex items-center gap-2"><ImagePlus size={20} className="text-rose-700"/><h2 className="text-lg font-extrabold">Homepage banner</h2></div>
-          <p className="text-xs leading-5 text-slate-600">Optional background for the existing Skill Quest welcome hero. No visual change occurs until a banner is uploaded.</p>
+          <p className="text-xs leading-5 text-slate-600">Optional background for the existing Learning Journey welcome hero. No visual change occurs until a banner is uploaded.</p>
           <MediaUploader kind="banner" initialUrl={banner} onUploaded={setBanner}/>
         </section>
         <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">

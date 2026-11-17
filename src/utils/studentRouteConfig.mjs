@@ -1,5 +1,5 @@
 /**
- * Only signed-in student experience routes receive Skill Quest chrome.
+ * Only signed-in student experience routes receive Learning Journey chrome.
  * Public onboarding, login and administrator pages keep their own layouts.
  */
 export const studentPrimaryRoutes = Object.freeze([

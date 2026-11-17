@@ -154,7 +154,7 @@ export default function ResumeRegistrationPage() {
           <span className={styles.funStarOne} aria-hidden="true">✦</span>
           <span className={styles.funStarTwo} aria-hidden="true">✳</span>
           <div className={styles.funContent}>
-            <span className={styles.funTag}><Sparkles size={17} aria-hidden="true"/> SKILL QUEST</span>
+            <span className={styles.funTag}><Sparkles size={17} aria-hidden="true"/> LEARNING JOURNEY</span>
             <h2>Your story is still waiting for you.</h2>
             <p>No missed adventure should stop you from exploring what comes next.</p>
             <div className={styles.steps}>

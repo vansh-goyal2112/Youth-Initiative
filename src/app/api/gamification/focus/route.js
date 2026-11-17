@@ -23,7 +23,7 @@ export async function POST(request) {
 
     if (!isValidQuestId(questId)) {
       return Response.json(
-        { success: false, message: "Choose a valid Skill Quest mission." },
+        { success: false, message: "Choose a valid Learning Journey mission." },
         { status: 400 }
       );
     }
@@ -64,7 +64,7 @@ export async function POST(request) {
     const accessResponse = studentAccessResponse(error);
     if (accessResponse) return accessResponse;
 
-    console.error("Select Skill Quest focus error:", error);
+    console.error("Select Learning Journey focus error:", error);
     return Response.json(
       { success: false, message: "Could not save your mission." },
       { status: 500 }

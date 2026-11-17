@@ -141,7 +141,7 @@ export default function SkillQuestHub({
       <div className={styles.intro}>
         <div className={styles.introDecor} aria-hidden="true"><Sparkles size={65}/></div>
         <div className={styles.introText}>
-          <span className={styles.kicker}><WandSparkles size={18} aria-hidden="true"/> SKILL QUEST HQ</span>
+          <span className={styles.kicker}><WandSparkles size={18} aria-hidden="true"/> LEARNING JOURNEY HQ</span>
           <h2 id="quest-hub-title">Ready for your next adventure, {firstName}?</h2>
           <p>Choose a mission, discover workshops, and collect real achievements as you learn. Every step tells your story!</p>
           <div className={styles.introActions}>
@@ -335,7 +335,7 @@ export default function SkillQuestHub({
       )}
 
       {(section === "all" || section === "level") && (
-      <div className={styles.milestoneStrip} aria-label="Your Skill Quest milestones">
+      <div className={styles.milestoneStrip} aria-label="Your Learning Journey milestones">
         <div><Rocket size={23} aria-hidden="true"/><strong>{completedMissions}</strong><span>Quests Reached</span></div>
         <span className={styles.stripDivider} aria-hidden="true">✦</span>
         <div><Compass size={23} aria-hidden="true"/><strong>{gameData.categoryCount}</strong><span>Skill Areas</span></div>

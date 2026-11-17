@@ -136,7 +136,7 @@ export default function HomePage() {
           <nav className="landing-navigation">
             <Link href="#opportunities">Explore</Link>
             <Link href="#journey">How It Works</Link>
-            <Link href="#skill-quest">Skill Quest</Link>
+            <Link href="#skill-quest">Learning Journey</Link>
 
             <Link href="/login" className="landing-login-button">
               Login
@@ -479,13 +479,13 @@ export default function HomePage() {
           <div className="skill-quest-content">
             <span className="skill-quest-label">
               <Sparkles size={16} />
-              SAIT Skill Quest
+              SAIT Learning Journey
             </span>
 
             <h2>Your learning journey should feel exciting.</h2>
 
             <p>
-              Every verified workshop builds your Skill Quest. Earn XP,
+              Every verified workshop builds your Learning Journey. Earn XP,
               unlock badges, complete personal challenges and see which skill
               areas are becoming your strongest.
             </p>
@@ -655,7 +655,7 @@ export default function HomePage() {
             <strong>Platform</strong>
             <Link href="#opportunities">Explore</Link>
             <Link href="#journey">How It Works</Link>
-            <Link href="#skill-quest">Skill Quest</Link>
+            <Link href="#skill-quest">Learning Journey</Link>
           </div>
 
           <div className="footer-link-group">

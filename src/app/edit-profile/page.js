@@ -302,7 +302,7 @@ function EditProfileForm({
 
         <header className={styles.hero}>
           <div className={styles.heroCopy}>
-            <span className={styles.eyebrow}><Sparkles size={16} aria-hidden="true" /> YOUR SKILL QUEST PASSPORT</span>
+            <span className={styles.eyebrow}><Sparkles size={16} aria-hidden="true" /> YOUR LEARNING JOURNEY PASSPORT</span>
             <h1>Edit My Identity</h1>
             <p>Make your learning journey yours. Keep your school details up to date and choose what you love exploring.</p>
           </div>

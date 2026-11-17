@@ -179,7 +179,7 @@ export default function ProfilePage() {
       <main className={styles.statusPage}>
         <LockKeyhole size={35} aria-hidden="true" />
         <h1>Log in to see your passport</h1>
-        <p>Your Skill Quest profile belongs to you.</p>
+        <p>Your Learning Journey profile belongs to you.</p>
         <Link href="/login" className={styles.primaryAction}>Go to Login <ArrowRight size={17} aria-hidden="true" /></Link>
       </main>
     );
@@ -220,7 +220,7 @@ export default function ProfilePage() {
 
         <div className={styles.heroInner}>
           <div className={styles.heroIntro}>
-            <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true"/> MY SKILL QUEST PASSPORT</span>
+            <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true"/> MY LEARNING JOURNEY PASSPORT</span>
             <h1 id="profile-heading">My Explorer Profile</h1>
             <p>Every adventure begins with you. Discover the skills you&apos;ve built and where your curiosity can take you next.</p>
           </div>
@@ -247,7 +247,7 @@ export default function ProfilePage() {
           <div className={styles.passportSeal}>
             <span className={styles.sealIcon}><WandSparkles size={28} aria-hidden="true"/></span>
             <span>OFFICIAL</span>
-            <strong>Skill Quest</strong>
+            <strong>Learning Journey</strong>
             <small>Adventure Passport</small>
           </div>
         </div>

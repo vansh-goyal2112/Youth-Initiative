@@ -34,7 +34,7 @@ export default function AdventureTrail({ quests = [], totalXp = 0 }) {
         <div>
           <span className={styles.eyebrow}>
             <Sparkles size={17} aria-hidden="true" />
-            SAIT SKILL QUEST
+            SAIT LEARNING JOURNEY
           </span>
           <h2 id="skill-quest-heading">Your Adventure Map</h2>
           <p>

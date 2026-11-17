@@ -378,7 +378,7 @@ export default function DashboardPage() {
               </strong>
 
               <span>
-                Skill Quest
+                Learning Journey
               </span>
             </div>
           </Link>
@@ -441,7 +441,7 @@ export default function DashboardPage() {
                 size={14}
               />
 
-              YOUR SKILL QUEST
+              YOUR LEARNING JOURNEY
             </span>
 
             <h1>
@@ -557,7 +557,7 @@ export default function DashboardPage() {
       {/* MAIN CONTENT */}
 
       <section className="student-content-container dashboard-main">
-        {/* 1. SKILL QUEST HQ */}
+        {/* 1. LEARNING JOURNEY HQ */}
         <SkillQuestHub section="hq"
           gameData={gameData} student={student} registrations={registrations}
           onRegistrationsRefresh={refreshRegistrations}

@@ -621,7 +621,7 @@ export default function BadgesPage() {
               Explore another
               workshop, build a new
               skill and continue your
-              Skill Quest.
+              Learning Journey.
             </p>
           </div>
 

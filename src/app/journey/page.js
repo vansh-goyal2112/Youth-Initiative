@@ -220,7 +220,7 @@ export default function JourneyPage() {
 
           <span className="journey-game-label">
             <Sparkles size={15} />
-            MY SKILL QUEST
+            MY LEARNING JOURNEY
           </span>
 
           <div className="journey-player-card">
