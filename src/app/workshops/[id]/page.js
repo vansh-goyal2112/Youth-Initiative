@@ -170,7 +170,7 @@ export default function WorkshopDetailsPage() {
               />
 
               {dateLabel && <InformationItem icon={CalendarDays} label="Date" value={dateLabel} />}
-              {schedule.time && <InformationItem icon={Clock} label="Time" value={schedule.time} />}
+              {dateLabel && schedule.time && <InformationItem icon={Clock} label="Time" value={schedule.time} />}
 
               <InformationItem
                 icon={MapPin}
