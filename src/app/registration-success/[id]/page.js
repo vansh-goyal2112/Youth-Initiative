@@ -149,6 +149,19 @@ export default function RegistrationSuccessPage() {
     router,
   ]);
 
+  const requestedSessionId = typeof window !== "undefined"
+    ? new URL(window.location.href).searchParams.get("sessionId")
+    : null;
+  const managedSessions = Array.isArray(workshop?.sessions) && workshop.sessions.length > 0;
+  const activeSelectedSession = managedSessions
+    ? workshop.sessions.find(item => item.id === requestedSessionId && item.status === "active")
+    : null;
+  const registrationUnavailable = Boolean(workshop && (
+    workshop.availabilityStatus === "closed" ||
+    (managedSessions && !activeSelectedSession) ||
+    (!managedSessions && requestedSessionId && requestedSessionId !== "legacy")
+  ));
+
   async function confirmRegistration() {
     try {
       if (!user) {
@@ -159,6 +172,10 @@ export default function RegistrationSuccessPage() {
         return;
       }
 
+      if (registrationUnavailable) {
+        setErrorMessage("This session is no longer available. Choose an active session on the workshop page.");
+        return;
+      }
       setSaving(true);
       setErrorMessage("");
       setSuccessMessage("");
@@ -267,9 +284,7 @@ export default function RegistrationSuccessPage() {
             {errorMessage}
           </p>
 
-          <Link href="/workshops">
-            Return to Workshops
-          </Link>
+
         </section>
       </main>
     );
@@ -345,10 +360,16 @@ export default function RegistrationSuccessPage() {
           </div>
         )}
 
+        {registrationUnavailable && (
+          <p className="registration-confirm-error" role="alert">
+            This workshop session is not available. Go back to workshop details and choose an active session.
+          </p>
+        )}
         <button
           type="button"
           className="registration-confirm-button"
           disabled={
+            registrationUnavailable ||
             saving ||
             Boolean(
               successMessage
@@ -374,9 +395,7 @@ export default function RegistrationSuccessPage() {
 
         <a
           href={
-            (Array.isArray(workshop.sessions) && typeof window !== "undefined"
-              ? workshop.sessions.find(item => item.id === new URL(window.location.href).searchParams.get("sessionId"))?.registrationUrl
-              : null) || workshop.registrationUrl ||
+            activeSelectedSession?.registrationUrl || workshop.registrationUrl ||
             "https://saitdigitalyouth.campbrainregistration.com/"
           }
           target="_blank"
@@ -392,12 +411,8 @@ export default function RegistrationSuccessPage() {
         </a>
 
         <p className="registration-confirm-note">
-          For this MVP, external
-          registration is confirmed
-          by the student. Future
-          versions can integrate
-          directly with the official
-          registration platform.
+          Register on the official SAIT website first.
+          Then confirm your registration here.
         </p>
       </section>
     </main>
