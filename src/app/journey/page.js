@@ -277,7 +277,7 @@ export default function JourneyPage() {
                   </p>
                 ) : (
                   <p>
-                    You've reached the highest level!
+                    You&apos;ve reached the highest level!
                   </p>
                 )}
               </div>
