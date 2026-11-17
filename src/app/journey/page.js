@@ -277,7 +277,7 @@ export default function JourneyPage() {
                   </p>
                 ) : (
                   <p>
-                    Maximum level achieved!
+                    You've reached the highest level!
                   </p>
                 )}
               </div>
@@ -378,7 +378,7 @@ export default function JourneyPage() {
               <Compass size={42} />
 
               <h3>
-                Your skill journey starts here
+                Your journey starts here
               </h3>
 
               <p>
