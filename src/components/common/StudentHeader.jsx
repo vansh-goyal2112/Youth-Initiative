@@ -9,6 +9,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/services/firebase";
 import { usePathname } from "next/navigation";
 import styles from "./studentNavigation.module.css";
+import { studentActiveTab } from "@/utils/studentRouteConfig.mjs";
 
 const navigation = [
   { href: "/dashboard", label: "Home", Icon: Home },
@@ -18,19 +19,11 @@ const navigation = [
   { href: "/profile", label: "Profile", Icon: UserRound },
 ];
 
-function activeRoute(pathname) {
-  if (pathname === "/dashboard") return "/dashboard";
-  if (pathname === "/journey" || pathname === "/reward") return "/journey";
-  if (pathname === "/badges") return "/badges";
-  if (pathname === "/profile" || pathname === "/edit-profile") return "/profile";
-  return "/workshops";
-}
-
-export default function StudentHeader({ backHref, backLabel = "Back", studentName }) {
+export default function StudentHeader({ backHref, backLabel = "Back", studentName, originPath = null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
-  const current = activeRoute(pathname);
+  const current = studentActiveTab(pathname, originPath);
 
   async function handleLogout() {
     if (loggingOut) return;
@@ -78,10 +71,6 @@ export default function StudentHeader({ backHref, backLabel = "Back", studentNam
         </nav>
 
         <div className={styles.headerEnd}>
-          <Link href="/journey" className={styles.questChip}>
-            <Sparkles size={15} aria-hidden="true" />
-            <span>My Adventure</span>
-          </Link>
           {studentName && (
             <Link href="/profile" className={styles.userChip} aria-label={`${studentName}, open profile`}>
               {String(studentName).trim().charAt(0).toUpperCase()}
@@ -106,9 +95,9 @@ export default function StudentHeader({ backHref, backLabel = "Back", studentNam
   );
 }
 
-export function StudentBottomNavigation() {
+export function StudentBottomNavigation({ originPath = null }) {
   const pathname = usePathname();
-  const current = activeRoute(pathname);
+  const current = studentActiveTab(pathname, originPath);
   return (
     <nav className={styles.mobileNav} aria-label="Student mobile navigation">
       {navigation.map(({href,label,Icon}) => (

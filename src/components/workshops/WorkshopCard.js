@@ -8,8 +8,10 @@ import {
 } from "lucide-react";
 
 import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
+import { getWorkshopSchedule, workshopDateRange } from "@/utils/workshopDate.mjs";
 
 export default function WorkshopCard({ workshop }) {
+  const dateLabel = workshopDateRange(getWorkshopSchedule(workshop));
 
   const eligibilityLabel =
     workshop.grade ||
@@ -49,10 +51,10 @@ export default function WorkshopCard({ workshop }) {
             {eligibilityLabel}
           </div>
 
-          <div>
+          {dateLabel && <div>
             <CalendarDays size={16} />
-            {workshop.startDate || "Date to be announced"}
-          </div>
+            {dateLabel}
+          </div>}
         </div>
 
         {workshop.eligibilityStatus === "unconfirmed" && (

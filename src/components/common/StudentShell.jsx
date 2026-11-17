@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import StudentAnnouncements from "@/components/common/StudentAnnouncements";
@@ -18,17 +19,38 @@ import { isStudentRoute, studentBackDestination } from "@/utils/studentRouteConf
 export default function StudentShell({ children }) {
   const pathname = usePathname() || "";
   const { student, user } = useAuth();
+  const previousRoute = useRef(pathname);
+  const [originPath, setOriginPath] = useState(null);
+
+  useEffect(() => {
+    const previous = previousRoute.current;
+    if (previous !== pathname) {
+      const from = isStudentRoute(previous) ? previous : null;
+      setOriginPath(from);
+      previousRoute.current = pathname;
+      try { sessionStorage.setItem("studentBackOrigin", JSON.stringify({ path: pathname, from })); } catch {}
+    } else {
+      // A page reload must keep the original Back destination too.
+      try {
+        const saved = JSON.parse(sessionStorage.getItem("studentBackOrigin") || "null");
+        if (saved?.path === pathname && isStudentRoute(saved.from)) {
+          setOriginPath(saved.from);
+        }
+      } catch {}
+    }
+  }, [pathname]);
 
   if (!isStudentRoute(pathname)) {
     return children;
   }
 
-  const back = studentBackDestination(pathname);
+  const back = studentBackDestination(pathname, originPath);
 
   return (
     <div className={styles.shell}>
       <StudentHeader
         studentName={student?.firstName || null}
+        originPath={originPath}
         backHref={back?.href}
         backLabel={back?.label}
       />
@@ -54,7 +76,7 @@ export default function StudentShell({ children }) {
         {children}
       </div>
       {user && student && <WelcomeTutorial user={user} student={student} />}
-      <StudentBottomNavigation />
+      <StudentBottomNavigation originPath={originPath} />
     </div>
   );
 }

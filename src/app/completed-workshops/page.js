@@ -26,6 +26,7 @@ import {
 
 import { useAuth } from "@/contexts/AuthContext";
 import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
+import { formatWorkshopDate } from "@/utils/workshopDate.mjs";
 
 export default function CompletedWorkshopsPage() {
   const {
@@ -432,9 +433,7 @@ function CompletedWorkshopCard({
       : registration.completedAt
         ? new Date(registration.completedAt)
         : null;
-  const completedDate = completionDay && !Number.isNaN(completionDay.getTime())
-    ? completionDay.toLocaleDateString()
-    : "Completed";
+  const completedDate = formatWorkshopDate(completionDay);
 
   return (
     <article className="completed-workshop-card">
@@ -461,7 +460,7 @@ function CompletedWorkshopCard({
           />
 
           +
-          {workshop.xpReward ||
+          {workshop.xpReward ??
             100}{" "}
           XP
         </div>
@@ -478,16 +477,10 @@ function CompletedWorkshopCard({
         </h2>
 
         <div className="completed-workshop-information">
-          <div>
-            <CalendarDays
-              size={17}
-            />
-
-            Completed{" "}
-            {
-              completedDate
-            }
-          </div>
+          {completedDate && <div>
+            <CalendarDays size={17} />
+            Completed {completedDate}
+          </div>}
 
           <div>
             <MapPin

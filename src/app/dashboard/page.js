@@ -8,6 +8,7 @@ import DiscoverySpinner from "@/components/gamification/DiscoverySpinner";
 import dashboardSkin from "@/components/gamification/dashboardQuest.module.css";
 import playfulSkin from "@/components/gamification/playfulSkin.module.css";
 import { daysUntilWorkshop } from "@/utils/upcomingWorkshops.mjs";
+import { getWorkshopSchedule, workshopDateRange } from "@/utils/workshopDate.mjs";
 import Image from "next/image";
 
 import {
@@ -697,8 +698,8 @@ export default function DashboardPage() {
               <div><Rocket size={31} aria-hidden="true" /></div>
               <section>
                 <span>A NEW ADVENTURE AWAITS</span>
-                <h3>Find a workshop that sparks your curiosity!</h3>
-                <p>Discover something new, try a skill, and start building your real learning journey.</p>
+                <h3>Find a workshop you like!</h3>
+                <p>Try something new. Earn XP and build your Learning Journey.</p>
                 <Link href="/workshops">
                   Explore Workshops <ChevronRight size={16} aria-hidden="true"/>
                 </Link>
@@ -924,8 +925,8 @@ export default function DashboardPage() {
 function NextWorkshopCard({
   registration,
 }) {
-  const workshop =
-    registration.workshop;
+  const workshop = registration.workshop;
+  const dateLabel = workshopDateRange(getWorkshopSchedule(workshop, registration.sessionId));
 
   return (
     <article className="dashboard-next-workshop">
@@ -949,14 +950,7 @@ function NextWorkshopCard({
         </h3>
 
         <div className="dashboard-next-details">
-          <div>
-            <CalendarDays
-              size={16}
-            />
-
-            {workshop.startDate ||
-              "Workshop date"}
-          </div>
+          {dateLabel && <div><CalendarDays size={16} />{dateLabel}</div>}
 
           <div>
             <MapPin

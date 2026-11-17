@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { studentFetch } from "@/services/studentApi";
 export default function StudentTasksPage() {
   const [data,setData]=useState(null);
@@ -43,7 +42,6 @@ export default function StudentTasksPage() {
     }catch(e){setError(e.message);}finally{setBusy(false);}
   }
   return <main className="mx-auto max-w-4xl px-5 py-10">
-    <Link href="/profile" className="text-indigo-700 underline">← Back to Profile</Link>
     <h1 className="mt-6 text-3xl font-black text-slate-900">My Tasks ✨</h1>
     <p className="mt-2 text-slate-600">Help make the next workshop even better! Five quick answers earn you XP.</p>
     {message&&<p role="status" className="my-4 rounded-lg bg-green-50 p-4 text-green-900">{message}</p>}

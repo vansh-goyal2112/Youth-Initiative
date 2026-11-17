@@ -272,12 +272,7 @@ export default function ScanAttendancePage() {
           </button>
         )}
 
-        <Link
-          href="/registered-workshops"
-          className="attendance-back-link"
-        >
-          Back to Upcoming Workshops
-        </Link>
+
       </section>
     </main>
   );

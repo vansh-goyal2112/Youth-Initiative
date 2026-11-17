@@ -14,7 +14,6 @@ import {
 } from "react";
 
 import {
-  ArrowLeft,
   CheckCircle2,
   ExternalLink,
   LoaderCircle,
@@ -279,20 +278,6 @@ export default function RegistrationSuccessPage() {
   return (
     <main className="registration-confirm-page">
       <section className="registration-confirm-card">
-        <button
-          type="button"
-          className="registration-back-button"
-          onClick={() =>
-            router.back()
-          }
-        >
-          <ArrowLeft
-            size={20}
-          />
-
-          Back
-        </button>
-
         <Image
           src="/images/landing/sait-logo.jpg"
           alt="SAIT"

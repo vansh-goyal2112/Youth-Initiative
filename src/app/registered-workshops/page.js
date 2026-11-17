@@ -24,6 +24,7 @@ import {
 
 import { useAuth } from "@/contexts/AuthContext";
 import { getWorkshopImage } from "@/utils/getWorkshopImage";
+import { getWorkshopSchedule, workshopDateRange } from "@/utils/workshopDate.mjs";
 
 import {
   studentFetch,
@@ -337,6 +338,8 @@ function RegisteredWorkshopCard({
   const workshop =
     registration.workshop;
 
+  const schedule = getWorkshopSchedule(workshop, registration.sessionId);
+  const dateLabel = workshopDateRange(schedule);
   const workshopImage =
     workshop.image ||
     getWorkshopImage(
@@ -370,19 +373,8 @@ function RegisteredWorkshopCard({
         </h2>
 
         <div className="registered-workshop-information">
-          <div>
-            <CalendarDays size={17} />
-
-            {workshop.startDate ||
-              "Date to be announced"}
-          </div>
-
-          <div>
-            <Clock size={17} />
-
-            {workshop.time ||
-              "Time to be announced"}
-          </div>
+          {dateLabel && <div><CalendarDays size={17} />{dateLabel}</div>}
+          {schedule.time && <div><Clock size={17} />{schedule.time}</div>}
 
           <div>
             <MapPin size={17} />

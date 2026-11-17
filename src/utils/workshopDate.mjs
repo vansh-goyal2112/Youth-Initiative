@@ -1,0 +1,38 @@
+/** A calendar date is formatted in UTC, so YYYY-MM-DD never shifts a day. */
+export function formatWorkshopDate(value) {
+  let date;
+  if (value instanceof Date) {
+    date = value;
+  } else {
+    const match = /^(\d{4})-(\d{2})-(\d{2})(?:$|T)/.exec(String(value || ""));
+    if (!match) return "";
+    date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+    if (date.getUTCFullYear() !== Number(match[1]) ||
+        date.getUTCMonth() + 1 !== Number(match[2]) ||
+        date.getUTCDate() !== Number(match[3])) return "";
+  }
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-GB", { day:"numeric", month:"short", year:"numeric", timeZone:"UTC" }).format(date);
+}
+
+/** Prefer the chosen session, then the earliest upcoming active session. */
+export function getWorkshopSchedule(workshop = {}, sessionId = null, today = new Date()) {
+  const sessions = Array.isArray(workshop.sessions) ? workshop.sessions
+    .filter(item => item && item.status !== "archived" && item.status !== "inactive" && formatWorkshopDate(item.startDate))
+    .sort((a,b) => String(a.startDate).localeCompare(String(b.startDate))) : [];
+  const selected = sessionId ? sessions.find(item => item.id === sessionId) : null;
+  const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+  const next = selected || sessions.find(item => item.startDate >= todayKey) || sessions[0] || null;
+  return {
+    startDate: next?.startDate || workshop.startDate || null,
+    endDate: next?.endDate || workshop.endDate || null,
+    time: next?.time || workshop.time || "",
+  };
+}
+
+export function workshopDateRange(schedule) {
+  const start = formatWorkshopDate(schedule?.startDate);
+  if (!start) return "";
+  const end = formatWorkshopDate(schedule?.endDate);
+  return end && end !== start ? `${start} – ${end}` : start;
+}

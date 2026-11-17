@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import ctaStyles from "@/components/workshops/previouslyCompletedCta.module.css";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import {
-  ArrowLeft,
   BookOpen,
   CalendarDays,
   Clock,
@@ -19,6 +18,7 @@ import {
 } from "lucide-react";
 
 import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
+import { getWorkshopSchedule, workshopDateRange } from "@/utils/workshopDate.mjs";
 
 import {
   studentFetch,
@@ -26,7 +26,6 @@ import {
 
 export default function WorkshopDetailsPage() {
   const params = useParams();
-  const router = useRouter();
 
   const [workshop, setWorkshop] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -93,21 +92,11 @@ export default function WorkshopDetailsPage() {
   const activeSessions = Array.isArray(workshop.sessions)
     ? workshop.sessions.filter(session => session.status === "active")
     : [];
+  const schedule = getWorkshopSchedule(workshop);
+  const dateLabel = workshopDateRange(schedule);
 
   return (
     <main className="workshop-details-page">
-      <header className="workshop-details-header">
-        <div className="student-content-container">
-          <button
-            type="button"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft size={22} />
-            Back to Workshops
-          </button>
-        </div>
-      </header>
-
       <div className="student-content-container workshop-details-layout">
         <section className="workshop-details-main">
           <div className="workshop-details-image-wrapper">
@@ -139,6 +128,9 @@ export default function WorkshopDetailsPage() {
             </span>
 
             <h1>{workshop.title}</h1>
+            {dateLabel && <p className="text-sm font-semibold text-slate-700">
+              <CalendarDays size={16} aria-hidden="true" className="mr-2 inline" />{dateLabel}
+            </p>
 
             <p className="workshop-details-description">
               {workshop.description}
@@ -178,23 +170,8 @@ export default function WorkshopDetailsPage() {
                 }
               />
 
-              <InformationItem
-                icon={CalendarDays}
-                label="Date"
-                value={
-                  workshop.startDate ||
-                  "To be announced"
-                }
-              />
-
-              <InformationItem
-                icon={Clock}
-                label="Time"
-                value={
-                  workshop.time ||
-                  "To be announced"
-                }
-              />
+              {dateLabel && <InformationItem icon={CalendarDays} label="Date" value={dateLabel} />}
+              {schedule.time && <InformationItem icon={Clock} label="Time" value={schedule.time} />}
 
               <InformationItem
                 icon={MapPin}
@@ -239,7 +216,7 @@ export default function WorkshopDetailsPage() {
               <div className="space-y-3">
                 {activeSessions.map(session => (
                   <article key={session.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <h3 className="mb-1 text-sm font-extrabold text-slate-900">{session.startDate}{session.endDate && session.endDate !== session.startDate ? " – " + session.endDate : ""}</h3>
+                    <h3 className="mb-1 text-sm font-extrabold text-slate-900">{workshopDateRange(session)}</h3>
                     <p className="mb-3 text-xs text-slate-600">{[session.time,session.location,session.capacity != null ? "Capacity " + session.capacity : ""].filter(Boolean).join(" · ")}</p>
                     <div className="flex flex-wrap gap-2">
                       <a href={session.registrationUrl || registrationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-rose-700 px-3 py-2 text-xs font-extrabold text-white hover:bg-rose-800">Register <ExternalLink size={15}/></a>
@@ -300,7 +277,7 @@ export default function WorkshopDetailsPage() {
           <div className="mt-6 border-t border-slate-200 pt-5">
             <h2 className="mb-2 text-base font-extrabold text-slate-900">Already attended this workshop?</h2>
             <p className="mb-3 text-sm leading-relaxed text-slate-600">
-              If you attended in the past, you can claim half XP without a QR code. SAIT staff may review your claim.
+              Attended before? Claim half XP. SAIT staff may review your claim.
             </p>
             <Link
               href={`/completed-workshops?workshop=${encodeURIComponent(workshop.id)}#previously-completed`}

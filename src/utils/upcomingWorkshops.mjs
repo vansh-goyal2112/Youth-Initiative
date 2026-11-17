@@ -1,3 +1,5 @@
+import { getWorkshopSchedule } from "./workshopDate.mjs";
+
 function dateOrdinal(input) {
   if (typeof input !== "string") return null;
 
@@ -45,10 +47,10 @@ export function findUpcomingAdventures(
   return workshops
     .filter((workshop) => workshop?.status === "active")
     .filter((workshop) => !registeredIds.has(workshop.id))
-    .map((workshop) => ({
-      ...workshop,
-      daysAway: daysUntilWorkshop(workshop.startDate, today),
-    }))
+    .map((workshop) => {
+      const schedule = getWorkshopSchedule(workshop, null, today);
+      return { ...workshop, startDate: schedule.startDate, daysAway: daysUntilWorkshop(schedule.startDate, today) };
+    })
     .filter((workshop) => (
       workshop.daysAway !== null &&
       workshop.daysAway >= 0 &&

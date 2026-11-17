@@ -13,7 +13,6 @@ import {
 } from "firebase/app-check";
 
 import {
-  ArrowLeft,
   AlertCircle,
   BookOpen,
   CalendarDays,
@@ -296,15 +295,11 @@ function EditProfileForm({
   return (
     <main className={styles.page}>
       <div className={styles.shell}>
-        <button type="button" className={styles.back} onClick={() => router.push("/profile")}>
-          <ArrowLeft size={18} aria-hidden="true" /> Back to My Profile
-        </button>
-
         <header className={styles.hero}>
           <div className={styles.heroCopy}>
             <span className={styles.eyebrow}><Sparkles size={16} aria-hidden="true" /> YOUR LEARNING JOURNEY PASSPORT</span>
             <h1>Edit My Identity</h1>
-            <p>Make your learning journey yours. Keep your school details up to date and choose what you love exploring.</p>
+            <p>Keep your grade and interests up to date. Find workshops for you.</p>
           </div>
           <span className={styles.heroIcon} aria-hidden="true"><UserRound size={45} /></span>
         </header>

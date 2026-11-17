@@ -9,13 +9,7 @@ import {
   workshopDateLabel,
 } from "@/utils/upcomingWorkshops.mjs";
 import styles from "./upcomingAdventures.module.css";
-
-function displayDate(value) {
-  const match = /^(\d{4}-\d{2}-\d{2})/.exec(value || "");
-  if (!match) return "Date to be announced";
-  const parsed = new Date(`${match[1]}T12:00:00`);
-  return parsed.toLocaleDateString("en-CA", { month: "short", day: "numeric" });
-}
+import { formatWorkshopDate } from "@/utils/workshopDate.mjs";
 
 export default function UpcomingAdventures({ workshops = [], registrations = [] }) {
   const upcoming = useMemo(
@@ -47,7 +41,7 @@ export default function UpcomingAdventures({ workshops = [], registrations = [] 
               <span className={styles.category}>{workshop.category || "SAIT Youth"}</span>
             </div>
             <h3>{workshop.title}</h3>
-            <p className={styles.date}>{displayDate(workshop.startDate)} · {workshop.learningMode || "Workshop"}</p>
+            <p className={styles.date}>{formatWorkshopDate(workshop.startDate)}{workshop.learningMode ? ` · ${workshop.learningMode}` : ""}</p>
             <Link href={`/workshops/${encodeURIComponent(workshop.id)}`} className={styles.cta}>
               View &amp; register <ArrowRight size={17} aria-hidden="true"/>
             </Link>

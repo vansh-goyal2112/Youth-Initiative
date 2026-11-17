@@ -222,7 +222,7 @@ export default function ProfilePage() {
           <div className={styles.heroIntro}>
             <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true"/> MY LEARNING JOURNEY PASSPORT</span>
             <h1 id="profile-heading">My Explorer Profile</h1>
-            <p>Every adventure begins with you. Discover the skills you&apos;ve built and where your curiosity can take you next.</p>
+            <p>This is your Learning Journey. See what you learned and what comes next.</p>
           </div>
           <Link href="/edit-profile" className={styles.editButton}>
             <Edit3 size={17} aria-hidden="true"/> Edit My Identity

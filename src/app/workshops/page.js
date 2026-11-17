@@ -208,7 +208,7 @@ export default function WorkshopsPage() {
             <h1>Find Your Next Workshop</h1>
 
             <p>
-              Discover workshops based on your interests,
+              Find workshops that match your interests,
               preferred learning mode and future goals.
             </p>
           </div>
