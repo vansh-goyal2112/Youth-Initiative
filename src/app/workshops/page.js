@@ -208,8 +208,7 @@ export default function WorkshopsPage() {
             <h1>Find Your Next Workshop</h1>
 
             <p>
-              Find workshops that match your interests,
-              preferred learning mode and future goals.
+              Pick a workshop you like. Explore something new.
             </p>
           </div>
 
@@ -224,7 +223,7 @@ export default function WorkshopsPage() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 border-l-4 border-l-red-600 bg-white p-5 shadow-sm">
           <div>
             <h2 className="text-lg font-extrabold text-slate-900">Already attended a SAIT workshop?</h2>
-            <p className="mt-1 text-sm text-slate-600">Find a past workshop and choose Previously Completed to claim half XP. Staff may review your claim.</p>
+            <p className="mt-1 text-sm text-slate-600">Find a workshop you attended. Choose Previously Completed to claim half XP. SAIT staff may review your claim.</p>
           </div>
           <Link
             href="/completed-workshops?claim=1#previously-completed"
@@ -367,7 +366,7 @@ export default function WorkshopsPage() {
             <h2>No workshops found</h2>
 
             <p>
-              Try changing or clearing your filters.
+              Try another search or clear your filters.
             </p>
 
             <button
