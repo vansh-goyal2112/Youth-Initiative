@@ -32,3 +32,24 @@ test("all workshop date surfaces use the shared optional schedule", () => {
   assert.doesNotMatch(s,/Date to be announced|Workshop date|To be announced/,path);
  }
 });
+
+test("admin schedule screens format dates without changing stored ISO date inputs", () => {
+  const sessions=src("../src/components/admin/WorkshopSessionsPanel.jsx");
+  const attendance=src("../src/app/admin/attendance/page.js");
+  assert.match(sessions,/workshopDateRange\(session\)/);
+  assert.match(attendance,/formatWorkshopDate\(item.startDate\)/);
+});
+test("archived schedules never offer an unfulfillable student registration", () => {
+  const detail=src("../src/app/workshops/[id]/page.js");
+  const confirm=src("../src/app/registration-success/[id]/page.js");
+  assert.match(detail,/sessionsUnavailable \|\| workshop.availabilityStatus === "closed"/);
+  assert.match(confirm,/managedSessions && !activeSelectedSession/);
+  assert.match(confirm,/registrationUnavailable \|\|/);
+  assert.match(src("../src/app/api/registrations/route.js"),/item.status === "active"/);
+});
+test("empty dates also hide empty or stale time rows on student screens", () => {
+  const detail=src("../src/app/workshops/[id]/page.js");
+  const registered=src("../src/app/registered-workshops/page.js");
+  assert.match(detail,/dateLabel && schedule.time && <InformationItem/);
+  assert.match(registered,/dateLabel && schedule.time && <div>/);
+});
