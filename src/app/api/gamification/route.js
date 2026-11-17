@@ -159,6 +159,7 @@ export async function GET(request) {
       );
 
     const completedWorkshops = [];
+    const completedWithSnapshots = [];
 
     // Keep the original ordering, duplicate-registration behaviour and
     // error propagation. Bound concurrent Cosmos reads to avoid bursts.
@@ -170,8 +171,12 @@ export async function GET(request) {
           ? await readCosmosDocument("workshops", registration.workshopId)
           : null)
       ));
-      for (const workshop of workshops) {
-        if (workshop) completedWorkshops.push({ id: workshop.id, ...workshop });
+      for (let index = 0; index < workshops.length; index += 1) {
+        const workshop = workshops[index];
+        if (workshop) {
+          completedWorkshops.push({ id: workshop.id, ...workshop });
+          completedWithSnapshots.push({ ...batch[index], workshopSnapshot: workshop });
+        }
       }
     }
 
@@ -271,7 +276,7 @@ export async function GET(request) {
       rule: definition.rule,
       status: definition.status,
       target: Number(definition.rule?.minCount) || 1,
-      current: countMatchingSessions(definition.rule, completedRegistrations),
+      current: countMatchingSessions(definition.rule, completedWithSnapshots),
     }));
 
     /*
