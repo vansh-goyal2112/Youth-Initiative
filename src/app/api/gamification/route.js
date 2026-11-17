@@ -4,6 +4,7 @@ import {
 } from "@/services/studentAccess";
 
 import { getXpBalances } from "@/services/xpBalance.mjs";
+import { getLevelInformation } from "@/services/levelProgress.mjs";
 import { countMatchingSessions } from "@/services/customBadges.mjs";
 import {
   queryCosmosDocuments,
@@ -11,89 +12,6 @@ import {
 } from "@/services/cosmosData";
 
 export const runtime = "nodejs";
-
-function getLevelInformation(totalXp) {
-  const levels = [
-    {
-      level: 1,
-      name: "New Explorer",
-      minimumXp: 0,
-      nextXp: 100,
-    },
-
-    {
-      level: 2,
-      name: "Skill Starter",
-      minimumXp: 100,
-      nextXp: 250,
-    },
-
-    {
-      level: 3,
-      name: "Future Creator",
-      minimumXp: 250,
-      nextXp: 450,
-    },
-
-    {
-      level: 4,
-      name: "Innovation Builder",
-      minimumXp: 450,
-      nextXp: 700,
-    },
-
-    {
-      level: 5,
-      name: "Pathway Explorer",
-      minimumXp: 700,
-      nextXp: 1000,
-    },
-
-    {
-      level: 6,
-      name: "Youth Champion",
-      minimumXp: 1000,
-      nextXp: null,
-    },
-  ];
-
-  let currentLevel =
-    levels[0];
-
-  for (const level of levels) {
-    if (
-      totalXp >= level.minimumXp
-    ) {
-      currentLevel = level;
-    }
-  }
-
-  let progressPercentage = 100;
-
-  if (currentLevel.nextXp) {
-    const levelRange =
-      currentLevel.nextXp -
-      currentLevel.minimumXp;
-
-    const levelProgress =
-      totalXp -
-      currentLevel.minimumXp;
-
-    progressPercentage = Math.min(
-      100,
-      Math.round(
-        (levelProgress /
-          levelRange) *
-          100
-      )
-    );
-  }
-
-  return {
-    ...currentLevel,
-    progressPercentage,
-  };
-}
 
 function createQuestData({
   completedCount,
@@ -287,8 +205,8 @@ export async function GET(request) {
           category
         ].xp +=
           Number(
-            workshop.xpReward
-          ) || 100;
+            workshop.xpReward ?? 100
+          );
       }
     );
 

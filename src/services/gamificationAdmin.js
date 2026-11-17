@@ -2,6 +2,8 @@ import crypto from "crypto";
 import { completionTransactionId, awardForCompletion } from "@/services/completionRules.mjs";
 import { countMatchingSessions } from "@/services/customBadges.mjs";
 import { creditXp } from "@/services/xpBalance.mjs";
+import { calculateLevel, getLevelName } from "@/services/levelProgress.mjs";
+export { calculateLevel, getLevelName };
 
 import {
   cosmosNow,
@@ -13,29 +15,6 @@ import {
   readCosmosDocument,
   replaceCosmosDocument,
 } from "@/services/cosmosData";
-
-export function calculateLevel(totalXp) {
-  if (totalXp >= 1000) return 6;
-  if (totalXp >= 700) return 5;
-  if (totalXp >= 450) return 4;
-  if (totalXp >= 250) return 3;
-  if (totalXp >= 100) return 2;
-
-  return 1;
-}
-
-export function getLevelName(level) {
-  const levels = {
-    1: "New Explorer",
-    2: "Skill Starter",
-    3: "Future Creator",
-    4: "Innovation Builder",
-    5: "Pathway Explorer",
-    6: "Youth Champion",
-  };
-
-  return levels[level] || "New Explorer";
-}
 
 async function removeXpReservation(
   transactionId,
