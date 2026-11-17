@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { LoaderCircle, QrCode, CalendarCheck2, Timer, ShieldCheck, CheckCircle2, ArrowRight, BookOpen, ScanLine, RefreshCw, Clock3, BarChart3, ArrowUpRight } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
+import { formatWorkshopDate } from "@/utils/workshopDate.mjs";
 
 export default function AdminAttendancePage() {
   const [workshops, setWorkshops] = useState([]);
@@ -82,7 +83,7 @@ export default function AdminAttendancePage() {
           {scheduled.length > 0 && <label><span><CalendarCheck2 size={16}/> Scheduled date</span>
             <select disabled={loading} required value={catalogSessionId} onChange={event=>{setCatalogSessionId(event.target.value);setQrImage("");}}>
               <option value="">Choose a session date</option>
-              {scheduled.map(item=><option key={item.id} value={item.id}>{item.startDate}{item.time ? " · " + item.time : ""}</option>)}
+              {scheduled.map(item=><option key={item.id} value={item.id}>{formatWorkshopDate(item.startDate)}{item.time ? " · " + item.time : ""}</option>)}
             </select>
           </label>}
           <label><span><Timer size={16}/> Check-in window</span>
