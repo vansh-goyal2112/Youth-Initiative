@@ -8,6 +8,8 @@ import { processWorkshopCompletion } from "@/services/gamificationAdmin";
 import { completionTransactionId, awardForCompletion } from "@/services/completionRules.mjs";
 import { resolveWorkshopSessions } from "@/services/workshopSessions.mjs";
 import { ensureWorkshopCatalogueXp, ensureWorkshopXpAssigned } from "@/services/workshopXpMigration";
+import { getSelfClaimCategory } from "@/utils/workshopSelfClaim.mjs";
+import { schoolGradeNumber } from "@/utils/workshopGrades.mjs";
 
 export const runtime = "nodejs";
 
@@ -15,7 +17,13 @@ export const runtime = "nodejs";
 // This is intentionally distinct from the active, grade-filtered registration catalogue.
 export async function GET(request) {
   try {
-    const { uid } = await requireActiveStudent(request);
+    const { uid, student } = await requireActiveStudent(request);
+    // A historical claim can involve an earlier grade, but not a future one.
+    // Never use the normal registration catalogue for this list.
+    if (schoolGradeNumber(student?.schoolGrade) === null) {
+      return Response.json({ success: true, gradeRequired: true, workshops: [] },
+        { headers: { "Cache-Control": "private, no-store" } });
+    }
     const [workshops, registrations] = await Promise.all([
       queryCosmosDocuments("workshops",
         "SELECT * FROM c WHERE NOT IS_DEFINED(c.status) OR c.status != 'deleted'"),
@@ -31,8 +39,9 @@ export async function GET(request) {
     return Response.json({
       success: true,
       workshops: resolvedWorkshops
-        .filter(item => item.id && item.title)
+        .filter(item => item.id && item.title && getSelfClaimCategory(item, student.schoolGrade))
         .map(item => {
+          const claimCategory = getSelfClaimCategory(item, student.schoolGrade);
           const sessions = resolveWorkshopSessions(item)
             .filter(session => !session.startDate || session.startDate <= today)
             .filter(session => !claimed.has(item.id + ":" + session.id));
@@ -41,7 +50,8 @@ export async function GET(request) {
           if (hasSessions && sessions.length === 0) return null;
           return {
             id: item.id, title: item.title, programArea: item.programArea || "",
-            grade: item.grade || "", xpReward: awardForCompletion(item, "self_reported"),
+            grade: item.grade || "", claimCategory,
+            xpReward: awardForCompletion(item, "self_reported"),
             startDate: item.startDate || null, status: item.status || "active",
             sessions: hasSessions ? sessions.map(session => ({
               id: session.id, startDate: session.startDate,
@@ -63,7 +73,7 @@ export async function GET(request) {
 // so authorized staff can subsequently verify or reverse the claim.
 export async function POST(request) {
   try {
-    const { uid } = await requireActiveStudent(request, { consumeAppCheck: true });
+    const { uid, student } = await requireActiveStudent(request, { consumeAppCheck: true });
     const body = await request.json().catch(() => null);
     const workshopId = typeof body?.workshopId === "string" ? body.workshopId.trim() : "";
     const requestedSessionId = typeof body?.sessionId === "string" ? body.sessionId.trim() : null;
@@ -81,6 +91,12 @@ export async function POST(request) {
     const workshop = await ensureWorkshopXpAssigned(await readCosmosDocument("workshops", workshopId));
     if (!workshop || !["active", "inactive"].includes(workshop.status || "active")) {
       return Response.json({ message: "This workshop is no longer available for a new completion claim." }, { status: 404 });
+    }
+    if (schoolGradeNumber(student?.schoolGrade) === null) {
+      return Response.json({ message: "Add your current school grade in My Identity before claiming a past workshop." }, { status: 409 });
+    }
+    if (!getSelfClaimCategory(workshop, student.schoolGrade)) {
+      return Response.json({ message: "This workshop is not eligible for a past-attendance claim for your grade." }, { status: 403 });
     }
 
     const knownSessions = resolveWorkshopSessions(workshop);
