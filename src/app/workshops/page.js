@@ -59,14 +59,9 @@ export default function WorkshopsPage() {
 
     let cancelled = false;
 
-    if (!user) {
-      setWorkshops([]);
-      setErrorMessage("");
-      setGradeRequired(false);
-      setLoadedForKey(null);
-      setLoading(false);
-      return;
-    }
+    // Signed-out display is derived from the auth state itself. No
+    // synchronous state reset is needed, and stale results are never rendered.
+    if (!user) return;
 
     async function loadWorkshops() {
       setLoading(true);
