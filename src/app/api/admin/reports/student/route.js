@@ -74,6 +74,7 @@ export async function GET(request) {
         workshopTitle: item.workshopSnapshot?.title || workshopMap.get(item.workshopId)?.title || "Workshop unavailable",
         programArea: item.workshopSnapshot?.programArea || workshopMap.get(item.workshopId)?.programArea || null,
         status: item.status || null,
+        completionSource: item.completionSource || null,
         attendanceStatus: item.attendanceStatus || null,
         registeredAt: item.createdAt || null,
         completedAt: item.completedAt || null,

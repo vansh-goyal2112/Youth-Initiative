@@ -27,6 +27,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 import { formatWorkshopDate } from "@/utils/workshopDate.mjs";
+import { isSelfReportedCompletion } from "@/utils/completionSourceLabels.mjs";
 
 export default function CompletedWorkshopsPage() {
   const {
@@ -469,6 +470,11 @@ function CompletedWorkshopCard({
         <h2>
           {workshop.title}
         </h2>
+        {isSelfReportedCompletion(registration) && (
+          <span className="mb-3 inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-bold text-sky-800">
+            Self-reported
+          </span>
+        )}
 
         <div className="completed-workshop-information">
           {completedDate && <div>

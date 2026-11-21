@@ -3,6 +3,7 @@ import "./report-print.css";
 import { useEffect, useState } from "react";
 import { FileText, Download, Search, ShieldCheck, Printer, ArrowUpRight, GraduationCap, Award, Activity, BookOpen, ChartNoAxesCombined, FileSearch, CheckCircle2, Users } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
+import { isSelfReportedCompletion } from "@/utils/completionSourceLabels.mjs";
 
 function formatValue(value) {
   if (value === null || value === undefined || value === "") return "—";
@@ -117,7 +118,15 @@ export default function AdminReportsPage() {
       </section>
 
       <section className="admin-report-section"><div className="admin-report-section-heading"><span><BookOpen size={19}/></span><div><h3>Workshop participation <small>({registrations.length})</small></h3><p>Registrations and check-in status</p></div></div>
-        <div className="admin-report-list">{registrations.length ? registrations.map((r,i) => <div className="admin-report-list-item" key={i}><span className="admin-report-list-icon"><BookOpen size={18}/></span><div><strong>{r.workshopTitle || "Workshop"}</strong><p>{r.status || "Unknown"} · Attendance: {r.attendanceStatus || "Not recorded"}</p></div><CheckCircle2 size={18} className="text-slate-300"/></div>) : <p className="admin-report-none">No workshop registrations recorded yet.</p>}</div>
+        <div className="admin-report-list">{registrations.length ? registrations.map((r,i) => <div className="admin-report-list-item" key={i}><span className="admin-report-list-icon"><BookOpen size={18}/></span><div>
+          <strong>{r.workshopTitle || "Workshop"}</strong>
+          {isSelfReportedCompletion(r) && (
+            <span className="ml-2 inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-800">
+              Self-reported
+            </span>
+          )}
+          <p>{r.status || "Unknown"} · Attendance: {r.attendanceStatus || "Not recorded"}</p>
+        </div><CheckCircle2 size={18} className="text-slate-300"/></div>) : <p className="admin-report-none">No workshop registrations recorded yet.</p>}</div>
       </section>
 
       <div className="admin-reports-two-columns">
