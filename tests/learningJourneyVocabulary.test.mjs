@@ -7,7 +7,7 @@ const visible = [
   "../src/app/dashboard/page.js",
   "../src/app/journey/page.js",
   "../src/components/gamification/AdventureTrail.jsx",
-  "../src/app/page.js",
+  "../src/app/LandingPage.jsx",
 ];
 
 test("student pages use XP, levels and badges instead of overlapping progress jargon", () => {

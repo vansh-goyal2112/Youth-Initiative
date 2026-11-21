@@ -34,6 +34,6 @@ test("app launcher and landing-page branding use the plural name", () => {
   const manifest = JSON.parse(readFileSync(join(root, "src/app/manifest.webmanifest"), "utf8"));
   assert.equal(manifest.name, "SAIT Youth Initiatives");
   assert.equal(manifest.short_name, "Youth Initiatives");
-  const home = readFileSync(join(root, "src/app/page.js"), "utf8");
+  const home = readFileSync(join(root, "src/app/LandingPage.jsx"), "utf8");
   assert.doesNotMatch(home, /^\s*Initiative\s*$/m);
 });

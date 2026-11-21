@@ -6,7 +6,7 @@ const read = path => readFileSync(new URL(path, import.meta.url), "utf8");
 
 test("XP messages do not promise fixed rewards", () => {
   const paths = [
-    "../src/app/page.js",
+    "../src/app/LandingPage.jsx",
     "../src/app/profile/page.js",
     "../src/components/common/StudentAnnouncements.jsx",
     "../src/components/common/WelcomeTutorial.jsx",
