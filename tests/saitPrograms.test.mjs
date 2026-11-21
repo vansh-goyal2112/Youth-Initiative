@@ -396,6 +396,34 @@ test("uses program-specific evidence for the mixed-interest student", () => {
   assert.ok(results.every(({ matchedWorkshopIds }) => matchedWorkshopIds.length === 0));
 });
 
+test("two distinct direct interests rank above three welding pathways", () => {
+  const integratedAi = makeProgram({
+    title: "Integrated AI",
+    description: "Learn Python programming and build AI applications.",
+  });
+  const weldingPrograms = ["Welding", "Welding Technician", "Welding Apprenticeship"].map((title) =>
+    makeProgram({ title, description: "Welding and metal fabrication.", learningMode: "in-person" })
+  );
+  const results = recommendSaitPrograms({
+    student: {
+      schoolGrade: "8",
+      interests: ["Coding", "AI", "Artificial Intelligence", "Skilled Trades", "Health"],
+      learningMode: "in-person",
+    },
+    completedWorkshops: [{ id: "welding", title: "Intro to Welding", category: "Trades" }],
+    programs: [...weldingPrograms, integratedAi],
+  }, { limit: 3 });
+
+  assert.equal(results.length, 3);
+  assert.equal(results[0].program.title, "Integrated AI");
+  assert.deepEqual(results[0].reasons, [
+    "Learn about artificial intelligence.",
+    "Learn about programming.",
+  ]);
+  assert.ok(results[1].score > results[0].score);
+  assert.equal("directInterestCount" in results[0], false);
+});
+
 test("handles incomplete profiles and preserves explicit interest mappings", () => {
   const recommendations = recommendSaitPrograms({
     student: {},

@@ -22,7 +22,7 @@ export const INTEREST_KEYWORD_BONUS = 10;
 export const SAIT_INTEREST_PATHWAY_MAPPINGS = Object.freeze({
   "artificial intelligence": {
     category: "Technology",
-    subjects: ["artificial intelligence"],
+    subjects: ["artificial intelligence", "ai"],
   },
   aviation: {
     category: "Aviation",
@@ -131,11 +131,14 @@ function getRecommendationReasons(
     score += (INTEREST_KEYWORD_BONUS * keywordPoints) / interests.length;
   }
 
-  const specificSubject = subjectMatches.find(({ term }) =>
+  const specificSubjects = subjectMatches.filter(({ term }) =>
     !categoryInterestMatch || term !== normalizeCategory(programCategory)
   );
-  if (specificSubject) {
-    reasons.push(`Learn about ${specificSubject.term}.`);
+  if (specificSubjects.length > 0) {
+    for (const { term } of specificSubjects.slice(0, 2)) {
+      const label = term === "ai" ? "artificial intelligence" : term;
+      reasons.push(`Learn about ${label}.`);
+    }
   } else if (categoryInterestMatch) {
     const area = { Trades: "the skilled trades", Health: "health care" }[programCategory] ||
       programCategory.toLowerCase();
@@ -209,6 +212,7 @@ function getRecommendationReasons(
 
   return {
     score: Math.min(100, Math.round(score)),
+    directInterestCount: subjectMatches.length,
     reasons,
     matchedWorkshopIds: [...matchedWorkshopIds],
   };
@@ -236,11 +240,16 @@ export function recommendSaitPrograms(
     throw new Error("Student interests must be an array.");
   }
 
-  const interests = student.interests || [];
+  const studentInterests = student.interests || [];
 
-  if (interests.some((interest) => typeof interest !== "string")) {
+  if (studentInterests.some((interest) => typeof interest !== "string")) {
     throw new Error("Student interests must contain only strings.");
   }
+
+  const interests = [...new Set(studentInterests.map((interest) => {
+    const normalized = normalizeMatchText(interest);
+    return normalized === "ai" ? "artificial intelligence" : normalized;
+  }).filter(Boolean))];
 
   if (
     !Array.isArray(completedWorkshops) ||
@@ -268,7 +277,7 @@ export function recommendSaitPrograms(
         (!getWorkshopGradeBounds(program) || matchesStudentGrade(program, student.schoolGrade));
     })
     .map((program) => {
-      const { score, reasons, matchedWorkshopIds } = getRecommendationReasons(
+      const { score, directInterestCount, reasons, matchedWorkshopIds } = getRecommendationReasons(
         program,
         student,
         interests,
@@ -283,6 +292,7 @@ export function recommendSaitPrograms(
           informationUrl: program.informationUrl,
         },
         score,
+        directInterestCount,
         reasons,
         matchedWorkshopIds,
       };
@@ -290,8 +300,11 @@ export function recommendSaitPrograms(
     .filter((recommendation) => recommendation.score > 0)
     .sort(
       (first, second) =>
+        // Direct subject matches take priority over category, history and delivery preferences.
+        second.directInterestCount - first.directInterestCount ||
         second.score - first.score ||
         first.program.title.localeCompare(second.program.title)
     )
-    .slice(0, limit);
+    .slice(0, limit)
+    .map(({ directInterestCount: _directInterestCount, ...recommendation }) => recommendation);
 }
