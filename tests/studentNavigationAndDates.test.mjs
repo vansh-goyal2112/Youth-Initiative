@@ -81,3 +81,11 @@ test("Home leads with the registered next workshop before recommendations", () =
   assert.match(dashboard, /daysUntilWorkshop\(getWorkshopSchedule\(second\.workshop, second\.sessionId\)\.startDate\)/);
   assert.match(dashboard, /\["completed", "cancelled"\]\.includes\(registration\.status\)/);
 });
+
+test("Home no longer renders the redundant journey footer", () => {
+  const dashboard = src("../src/app/dashboard/page.js");
+  assert.doesNotMatch(dashboard, /dashboard-journey-cta|YOUR JOURNEY IS GROWING|View My Journey/);
+  assert.match(dashboard, /<UpcomingAdventures/);
+  assert.match(dashboard, /<SkillQuestHub section="level"/);
+  assert.match(dashboard, /dashboard-next-adventure/);
+});

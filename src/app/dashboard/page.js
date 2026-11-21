@@ -677,39 +677,6 @@ export default function DashboardPage() {
 
         <UpcomingAdventures workshops={workshops} registrations={registrations} />
 
-        {/* CTA footer */}
-
-        <section className="dashboard-journey-cta">
-          <div className="dashboard-cta-icon">
-            <Trophy
-              size={33}
-            />
-          </div>
-
-          <div>
-            <span>
-              YOUR JOURNEY IS GROWING
-            </span>
-
-            <h2>
-              Every workshop gets
-              you closer to your
-              future.
-            </h2>
-
-            <p>
-              Build skills. Unlock badges.
-              Find out what you like.
-            </p>
-          </div>
-
-          <Link href="/journey">
-            View My Journey
-            <ChevronRight
-              size={16}
-            />
-          </Link>
-        </section>
       </section>
 
       {/* MOBILE NAVIGATION */}
