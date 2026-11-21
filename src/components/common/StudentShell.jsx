@@ -79,7 +79,7 @@ export default function StudentShell({ children }) {
   return (
     <div className={styles.shell}>
       <StudentHeader
-        studentName={student?.firstName || null}
+        student={student}
         originPath={originPath}
         backHref={back?.href}
         backLabel={back?.label}

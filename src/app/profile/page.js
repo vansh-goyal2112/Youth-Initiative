@@ -201,7 +201,7 @@ export default function ProfilePage() {
   }
 
   const name = studentDisplayName(student);
-  const initials = studentInitials(student);
+  const initials = studentInitials(studentProfile || student);
   const youthId = studentYouthId(student);
   const email = studentContactEmail(student);
   const birthDate = formatStudentBirthDate(student.dateOfBirth);

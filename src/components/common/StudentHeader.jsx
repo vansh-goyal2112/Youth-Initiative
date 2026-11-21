@@ -10,6 +10,7 @@ import { auth } from "@/services/firebase";
 import { usePathname } from "next/navigation";
 import styles from "./studentNavigation.module.css";
 import { studentActiveTab } from "@/utils/studentRouteConfig.mjs";
+import { studentDisplayName, studentInitials } from "@/utils/studentProfileDisplay.mjs";
 
 const navigation = [
   { href: "/dashboard", label: "Home", Icon: Home },
@@ -19,7 +20,7 @@ const navigation = [
   { href: "/profile", label: "Profile", Icon: UserRound },
 ];
 
-export default function StudentHeader({ backHref, backLabel = "Back", studentName, originPath = null }) {
+export default function StudentHeader({ backHref, backLabel = "Back", student, originPath = null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = useState(false);
@@ -71,9 +72,9 @@ export default function StudentHeader({ backHref, backLabel = "Back", studentNam
         </nav>
 
         <div className={styles.headerEnd}>
-          {studentName && (
-            <Link href="/profile" className={styles.userChip} aria-label={`${studentName}, open profile`}>
-              {String(studentName).trim().charAt(0).toUpperCase()}
+          {student && (
+            <Link href="/profile" className={styles.userChip} aria-label={`${studentDisplayName(student)}, open profile`}>
+              {studentInitials(student)}
             </Link>
           )}
           <button type="button" className={styles.logoutButton} onClick={handleLogout} disabled={loggingOut} aria-label={loggingOut ? "Signing out" : "Log out"}>
