@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Cpu,
   Gift,
+  History,
   Home,
   LoaderCircle,
   Lock,
@@ -103,6 +104,10 @@ export default function BadgesPage() {
     setErrorMessage,
   ] = useState("");
 
+  const [redemptions, setRedemptions] = useState([]);
+  const [redemptionLoading, setRedemptionLoading] = useState(true);
+  const [redemptionError, setRedemptionError] = useState("");
+
   useEffect(() => {
     if (
       authLoading ||
@@ -166,6 +171,27 @@ export default function BadgesPage() {
     }
 
     loadBadges();
+
+    // History is independent of badges: a failed ledger request must not
+    // hide a student's XP balance or badge collection.
+    async function loadRedemptions() {
+      setRedemptionLoading(true);
+      setRedemptionError("");
+      try {
+        const response = await studentFetch("/api/rewards/history", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok || !Array.isArray(data.redemptions)) {
+          throw new Error(data.message || "Redemption history could not be loaded.");
+        }
+        if (!cancelled) setRedemptions(data.redemptions);
+      } catch (error) {
+        if (!cancelled) setRedemptionError(error.message || "Redemption history could not be loaded.");
+      } finally {
+        if (!cancelled) setRedemptionLoading(false);
+      }
+    }
+
+    void loadRedemptions();
 
     return () => {
       cancelled =
@@ -469,6 +495,65 @@ export default function BadgesPage() {
               </p>
             </div>
           </div>
+        </section>
+
+        <section aria-labelledby="badges-redemption-history-heading"
+          className="mb-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
+              <History size={24} aria-hidden="true" />
+            </div>
+            <div>
+              <span className="text-xs font-extrabold uppercase tracking-widest text-violet-700">YOUR XP SPENDING</span>
+              <h2 id="badges-redemption-history-heading" className="mt-1 text-xl font-extrabold text-slate-900">Redemption history</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                See when and where you spent XP at SAIT events. Only completed redemptions appear here.
+              </p>
+            </div>
+          </div>
+
+          {redemptionLoading ? (
+            <p className="flex items-center gap-2 text-sm text-slate-600" role="status">
+              <LoaderCircle className="button-spinner" size={18} /> Loading redemption history...
+            </p>
+          ) : redemptionError ? (
+            <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800">
+              {redemptionError}
+            </p>
+          ) : redemptions.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5">
+              <p className="font-bold text-slate-800">No rewards redeemed yet</p>
+              <p className="mt-1 text-sm text-slate-600">When you spend XP at a SAIT event, your completed redemptions will appear here.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[400px] border-collapse text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-extrabold uppercase tracking-wide text-slate-600">
+                  <tr>
+                    <th scope="col" className="px-4 py-3">Date</th>
+                    <th scope="col" className="px-4 py-3">Event / reward</th>
+                    <th scope="col" className="px-4 py-3 text-right">XP spent</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {redemptions.map(item => (
+                    <tr key={item.id} className="text-slate-700">
+                      <td className="whitespace-nowrap px-4 py-3">
+                        {new Date(item.date).toLocaleDateString("en-CA", {
+                          year: "numeric", month: "short", day: "numeric",
+                          timeZone: "America/Edmonton",
+                        })}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-900">{item.event}</td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right font-extrabold text-rose-700">
+                        -{item.xpSpent} XP
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <div className="badges-section-heading">
