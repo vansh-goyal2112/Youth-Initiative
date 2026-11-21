@@ -19,7 +19,9 @@ test("XP messages do not promise fixed rewards", () => {
     assert.doesNotMatch(content, /(?:\+?\b(?:20|50|75|100)\b(?:\s+bonus)?\s+XP)/i, path);
   }
   assert.match(read("../src/app/tasks/page.js"), /Submit & Earn XP/);
-  assert.match(read("../src/components/workshops/SelfReportWorkshop.jsx"), /Earn <strong>XP<\/strong>/);
+  // Past claims show the workshop-specific half-XP reward, not a hardcoded value.
+  assert.match(read("../src/components/workshops/SelfReportWorkshop.jsx"), /Earn <strong>\{workshop\.xpReward\} XP<\/strong>/);
+  assert.match(read("../src/app/api/workshops/self-report/route.js"), /xpReward: awardForCompletion\(item, "self_reported"\)/);
 });
 
 test("real XP values stay on workshop cards and counters", () => {
