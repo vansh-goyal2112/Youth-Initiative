@@ -557,13 +557,7 @@ export default function DashboardPage() {
       {/* MAIN CONTENT */}
 
       <section className="student-content-container dashboard-main">
-        {/* 1. LEARNING JOURNEY HQ */}
-        <SkillQuestHub section="hq"
-          gameData={gameData} student={student} registrations={registrations}
-          onRegistrationsRefresh={refreshRegistrations}
-        />
-
-        {/* 2. LEVEL PROGRESS */}
+        {/* LEVEL PROGRESS (the separate Skill Quest HQ introduction has been removed) */}
         <SkillQuestHub section="level"
           gameData={gameData} student={student} registrations={registrations}
           onRegistrationsRefresh={refreshRegistrations}
