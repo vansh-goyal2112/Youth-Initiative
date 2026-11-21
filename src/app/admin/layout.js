@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import {
-  BookOpen, LayoutDashboard, LogOut, ShieldCheck,
+  ImagePlus, LayoutDashboard, LogOut, ShieldCheck,
   FileText, ClipboardList, KeyRound, Menu, X, ChevronRight, PanelLeftClose, BarChart3,
 } from "lucide-react";
 import { auth } from "@/services/firebase";
@@ -14,27 +14,26 @@ import AdminGuard from "@/components/admin/AdminGuard";
 import { adminWorkspaces } from "@/components/admin/adminWorkspaces";
 
 const navigation = [
-  { title: "Overview", items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }] },
-  { title: "Operations", items: [
+  { items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }] },
+  { title: "Students", items: [
     adminWorkspaces.students,
+    { href: "/admin/reports", label: "Student reports", icon: FileText, permission: "reports.generate" },
+    adminWorkspaces.claims,
+  ] },
+  { title: "Programs", items: [
     adminWorkspaces.workshops,
     adminWorkspaces.badges,
-    { href: "/admin/media", label: "Media library", icon: BookOpen, permission: "workshops.edit" },
+    { href: "/admin/engagement", label: "Engagement insights", icon: BarChart3, permission: "attendance.view" },
   ] },
   { title: "Check-ins & rewards", items: [
     adminWorkspaces.attendance,
     adminWorkspaces.redeem,
-    adminWorkspaces.claims,
   ] },
-  { title: "Reporting", items: [
-    { href: "/admin/reports", label: "Student reports", icon: FileText, permission: "reports.generate" },
-    { href: "/admin/engagement", label: "Engagement insights", icon: BarChart3, permission: "attendance.view" },
-    { href: "/admin/feedback", label: "Workshop feedback", icon: ClipboardList, permission: "reports.generate" },
-  ] },
-  { title: "Administration", items: [
+  { title: "Settings", items: [
     { href: "/admin/team", label: "Team & access", icon: ShieldCheck, permission: "admins.view" },
     { href: "/admin/audit", label: "Audit activity", icon: ClipboardList, permission: "audit.view" },
     { href: "/admin/security", label: "Account security", icon: KeyRound },
+    { href: "/admin/media", label: "Homepage banner", icon: ImagePlus, permission: "workshops.edit" },
   ] },
 ];
 
@@ -87,8 +86,8 @@ export default function AdminLayout({ children }) {
       {navigation.map(group => {
         const items = group.items.filter(item => !item.permission || permissions.includes(item.permission));
         if (!items.length) return null;
-        return <div key={group.title}>
-          {!collapsed && <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{group.title}</p>}
+        return <div key={group.title || "dashboard"}>
+          {!collapsed && group.title && items.length > 1 && <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{group.title}</p>}
           <div className="space-y-1">
             {items.map(({ href, label, icon: Icon }) => {
               const active = href === "/admin" ? pathname === href : pathname.startsWith(href);

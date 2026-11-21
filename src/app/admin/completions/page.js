@@ -77,7 +77,7 @@ export default function CompletionReviewsPage() {
       <div className="mb-7 flex flex-wrap items-center justify-between gap-4">
         <div>
           <span className="mb-2 inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.15em] text-rose-600"><ClipboardCheck size={16}/> Attendance operations</span>
-          <h1 className="text-3xl font-black tracking-tight">Completion <span className="text-rose-600">reviews.</span></h1>
+          <h1 className="text-3xl font-black tracking-tight">Review <span className="text-rose-600">claims</span></h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Review self-reported workshops, approve genuine attendance, and reverse incorrect claims. Half XP is awarded when students report a workshop; approval does not award it twice.</p>
         </div>
         <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50" onClick={() => {setLoading(true);setRefresh(n=>n+1);}}>

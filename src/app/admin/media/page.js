@@ -25,13 +25,13 @@ export default function AdminMediaPage() {
     <main className="min-h-screen bg-[#f5f6fa] p-4 text-slate-900 md:p-8">
       <div className="mb-8">
         <span className="mb-2 flex items-center gap-2 text-xs font-extrabold uppercase tracking-widest text-rose-700"><Layers3 size={16}/> Brand assets</span>
-        <h1 className="text-3xl font-black">Media <span className="text-rose-600">library.</span></h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Manage the student homepage banner and reward artwork. Workshops have their own upload option in the Workshop editor; custom badge artwork can be uploaded in the Badge studio.</p>
+        <h1 className="text-3xl font-black">Homepage <span className="text-rose-600">banner</span></h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Update the banner on the student homepage or the artwork used in reward celebrations.</p>
       </div>
       {error&&<p className="mb-4 rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-800">{error}</p>}
       <div className="grid gap-5 xl:grid-cols-2">
         <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
-          <div className="flex items-center gap-2"><ImagePlus size={20} className="text-rose-700"/><h2 className="text-lg font-extrabold">Homepage banner</h2></div>
+          <div className="flex items-center gap-2"><ImagePlus size={20} className="text-rose-700"/><h2 className="text-lg font-extrabold">Student homepage</h2></div>
           <p className="text-xs leading-5 text-slate-600">Optional background for the existing Learning Journey welcome hero. No visual change occurs until a banner is uploaded.</p>
           <MediaUploader kind="banner" initialUrl={banner} onUploaded={setBanner}/>
         </section>
