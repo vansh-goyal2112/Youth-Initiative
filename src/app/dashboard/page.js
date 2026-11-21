@@ -668,12 +668,6 @@ export default function DashboardPage() {
           onRegistrationsRefresh={refreshRegistrations}
         />
 
-        {/* Workshop reflections (legacy source key retained) */}
-        <SkillQuestHub section="journal"
-          gameData={gameData} student={student} registrations={registrations}
-          onRegistrationsRefresh={refreshRegistrations}
-        />
-
         {/* Additional workshop and skill progress, after the client-requested main sections. */}
         <section className="dashboard-section dashboard-next-adventure">
           <div className="dashboard-section-heading">
