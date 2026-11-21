@@ -6,9 +6,11 @@ import Link from "next/link";
 import {
   useParams,
   useRouter,
+  useSearchParams,
 } from "next/navigation";
 
 import {
+  Suspense,
   useEffect,
   useState,
 } from "react";
@@ -29,6 +31,15 @@ import {
 } from "@/services/studentApi";
 
 export default function RegistrationSuccessPage() {
+  return (
+    <Suspense fallback={<main className="registration-confirm-page"><p>Loading registration...</p></main>}>
+      <RegistrationSuccessContent />
+    </Suspense>
+  );
+}
+
+function RegistrationSuccessContent() {
+  const requestedSessionId = useSearchParams().get("sessionId");
   const params =
     useParams();
 
@@ -149,21 +160,14 @@ export default function RegistrationSuccessPage() {
     router,
   ]);
 
-  // Read URL search parameters after mount to keep server and client HTML aligned.
-  const [requestedSessionId, setRequestedSessionId] = useState(null);
-  const [urlReady, setUrlReady] = useState(false);
-  useEffect(() => {
-    setRequestedSessionId(new URL(window.location.href).searchParams.get("sessionId"));
-    setUrlReady(true);
-  }, []);
-  const managedSessions = Array.isArray(workshop?.sessions) && workshop.sessions.length > 0;
+   const managedSessions = Array.isArray(workshop?.sessions) && workshop.sessions.length > 0;
   const activeSelectedSession = managedSessions
     ? workshop.sessions.find(item => item.id === requestedSessionId && item.status === "active")
     : null;
   const registrationUnavailable = Boolean(workshop && (
     workshop.availabilityStatus === "closed" ||
-    (urlReady && managedSessions && !activeSelectedSession) ||
-    (urlReady && !managedSessions && requestedSessionId && requestedSessionId !== "legacy")
+    (managedSessions && !activeSelectedSession) ||
+    (!managedSessions && requestedSessionId && requestedSessionId !== "legacy")
   ));
 
   async function confirmRegistration() {
@@ -176,7 +180,7 @@ export default function RegistrationSuccessPage() {
         return;
       }
 
-      if (!urlReady || registrationUnavailable) {
+      if (registrationUnavailable) {
         setErrorMessage("This session is no longer available. Choose an active session on the workshop page.");
         return;
       }
@@ -198,7 +202,7 @@ export default function RegistrationSuccessPage() {
             body:
               JSON.stringify({
                 workshopId: params.id,
-                sessionId: typeof window !== "undefined" ? new URL(window.location.href).searchParams.get("sessionId") : null,
+                sessionId: requestedSessionId,
               }),
           }
         );
@@ -373,7 +377,6 @@ export default function RegistrationSuccessPage() {
           type="button"
           className="registration-confirm-button"
           disabled={
-            !urlReady ||
             registrationUnavailable ||
             saving ||
             Boolean(
