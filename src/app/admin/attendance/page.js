@@ -14,6 +14,7 @@ export default function AdminAttendancePage() {
   const [catalogSessionId, setCatalogSessionId] = useState("");
   const [duration, setDuration] = useState(15);
   const [qrImage, setQrImage] = useState("");
+  const [manualCode, setManualCode] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingWorkshops, setLoadingWorkshops] = useState(true);
@@ -40,6 +41,7 @@ export default function AdminAttendancePage() {
       setErrorMessage("");
       setSuccessMessage("");
       setQrImage("");
+      setManualCode("");
       setExpiresAt("");
       const response = await adminFetch("/api/admin/attendance", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -47,11 +49,15 @@ export default function AdminAttendancePage() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to create attendance session.");
+      if (!/^[0-9]{4}$/.test(data.manualCode || "")) {
+        throw new Error("The session did not include a valid attendance code. Generate a new one.");
+      }
       const qrPayload = JSON.stringify({ attendanceSessionId: data.attendanceSessionId, code: data.code });
       const image = await QRCode.toDataURL(qrPayload, { width: 440, margin: 2, color: { dark: "#15233d", light: "#ffffff" } });
       setQrImage(image);
+      setManualCode(data.manualCode);
       setExpiresAt(data.expiresAt);
-      setSuccessMessage("Your attendance session is ready. Display this QR to students.");
+      setSuccessMessage("Attendance is ready. Show the QR or four-digit code to students.");
     } catch (error) {
       setErrorMessage(error.message || "QR code could not be generated.");
     } finally { setLoading(false); }
@@ -75,19 +81,19 @@ export default function AdminAttendancePage() {
         <p className="admin-panel-subtext">Choose the experience and how long students can scan the code.</p>
         <div className="admin-attendance-fields">
           <label><span><BookOpen size={16}/> Workshop</span>
-            <select disabled={loadingWorkshops || loading} value={workshopId} onChange={event => {setWorkshopId(event.target.value);setCatalogSessionId("");setSuccessMessage("");setQrImage("");}}>
+            <select disabled={loadingWorkshops || loading} value={workshopId} onChange={event => {setWorkshopId(event.target.value);setCatalogSessionId("");setSuccessMessage("");setQrImage("");setManualCode("");}}>
               <option value="">{loadingWorkshops ? "Loading workshops…" : "Choose a workshop"}</option>
               {workshops.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
             </select>
           </label>
           {scheduled.length > 0 && <label><span><CalendarCheck2 size={16}/> Scheduled date</span>
-            <select disabled={loading} required value={catalogSessionId} onChange={event=>{setCatalogSessionId(event.target.value);setQrImage("");}}>
+            <select disabled={loading} required value={catalogSessionId} onChange={event=>{setCatalogSessionId(event.target.value);setQrImage("");setManualCode("");}}>
               <option value="">Choose a session date</option>
               {scheduled.map(item=><option key={item.id} value={item.id}>{formatWorkshopDate(item.startDate)}{item.time ? " · " + item.time : ""}</option>)}
             </select>
           </label>}
           <label><span><Timer size={16}/> Check-in window</span>
-            <select value={duration} disabled={loading} onChange={event => {setDuration(event.target.value);setQrImage("");setSuccessMessage("");}}>
+            <select value={duration} disabled={loading} onChange={event => {setDuration(event.target.value);setQrImage("");setManualCode("");setSuccessMessage("");}}>
               {[5,10,15,30].map(minutes => <option value={minutes} key={minutes}>{minutes} minutes</option>)}
             </select>
           </label>
@@ -107,6 +113,13 @@ export default function AdminAttendancePage() {
         <div className={`admin-attendance-preview-body ${qrImage ? "has-qr" : ""}`}>
           {qrImage ? <>
             <div className="admin-attendance-qr-frame"><Image src={qrImage} width={440} height={440} alt="QR code for current workshop attendance session" unoptimized/></div>
+            {manualCode && (
+              <div className="mt-4 w-full max-w-sm rounded-2xl border border-slate-200 bg-white px-5 py-4 text-center shadow-sm">
+                <p className="text-sm font-semibold text-slate-600">Camera not working? Enter this attendance code</p>
+                <p className="mt-2 font-mono text-4xl font-black tracking-[0.25em] text-slate-900" aria-label={`Four-digit attendance code: ${manualCode.split("").join(" ")}`}>{manualCode}</p>
+                <p className="mt-2 text-xs text-slate-500">Students can select “Enter code instead” on Scan Attendance. This code expires with the QR.</p>
+              </div>
+            )
             <div className="admin-attendance-active-badge"><span/> Check-in session created</div>
             {workshop && <p className="admin-attendance-session-title">{workshop.title}</p>}
             {expiresAt && <div className="admin-attendance-expiry"><Clock3 size={17}/> Code expires at <strong>{new Date(expiresAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</strong></div>}
