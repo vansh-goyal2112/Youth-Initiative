@@ -555,9 +555,11 @@ export default function DashboardPage() {
               <span>YOUR NEXT WORKSHOP</span>
               <h2>Next Stop on Your Journey</h2>
             </div>
-            <Link href="/registered-workshops">
-              View My Workshops <ChevronRight size={16} aria-hidden="true" />
-            </Link>
+            {!nextWorkshop && (
+              <Link href="/registered-workshops">
+                View My Workshops <ChevronRight size={16} aria-hidden="true" />
+              </Link>
+            )}
           </div>
           {nextWorkshop ? (
             <NextWorkshopCard registration={nextWorkshop} />
@@ -779,7 +781,11 @@ function NextWorkshopCard({
           </div>
         </div>
 
-        <div className="dashboard-next-actions">
+        <div className="dashboard-next-actions flex-wrap">
+          <Link href="/registered-workshops">
+            My Workshops
+          </Link>
+
           <Link
             href={`/workshops/${workshop.id}`}
           >

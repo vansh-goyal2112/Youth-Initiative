@@ -224,9 +224,14 @@ export default function ProfilePage() {
             <h1 id="profile-heading">My Explorer Profile</h1>
             <p>See what you&apos;ve learned. Find what comes next.</p>
           </div>
-          <Link href="/edit-profile" className={styles.editButton}>
-            <Edit3 size={17} aria-hidden="true"/> Edit My Identity
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/registered-workshops" className={styles.editButton}>
+              <BookOpen size={17} aria-hidden="true"/> My Workshops
+            </Link>
+            <Link href="/edit-profile" className={styles.editButton}>
+              <Edit3 size={17} aria-hidden="true"/> Edit My Identity
+            </Link>
+          </div>
         </div>
 
         <div className={styles.passport}>
@@ -359,12 +364,6 @@ export default function ProfilePage() {
               <span className={styles.actionArtwork}><Trophy size={31} aria-hidden="true"/></span>
               <strong>Badge Collection</strong>
               <small>See what you&apos;ve unlocked</small>
-              <ChevronRight size={19} aria-hidden="true"/>
-            </Link>
-            <Link href="/completed-workshops" className={styles.actionCard}>
-              <span className={styles.actionArtwork}><BookOpen size={31} aria-hidden="true"/></span>
-              <strong>My Workshops</strong>
-              <small>Celebrate what you&apos;ve learned</small>
               <ChevronRight size={19} aria-hidden="true"/>
             </Link>
           </div>
