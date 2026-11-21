@@ -1,10 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const visible = [
   "../src/components/gamification/SkillQuestHub.jsx",
-  "../src/components/gamification/JournalStamps.jsx",
   "../src/app/dashboard/page.js",
   "../src/app/journey/page.js",
   "../src/components/gamification/AdventureTrail.jsx",
@@ -26,10 +25,28 @@ test("student pages use XP, levels and badges instead of overlapping progress ja
   assert.doesNotMatch(map, /XP earned through verified learning/);
 });
 
-test("selection and reflection responses use plain wording without changing stored IDs", () => {
+test("selection response uses plain wording without changing stored IDs", () => {
   const focus = readFileSync(new URL("../src/app/api/gamification/focus/route.js", import.meta.url), "utf8");
   assert.match(focus, /activeQuestId: questId/);
   assert.match(focus, /Saved! Your workshop interests are updated/);
-  const reflect = readFileSync(new URL("../src/app/api/gamification/reflect/route.js", import.meta.url), "utf8");
-  assert.match(reflect, /Your workshop reflection was saved/);
+});
+
+test("retired Learning Journal UI and endpoint are absent; XP logic remains", () => {
+  for (const path of [
+    "../src/components/gamification/JournalStamps.jsx",
+    "../src/components/gamification/journalStamps.module.css",
+    "../src/app/api/gamification/reflect/route.js",
+  ]) assert.equal(existsSync(new URL(path, import.meta.url)), false, path);
+  for (const path of [
+    "../src/app/dashboard/page.js",
+    "../src/app/journey/page.js",
+    "../src/app/profile/page.js",
+    "../src/components/gamification/SkillQuestHub.jsx",
+  ]) {
+    const source = readFileSync(new URL(path, import.meta.url), "utf8");
+    assert.doesNotMatch(source, /My Learning Journal|Workshop Reflections|<JournalStamps|section="journal"/i, path);
+  }
+  const service = readFileSync(new URL("../src/services/skillQuestEngagement.mjs", import.meta.url), "utf8");
+  assert.doesNotMatch(service, /getReflectionStats|validateReflection|REFLECTION_MOODS|LEARNING_MOMENTS/);
+  assert.match(readFileSync(new URL("../src/services/gamificationAdmin.js", import.meta.url), "utf8"), /creditXp\(student, xpReward\)/);
 });

@@ -69,10 +69,9 @@ test("production server: public onboarding and recovery pages load; APIs require
       }
     });
 
-    await t.test("student-specific mission and reflection endpoints reject anonymous callers", async () => {
+    await t.test("student-specific milestone selection endpoint rejects anonymous callers", async () => {
       for (const pathname of [
         "/api/gamification/focus",
-        "/api/gamification/reflect",
       ]) {
         const response = await fetch(baseUrl + pathname, {
           method: "POST",
@@ -82,6 +81,16 @@ test("production server: public onboarding and recovery pages load; APIs require
         });
         assert.equal(response.status, 401, `${pathname} should require sign-in, got ${response.status}`);
       }
+    });
+
+    await t.test("retired Learning Journal endpoint is unavailable", async () => {
+      const response = await fetch(baseUrl + "/api/gamification/reflect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registrationId: "any", mood: "proud", moment: "created" }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      assert.equal(response.status, 404, "Retired journal endpoint must not accept submissions.");
     });
   } catch (error) {
     throw Error(`${error.message}\nServer log tail:\n${logs.slice(-4_000)}`);
