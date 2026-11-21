@@ -1,5 +1,5 @@
 /* Admin-only design system. Scoped to keep the student experience untouched. */
-.admin-auth {font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#152036;isolation:isolate}
+.admin-auth {color:#152036;isolation:isolate}
 .admin-auth-grid{min-height:100svh;display:grid;grid-template-columns:minmax(0,1.03fr) minmax(460px,.97fr)}
 .admin-auth-story{position:relative;overflow:hidden;background:radial-gradient(ellipse at 100% 0%,#394566 0%,transparent 48%),linear-gradient(145deg,#101a2e 10%,#1b2b47 70%,#18233b);color:#fff}
 .admin-auth-story-content{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:space-between;min-height:100%;padding:clamp(32px,5vw,78px)}
@@ -72,7 +72,7 @@
   .admin-auth-submit,.admin-auth-verification-actions .admin-auth-secondary{padding-left:12px;padding-right:12px}
 }
 
-.admin-revamp{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#17243a}
+.admin-revamp{color:#17243a}
 .admin-revamp main{max-width:1440px;margin-left:auto;margin-right:auto}
 .admin-revamp main h1{letter-spacing:-.045em}
 .admin-revamp main section,.admin-revamp main article{transition:border-color .2s,box-shadow .2s}

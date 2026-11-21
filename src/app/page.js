@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import navigationStyles from "@/components/common/studentNavigation.module.css";
 
 import {
   ArrowRight,
@@ -112,28 +113,26 @@ export default function HomePage() {
 
   return (
     <main className="landing-page">
-      <header className="landing-header">
+      <header className={navigationStyles.shell}>
         <div className="site-container landing-header-content">
-          <Link href="/" className="official-brand">
+          <Link href="/" className={navigationStyles.brand}>
             <Image
               src="/images/landing/sait-logo.jpg"
               alt="SAIT"
-              width={132}
-              height={48}
-              className="official-brand-image"
+              width={112}
+              height={42}
+              className={navigationStyles.logo}
               priority
             />
 
-            <span className="official-brand-divider" />
-
-            <span className="official-brand-name">
-              Youth
-              <br />
-              Initiatives
+            <span className={navigationStyles.divider} aria-hidden="true" />
+            <span className={navigationStyles.brandWords}>
+              <strong>Youth Initiatives</strong>
+              <small>Learning Journey <Sparkles size={12} aria-hidden="true" /></small>
             </span>
           </Link>
 
-          <nav className="landing-navigation">
+          <nav className="landing-navigation" aria-label="Landing page navigation">
             <Link href="#opportunities">Explore</Link>
             <Link href="#journey">How It Works</Link>
             <Link href="#skill-quest">Learning Journey</Link>

@@ -1,6 +1,14 @@
 @import "tailwindcss";
+@import "./fonts/brand-fonts.css";
+
+@theme inline {
+  --font-sans: var(--brand-body-font);
+}
 
 :root {
+  --brand-body-font: "DM Sans", Arial, sans-serif;
+  --brand-heading-font: "Titillium Web", "DM Sans", Arial, sans-serif;
+
   --sait-red: #e2232a;
   --sait-red-dark: #ba171d;
   --sait-red-light: #fff1f2;
@@ -53,7 +61,12 @@ body {
   overflow-x: hidden;
   background: var(--page-background);
   color: var(--text-primary);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--brand-body-font);
+}
+
+:where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--brand-heading-font);
+  font-weight: 700;
 }
 
 button,
@@ -115,24 +128,16 @@ img {
 /* Header */
 
 .landing-page {
-  overflow: hidden;
+  overflow: clip;
   background: white;
-}
-
-.landing-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  border-bottom: 1px solid rgba(223, 229, 235, 0.9);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(14px);
 }
 
 .landing-header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 76px;
+  gap: 12px;
+  min-height: 74px;
 }
 
 .official-brand {
@@ -165,23 +170,32 @@ img {
 .landing-navigation {
   display: flex;
   align-items: center;
-  gap: 27px;
+  gap: 5px;
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 700;
 }
 
-.landing-navigation > a:not(.primary-button):hover {
-  color: var(--sait-red);
+.landing-navigation > a:not(.primary-button) {
+  padding: 10px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
 }
 
-.landing-login-button {
-  padding: 10px 4px;
+.landing-navigation > a:not(.primary-button):hover {
+  color: #7b3f90;
+  background: #f4effd;
+}
+
+.landing-page :where(a, button):focus-visible {
+  outline: 3px solid #2e63d7;
+  outline-offset: 3px;
 }
 
 .landing-register-button {
   min-height: 43px;
   padding: 9px 17px;
+  white-space: nowrap;
 }
 
 /* Hero */
@@ -195,8 +209,8 @@ img {
       104deg,
       #ffffff 0%,
       #ffffff 51%,
-      #f5faff 51%,
-      #eef7fd 100%
+      #f8f4ff 51%,
+      #fff0ed 100%
     );
 }
 
@@ -269,9 +283,9 @@ img {
   margin: 20px 0 21px;
   color: var(--text-primary);
   font-size: clamp(44px, 5.2vw, 69px);
-  font-weight: 900;
-  letter-spacing: -3.7px;
-  line-height: 0.99;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
 }
 
 .impressive-hero-content h1 span {
@@ -304,10 +318,10 @@ img {
   justify-content: center;
   min-height: 52px;
   padding: 13px 24px;
-  border: 1px solid var(--border-dark);
-  border-radius: var(--radius-small);
-  background: white;
-  color: var(--text-primary);
+  border: 1px solid #ead4d9;
+  border-radius: 12px;
+  background: #fff7f8;
+  color: #9a233e;
   font-size: 14px;
   font-weight: 800;
   transition:
@@ -380,7 +394,7 @@ img {
   height: 510px;
   overflow: hidden;
   border: 8px solid white;
-  border-radius: 35px 8px 35px 8px;
+  border-radius: 24px;
   background: #dce7ef;
   box-shadow: var(--shadow-large);
 }
@@ -662,7 +676,8 @@ img {
   margin: 12px 0 15px;
   color: var(--text-primary);
   font-size: clamp(32px, 4vw, 45px);
-  letter-spacing: -2px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   line-height: 1.08;
 }
 
@@ -689,8 +704,8 @@ img {
   position: relative;
   overflow: hidden;
   padding: 28px 24px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-large);
+  border: 1px solid #e1e3f4;
+  border-radius: 20px;
   background: white;
   box-shadow: var(--shadow-small);
   animation: revealUp 0.7s both;
@@ -778,7 +793,7 @@ img {
 /* Journey */
 
 .journey-section {
-  background: var(--blue-light);
+  background: #f7f4fd;
 }
 
 .journey-layout {
@@ -792,7 +807,7 @@ img {
   position: relative;
   min-height: 590px;
   overflow: hidden;
-  border-radius: 6px 34px 6px 34px;
+  border-radius: 24px;
   box-shadow: var(--shadow-large);
 }
 
@@ -864,9 +879,10 @@ img {
   grid-template-columns: auto 1fr;
   gap: 15px;
   padding: 16px;
-  border: 1px solid rgba(205, 213, 222, 0.8);
-  border-radius: 13px;
-  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #e1e3f4;
+  border-radius: 16px;
+  background: white;
+  box-shadow: var(--shadow-small);
   transition:
     transform 0.2s ease,
     border 0.2s ease;
@@ -882,10 +898,10 @@ img {
   place-items: center;
   width: 39px;
   height: 39px;
-  border-radius: 11px;
-  background: var(--sait-red);
-  color: white;
-  font-size: 10px;
+  border-radius: 12px;
+  background: var(--sait-red-light);
+  color: #9a233e;
+  font-size: 12px;
   font-weight: 900;
 }
 
@@ -913,10 +929,10 @@ img {
   background:
     radial-gradient(
       circle at 85% 15%,
-      rgba(59, 119, 166, 0.32),
-      transparent 25%
+      rgba(226, 35, 42, 0.22),
+      transparent 28%
     ),
-    var(--navy);
+    linear-gradient(125deg, #172b42 0%, #1d3857 58%, #214568 100%);
 }
 
 .skill-glider {
@@ -997,12 +1013,11 @@ img {
   border-radius: var(--radius-extra-large);
   background: rgba(255, 255, 255, 0.97);
   box-shadow: 0 35px 80px rgba(4, 14, 25, 0.4);
-  transform: rotate(1deg);
-  transition: transform 0.4s ease;
+  transition: transform 0.25s ease;
 }
 
 .skill-quest-dashboard:hover {
-  transform: rotate(0deg) translateY(-5px);
+  transform: translateY(-5px);
 }
 
 .skill-player-heading {
@@ -1266,7 +1281,7 @@ img {
   margin: 7px 0 9px;
   max-width: 720px;
   font-size: clamp(30px, 4vw, 43px);
-  letter-spacing: -2px;
+  letter-spacing: -0.02em;
 }
 
 .landing-final-cta p {
@@ -1450,7 +1465,7 @@ img {
 
   .impressive-hero {
     padding-top: 56px;
-    background: white;
+    background: linear-gradient(155deg, white 30%, #f8f4ff 72%, #fff0ed);
   }
 
   .impressive-hero-grid {
@@ -1550,7 +1565,7 @@ img {
     font-size: 9px;
   }
 
-  .landing-login-button {
+  .landing-navigation > .landing-login-button {
     display: none;
   }
 
@@ -1566,7 +1581,7 @@ img {
 
   .impressive-hero-content h1 {
     font-size: 41px;
-    letter-spacing: -2.4px;
+    letter-spacing: -0.035em;
   }
 
   .impressive-hero-content > p {
