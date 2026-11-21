@@ -1,3 +1,5 @@
+import { getWorkshopGradeBounds, matchesStudentGrade, schoolGradeNumber } from "../utils/workshopGrades.mjs";
+
 import {
   assertValidSaitProgram,
   normalizeMatchText,
@@ -287,10 +289,15 @@ export function recommendSaitPrograms(
 
   validateWeights(weights);
 
+  if (schoolGradeNumber(student.schoolGrade) === null) return [];
+
   return programs
     .filter((program) => {
       assertValidSaitProgram(program);
-      return program.status === "active";
+      // Future pathways without a published school-grade limit remain informational.
+      // Explicit grade-limited SAIT offerings must match the student grade.
+      return program.status === "active" &&
+        (!getWorkshopGradeBounds(program) || matchesStudentGrade(program, student.schoolGrade));
     })
     .map((program) => {
       const { score, reasons, matchedWorkshopIds } = getRecommendationReasons(

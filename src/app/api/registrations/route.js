@@ -16,6 +16,7 @@ import {
   getWorkshopEligibility,
 } from "@/services/workshopEligibility";
 import { withCompletionArtwork } from "@/services/workshopHistory.mjs";
+import { matchesStudentGrade } from "@/utils/workshopGrades.mjs";
 
 export const runtime = "nodejs";
 
@@ -202,6 +203,12 @@ export async function POST(request) {
           status: 409,
         }
       );
+    }
+
+    if (!matchesStudentGrade(workshop, student.schoolGrade)) {
+      return Response.json({ success: false,
+        message: "This workshop is not available for your current school grade.",
+      }, { status: 403 });
     }
 
     const eligibility = getWorkshopEligibility(

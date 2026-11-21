@@ -9,6 +9,8 @@ import {
   normalizeWorkshopGrades,
   workshopGradeOptions,
   matchesWorkshopGrade,
+  matchesStudentGrade,
+  schoolGradeNumber,
 } from "../src/utils/workshopGrades.mjs";
 
 const src = file => readFileSync(new URL(file, import.meta.url), "utf8");

@@ -11,7 +11,7 @@ import {
   getWorkshopEligibility,
 } from "@/services/workshopEligibility";
 import { ensureWorkshopCatalogueXp } from "@/services/workshopXpMigration";
-import { normalizeWorkshopGrades } from "@/utils/workshopGrades.mjs";
+import { normalizeWorkshopGrades, matchesStudentGrade } from "@/utils/workshopGrades.mjs";
 
 export const runtime = "nodejs";
 
@@ -67,6 +67,7 @@ export async function GET(request) {
           };
         })
         .filter((workshop) =>
+          matchesStudentGrade(workshop, student.schoolGrade) &&
           workshop.eligibilityStatus !== "ineligible"
         )
         .sort(

@@ -1,3 +1,5 @@
+import { getWorkshopGradeBounds, formatWorkshopGradeRange } from "../utils/workshopGrades.mjs";
+
 const PROGRAM_CATEGORIES = [
   {
     category: "Technology",
@@ -202,6 +204,9 @@ const VALID_CREDENTIALS = [
 const PROGRAM_FIELDS = new Set([
   "id",
   "title",
+  "grade",
+  "minGrade",
+  "maxGrade",
   "description",
   "programArea",
   "credential",
@@ -374,6 +379,8 @@ export function normalizeSaitProgram(rawProgram, now = new Date()) {
     ? rawProgram.status
     : "active";
 
+  const gradeBounds = getWorkshopGradeBounds(rawProgram);
+
   return {
     id: createSaitProgramId(title),
     title,
@@ -389,6 +396,9 @@ export function normalizeSaitProgram(rawProgram, now = new Date()) {
           rawProgram.credential.trim()
         : findCredential(evidenceText),
     informationUrl,
+    grade: gradeBounds ? formatWorkshopGradeRange(gradeBounds) : null,
+    minGrade: gradeBounds?.minGrade ?? null,
+    maxGrade: gradeBounds?.maxGrade ?? null,
     category,
     skills: unique([
       ...matchedTopics.flatMap(({ skills }) => skills),
@@ -484,6 +494,20 @@ export function validateSaitProgram(program) {
     !isOfficialSaitUrl(program.informationUrl)
   ) {
     errors.push("informationUrl must use the official sait.ca domain.");
+  }
+
+  if (program.grade !== undefined && program.grade !== null && typeof program.grade !== "string") {
+    errors.push("grade must be a string or null.");
+  }
+  for (const field of ["minGrade", "maxGrade"]) {
+    if (program[field] !== undefined && program[field] !== null &&
+        (!Number.isInteger(program[field]) || program[field] < 0 || program[field] > 12)) {
+      errors.push(`${field} must be a grade from 0 to 12 or null.`);
+    }
+  }
+  if (Number.isInteger(program.minGrade) && Number.isInteger(program.maxGrade) &&
+      program.minGrade > program.maxGrade) {
+    errors.push("minGrade cannot exceed maxGrade.");
   }
 
   for (const field of [

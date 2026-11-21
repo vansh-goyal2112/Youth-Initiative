@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { chooseDiscovery, getDiscoverableWorkshops } from "../src/utils/discoverySpin.mjs";
 
 const date = new Date(2026, 9, 16);
-const workshop = (id, startDate, status = "active") => ({ id, title: id, startDate, status });
+const workshop = (id, startDate, status = "active") => ({ id, title: id, startDate, status, grade: "Grades 6 - 12" });
 
 test("discovery only includes active, unregistered, not-past workshops", () => {
   const available = getDiscoverableWorkshops(
@@ -16,7 +16,8 @@ test("discovery only includes active, unregistered, not-past workshops", () => {
       workshop("", "2026-10-22"),
     ],
     [{ workshopId: "registered" }],
-    date
+    date,
+    "8"
   );
   assert.deepEqual(available.map(x => x.id), ["upcoming", "no-date"]);
 });

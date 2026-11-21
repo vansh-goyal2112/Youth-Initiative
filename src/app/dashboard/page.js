@@ -673,7 +673,7 @@ export default function DashboardPage() {
         )}
 
         {/* 5. DISCOVERY CORNER */}
-        <DiscoverySpinner workshops={workshops} registrations={registrations} />
+        <DiscoverySpinner workshops={workshops} registrations={registrations} schoolGrade={student?.schoolGrade} />
 
         <UpcomingAdventures workshops={workshops} registrations={registrations} />
 
