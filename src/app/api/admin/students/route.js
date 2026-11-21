@@ -2,6 +2,8 @@ import {
   adminAuth,
 } from "@/services/firebaseAdmin";
 
+import { getPossibleDuplicateAccounts, summarizeStudentWorkshopHistory } from "@/utils/adminStudentDirectory.mjs";
+import { schoolGradeNumber } from "@/utils/workshopGrades.mjs";
 import { getXpBalances } from "@/services/xpBalance.mjs";
 import {
   adminAccessResponse,
@@ -260,6 +262,11 @@ function validateStudentUpdate(
     );
   }
 
+  const schoolGrade = data.schoolGrade;
+  if (schoolGrade !== undefined && schoolGradeNumber(schoolGrade) === null) {
+    throw apiError("Choose Kindergarten or a grade from 1 to 12.", 400);
+  }
+
   return {
     firstName,
 
@@ -273,6 +280,7 @@ function validateStudentUpdate(
       normalizedInterests,
 
     accountStatus,
+    schoolGrade,
   };
 }
 
@@ -364,12 +372,43 @@ async function getStudentAndAuthUser(
   ========================================
 */
 
+async function getStudentProfile(studentId) {
+  if (!studentId || studentId.length > 128) throw apiError("A valid student ID is required.", 400);
+  const student = await readCosmosDocument("students", studentId);
+  if (!student || (student.role && student.role !== "student")) throw apiError("Student not found.", 404);
+
+  const parameters = [{ name: "@studentId", value: studentId }];
+  const [registrations, transactions] = await Promise.all([
+    queryCosmosDocuments("registrations",
+      `SELECT c.id, c.workshopId, c.sessionId, c.workshopSnapshot, c.sessionSnapshot,
+        c.completedAt, c.attendedAt, c.createdAt, c.status, c.attendanceStatus, c.completionSource
+        FROM c WHERE c.studentId = @studentId`, parameters),
+    queryCosmosDocuments("xpTransactions",
+      `SELECT c.id, c.registrationId, c.status, c.points, c.amount, c.xpAmount
+        FROM c WHERE c.studentId = @studentId AND c.action = "workshop_completion"`, parameters),
+  ]);
+  const missingTitles = [...new Set(registrations
+    .filter(item => !item.workshopSnapshot?.title && item.workshopId)
+    .map(item => item.workshopId))];
+  const workshops = missingTitles.length ? await queryCosmosDocuments("workshops",
+    "SELECT c.id, c.title FROM c WHERE ARRAY_CONTAINS(@ids, c.id)",
+    [{ name: "@ids", value: missingTitles }]) : [];
+
+  return Response.json({
+    parentEmail: student.parentEmail || null,
+    consentStatus: student.consentStatus || (student.requiresParentalConsent === false ? "not_required" : null),
+    history: summarizeStudentWorkshopHistory(studentId, registrations, transactions, workshops),
+  }, { headers: { "Cache-Control": "private, no-store" } });
+}
+
 export async function GET(
   request
 ) {
   try {
     await requireAdminPermission(request, "students.view");
-    if (new URL(request.url).searchParams.get("pendingCount") === "1") {
+    const params = new URL(request.url).searchParams;
+    if (params.has("studentId")) return await getStudentProfile(params.get("studentId").trim());
+    if (params.get("pendingCount") === "1") {
       const [count] = await queryCosmosDocuments("pendingRegistrations",
         'SELECT VALUE COUNT(1) FROM c WHERE c.status != "account_created"'
       );
@@ -432,23 +471,28 @@ export async function GET(
     // allowlisted summary (never guardian tokens, hashes, DOB or secrets).
     const pendingDocuments = await queryCosmosDocuments(
       "pendingRegistrations",
-      `SELECT TOP 100 c.id, c.fullName, c.email, c.status, c.createdAt
+      `SELECT c.id, c.fullName, c.firstName, c.lastName, c.email, c.status, c.createdAt
        FROM c
        WHERE c.status != "account_created"
        ORDER BY c.createdAt DESC`
     );
     const pendingEnrollments = pendingDocuments.map(doc => ({
       id: doc.id,
-      fullName: doc.fullName || "",
+      fullName: doc.fullName || [doc.firstName, doc.lastName].filter(Boolean).join(" "),
       email: doc.email || "",
       status: doc.status || "pending",
       createdAt: doc.createdAt,
     }));
 
+    const duplicates = getPossibleDuplicateAccounts(students, pendingEnrollments);
     return Response.json({
       success: true,
-      students,
-      pendingEnrollments,
+      students: students.map(student => ({
+        ...student, duplicateMatches: duplicates.get("student:" + student.id) || [],
+      })),
+      pendingEnrollments: pendingEnrollments.slice(0, 100).map(item => ({
+        ...item, duplicateMatches: duplicates.get("pending:" + item.id) || [],
+      })),
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (
     error
@@ -463,6 +507,9 @@ export async function GET(
     ) {
       return accessResponse;
     }
+
+    const customResponse = customErrorResponse(error);
+    if (customResponse) return customResponse;
 
     console.error(
       "Admin load students error:",
@@ -649,6 +696,8 @@ export async function PUT(
           contactEmail:
             validatedData
               .contactEmail,
+
+          ...(validatedData.schoolGrade !== undefined ? { schoolGrade: validatedData.schoolGrade } : {}),
 
           learningMode:
             validatedData

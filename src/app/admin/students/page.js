@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import XpRedemptionPanel from "@/components/admin/XpRedemptionPanel";
+import { schoolGradeNumber } from "@/utils/workshopGrades.mjs";
 
 import {
   useEffect,
@@ -27,6 +28,27 @@ import {
 import {
   adminFetch,
 } from "@/services/adminApi";
+
+const gradeOptions = ["K", ...Array.from({ length: 12 }, (_, index) => String(index + 1))];
+const consentLabels = {
+  approved: "Approved",
+  pending: "Awaiting consent",
+  denied: "Declined",
+  rejected: "Declined",
+  not_required: "Not required",
+};
+
+function formatGrade(grade) {
+  const value = schoolGradeNumber(grade);
+  return value === 0 ? "Kindergarten" : value === null ? null : "Grade " + value;
+}
+
+function DuplicateFlag({ matches }) {
+  if (!matches?.length) return null;
+  return <span className="mt-1 inline-block rounded-lg bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">
+    Possible duplicate · Matching {matches.join(" and ")}
+  </span>;
+}
 
 export default function AdminStudentsPage() {
   const [students, setStudents] =
@@ -137,6 +159,11 @@ export default function AdminStudentsPage() {
     event
   ) {
     event.preventDefault();
+    const { schoolGrade, ...profile } = editingStudent;
+    const originalGrade = students.find(student => student.id === profile.id)?.schoolGrade;
+    const changes = schoolGrade && schoolGrade !== originalGrade
+      ? { ...profile, schoolGrade }
+      : profile;
 
     try {
       setSaving(true);
@@ -156,7 +183,7 @@ export default function AdminStudentsPage() {
 
             body:
               JSON.stringify(
-                editingStudent
+                changes
               ),
           }
         );
@@ -391,7 +418,7 @@ export default function AdminStudentsPage() {
                 <tbody>
                   {pendingEnrollments.map(item => (
                     <tr key={item.id}>
-                      <td>{item.fullName}</td>
+                      <td><div>{item.fullName}</div><DuplicateFlag matches={item.duplicateMatches} /></td>
                       <td>{item.email}</td>
                       <td>{(item.status || "pending").replaceAll("_", " ")}</td>
                     </tr>
@@ -461,6 +488,7 @@ export default function AdminStudentsPage() {
                             student.contactEmail
                           }
                         </span>
+                        <DuplicateFlag matches={student.duplicateMatches} />
                       </td>
 
                       <td>
@@ -570,6 +598,7 @@ export default function AdminStudentsPage() {
 
       {selectedStudent && (
         <StudentViewModal
+          key={selectedStudent.id}
           student={selectedStudent}
           onClose={() => setSelectedStudent(null)}
           onRedeemed={(balances) => {
@@ -612,6 +641,21 @@ function StudentViewModal({
   onRedeemed,
   onBadgeRemoved,
 }) {
+  const [profile, setProfile] = useState(null);
+  const [profileError, setProfileError] = useState("");
+
+  useEffect(() => {
+    const request = new AbortController();
+    adminFetch("/api/admin/students?studentId=" + encodeURIComponent(student.id), { signal: request.signal })
+      .then(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Could not load student profile details.");
+        if (!request.signal.aborted) setProfile(data);
+      })
+      .catch(error => { if (!request.signal.aborted) setProfileError(error.message); });
+    return () => request.abort();
+  }, [student.id]);
+
   return (
     <div className="admin-student-modal-overlay">
       <section className="admin-student-modal">
@@ -648,6 +692,12 @@ function StudentViewModal({
               student.contactEmail
             }
           />
+
+          <ProfileItem label="School grade" value={formatGrade(student.schoolGrade)} />
+          <ProfileItem label="Parent or guardian email" value={profile?.parentEmail} />
+          <ProfileItem label="Consent status" value={
+            profile?.consentStatus ? consentLabels[profile.consentStatus] || profile.consentStatus.replaceAll("_", " ") : null
+          } />
 
           <ProfileItem
             label="Date of Birth"
@@ -691,6 +741,30 @@ function StudentViewModal({
           />
         </div>
 
+        <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-labelledby="student-workshop-history">
+          <h3 id="student-workshop-history" className="text-base font-extrabold">Workshop history</h3>
+          {profileError ? <p role="alert" className="mt-2 text-sm text-red-700">{profileError}</p> :
+            !profile ? <p role="status" className="mt-2 text-sm text-slate-600">Loading consent details and workshop history…</p> :
+            profile.history.length === 0 ? <p className="mt-2 text-sm text-slate-600">No workshop records yet.</p> :
+            <div className="admin-table-scroll">
+              <table className="admin-student-table">
+                <thead><tr><th>Workshop</th><th>Date</th><th>Status</th><th>XP award</th></tr></thead>
+                <tbody>{profile.history.map(item => (
+                  <tr key={item.id}>
+                    <td>{item.title}</td>
+                    <td>{item.date ? item.date.slice(0, 10) : "—"}</td>
+                    <td>
+                      {item.status ? item.status.replaceAll("_", " ") : "Unknown"}
+                      {item.status === "completed" && (item.completionSource === "self_reported" || item.attendanceStatus === "self_reported") && " · Self-reported"}
+                      {item.status === "completed" && item.attendanceStatus === "verified" && " · Verified"}
+                    </td>
+                    <td>{formatWorkshopAward(item)}</td>
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>}
+        </section>
+
         <XpRedemptionPanel student={student} onRedeemed={onRedeemed} />
         <XpCorrectionPanel student={student} onAdjusted={onRedeemed} />
         <AdminBadgeRemoval student={student} onBadgeRemoved={onBadgeRemoved} />
@@ -732,6 +806,13 @@ function StudentViewModal({
       </section>
     </div>
   );
+}
+
+function formatWorkshopAward(item) {
+  if (item.status === "reversed" || item.xpStatus === "reversed") return "Reversed";
+  if (item.xpAwarded !== null) return item.xpAwarded.toLocaleString() + " XP awarded";
+  if (item.xpStatus === "processing" || item.xpStatus === "reversing") return "Needs review";
+  return item.status === "completed" ? "Award not confirmed" : "—";
 }
 
 function AdminBadgeRemoval({ student, onBadgeRemoved }) {
@@ -937,6 +1018,15 @@ function StudentEditModal({
               )
             }
           />
+
+          <label className="admin-form-field">
+            <span>School grade</span>
+            <select value={schoolGradeNumber(student.schoolGrade) === null ? "" : student.schoolGrade}
+              onChange={event => updateField("schoolGrade", event.target.value)}>
+              <option value="" disabled>Choose a grade</option>
+              {gradeOptions.map(grade => <option value={grade} key={grade}>{formatGrade(grade)}</option>)}
+            </select>
+          </label>
 
           <label className="admin-form-field">
             <span>
