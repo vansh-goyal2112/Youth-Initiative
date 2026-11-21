@@ -379,7 +379,7 @@ export default function BadgesPage() {
             </h1>
 
             <p>
-              Complete workshops. Earn XP. Unlock badges. Ask SAIT staff about rewards at events.
+              Complete workshops, earn XP, and unlock badges. Redeem your Current XP in person at SAIT events.
             </p>
           </div>
 
@@ -419,7 +419,7 @@ export default function BadgesPage() {
             <div>
               <Gift size={23} />
               <strong>{gameData.currentXp ?? gameData.totalXp}</strong>
-              <span>Current XP</span>
+              <span>Current XP · Available to redeem</span>
             </div>
 
             <div>
@@ -442,6 +442,35 @@ export default function BadgesPage() {
       </section>
 
       <section className="student-content-container badges-content">
+        <section aria-labelledby="badges-rewards-how-heading"
+          className="mb-8 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-violet-50 p-5 shadow-sm md:p-7">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+              <Gift size={26} aria-hidden="true" />
+            </div>
+            <div>
+              <span className="text-xs font-extrabold uppercase tracking-widest text-amber-800">In-person rewards</span>
+              <h2 id="badges-rewards-how-heading" className="mt-1 text-xl font-extrabold text-slate-900">
+                How rewards work
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-700 md:text-base">
+                Bring your XP to SAIT events. Staff will show you the rewards available that day.
+                If you choose a reward, SAIT staff will redeem it in person and subtract the required XP from your Current XP balance.
+              </p>
+              <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-white px-4 py-3">
+                <strong className="text-2xl font-black text-slate-900" aria-label={`Current XP available to redeem: ${gameData.currentXp ?? gameData.totalXp}`}>
+                  {gameData.currentXp ?? gameData.totalXp} XP
+                </strong>
+                <span className="text-sm font-semibold text-slate-600">Available to redeem at SAIT events</span>
+              </div>
+              <p className="mt-3 text-xs leading-relaxed text-slate-600">
+                Total XP tracks how much you have earned across your journey; Current XP is what you can still redeem.
+                Rewards vary by event, and online redemption is not available.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <div className="badges-section-heading">
           <div>
             <span>
