@@ -11,6 +11,7 @@ import {
   getWorkshopEligibility,
 } from "@/services/workshopEligibility";
 import { ensureWorkshopCatalogueXp } from "@/services/workshopXpMigration";
+import { normalizeWorkshopGrades } from "@/utils/workshopGrades.mjs";
 
 export const runtime = "nodejs";
 
@@ -52,14 +53,15 @@ export async function GET(request) {
     const workshops =
       updatedCatalogue
         .map((workshop) => {
+          const normalizedWorkshop = normalizeWorkshopGrades(workshop);
           const eligibility = getWorkshopEligibility(
-            workshop,
+            normalizedWorkshop,
             student
           );
 
           return {
             id: workshop.id,
-            ...workshop,
+            ...normalizedWorkshop,
             eligibilityStatus: eligibility.status,
             eligibilityMessage: eligibility.reason,
           };

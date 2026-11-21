@@ -11,6 +11,7 @@ import {
   getWorkshopEligibility,
 } from "@/services/workshopEligibility";
 import { ensureWorkshopXpAssigned } from "@/services/workshopXpMigration";
+import { normalizeWorkshopGrades } from "@/utils/workshopGrades.mjs";
 
 export const runtime = "nodejs";
 
@@ -90,8 +91,9 @@ export async function GET(
       );
     }
 
+    const normalizedWorkshop = normalizeWorkshopGrades(workshop);
     const eligibility = getWorkshopEligibility(
-      workshop,
+      normalizedWorkshop,
       student
     );
 
@@ -114,7 +116,7 @@ export async function GET(
         id:
           workshop.id,
 
-        ...workshop,
+        ...normalizedWorkshop,
         eligibilityStatus: eligibility.status,
         eligibilityMessage: eligibility.reason,
       },

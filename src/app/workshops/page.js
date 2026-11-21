@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import WorkshopCard from "@/components/workshops/WorkshopCard";
+import { workshopGradeOptions, matchesWorkshopGrade } from "@/utils/workshopGrades.mjs";
 
 import {
   studentFetch,
@@ -91,17 +92,7 @@ export default function WorkshopsPage() {
     [workshops]
   );
 
-  const grades = useMemo(
-    () =>
-      [
-        ...new Set(
-          workshops
-            .map((workshop) => workshop.grade)
-            .filter(Boolean)
-        ),
-      ].sort(),
-    [workshops]
-  );
+  const grades = useMemo(() => workshopGradeOptions(workshops), [workshops]);
 
   const filteredWorkshops = useMemo(() => {
     const normalizedSearch =
@@ -133,9 +124,7 @@ export default function WorkshopsPage() {
         workshop.learningMode === modeFilter ||
         workshop.learningMode === "both";
 
-      const matchesGrade =
-        gradeFilter === "all" ||
-        workshop.grade === gradeFilter;
+      const matchesGrade = matchesWorkshopGrade(workshop, gradeFilter);
 
       return (
         matchesSearch &&
@@ -319,6 +308,7 @@ export default function WorkshopsPage() {
             value={gradeFilter}
             onChange={setGradeFilter}
             options={grades}
+            useObjects
           />
 
           {activeFilterCount > 0 && (

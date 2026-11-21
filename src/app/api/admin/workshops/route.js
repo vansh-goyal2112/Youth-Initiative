@@ -3,6 +3,7 @@ import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAs
 import crypto from "crypto";
 import { automaticWorkshopXp } from "@/services/workshopXpAssignment.mjs";
 import { ensureWorkshopCatalogueXp } from "@/services/workshopXpMigration";
+import { parseGradeRange, formatWorkshopGradeRange } from "@/utils/workshopGrades.mjs";
 
 import {
   adminAccessResponse,
@@ -41,6 +42,10 @@ function validateWorkshop(
     return "Title, program area and grade are required.";
   }
 
+  if (!parseGradeRange(workshop.grade)) {
+    return "Enter a grade such as Grade 6 or Grades 6 - 12.";
+  }
+
   if (
     workshop.learningMode &&
     !VALID_LEARNING_MODES.includes(
@@ -72,6 +77,7 @@ function validateWorkshop(
 function buildWorkshopData(
   workshop, workshopId
 ) {
+  const gradeBounds = parseGradeRange(workshop.grade);
   const capacity =
     workshop.capacity === "" ||
     workshop.capacity === null ||
@@ -97,7 +103,10 @@ function buildWorkshopData(
       "General",
 
     grade:
-      workshop.grade.trim(),
+      formatWorkshopGradeRange(gradeBounds),
+
+    minGrade: gradeBounds.minGrade,
+    maxGrade: gradeBounds.maxGrade,
 
     description:
       workshop.description?.trim() ||

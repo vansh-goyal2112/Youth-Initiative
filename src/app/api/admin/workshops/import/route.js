@@ -2,6 +2,7 @@ import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAs
 import crypto from "crypto";
 import { completionTransactionId } from "@/services/completionRules.mjs";
 import { automaticWorkshopXp, needsLegacyXpAssignment } from "@/services/workshopXpAssignment.mjs";
+import { parseGradeRange, formatWorkshopGradeRange } from "@/utils/workshopGrades.mjs";
 
 import {
   adminAccessResponse,
@@ -158,6 +159,7 @@ function buildImportedWorkshop(
   workshop,
   adminUid
 ) {
+  const gradeBounds = parseGradeRange(workshop.grade);
   const workshopId =
     createWorkshopId(
       workshop.title,
@@ -199,7 +201,9 @@ function buildImportedWorkshop(
       ),
 
     grade:
-      workshop.grade.trim(),
+      gradeBounds ? formatWorkshopGradeRange(gradeBounds) : workshop.grade.trim(),
+    minGrade: gradeBounds?.minGrade ?? null,
+    maxGrade: gradeBounds?.maxGrade ?? null,
 
     description:
       workshop.description
@@ -338,6 +342,8 @@ async function saveImportedWorkshop(
             programArea: workshopData.programArea,
             category: workshopData.category,
             grade: workshopData.grade,
+            minGrade: workshopData.minGrade,
+            maxGrade: workshopData.maxGrade,
             description: workshopData.description,
             informationUrl: workshopData.informationUrl,
             offeringYear: workshopData.offeringYear,
@@ -428,6 +434,19 @@ export async function POST(
     if (invalidXp) {
       return Response.json({ success: false,
         message: "XP Reward must be a positive whole number (1–100000) when provided in the spreadsheet."
+      }, { status: 400 });
+    }
+
+    const invalidGrade = workshops.find(w =>
+      w && typeof w.title === "string" && w.title.trim() &&
+      typeof w.programArea === "string" && w.programArea.trim() &&
+      typeof w.grade === "string" && w.grade.trim() &&
+      !parseGradeRange(w.grade)
+    );
+    if (invalidGrade) {
+      return Response.json({
+        success: false,
+        message: "Invalid grade in spreadsheet. Use Grade 6 or Grades 6 - 12.",
       }, { status: 400 });
     }
 
