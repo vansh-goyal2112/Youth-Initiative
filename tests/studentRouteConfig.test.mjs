@@ -46,7 +46,7 @@ test("contextual Back follows the actual student origin and tabs highlight profi
   assert.deepEqual(studentBackDestination("/scan-attendance", "/registered-workshops"), { href:"/registered-workshops", label:"Back to My Workshops" });
   assert.deepEqual(studentBackDestination("/edit-profile", "/profile"), { href:"/profile", label:"Back to Profile" });
   assert.equal(studentActiveTab("/edit-profile"), "/profile");
-  assert.equal(studentActiveTab("/tasks"), "/profile");
+  assert.equal(isStudentRoute("/tasks"), false);
   assert.equal(studentActiveTab("/completed-workshops"), "/profile");
   assert.equal(studentActiveTab("/scan-attendance", "/dashboard"), "/dashboard");
   assert.equal(studentActiveTab("/scan-attendance", "/registered-workshops"), "/profile");
