@@ -93,6 +93,7 @@ test("student can enter four digits instead of opening a camera", () => {
   assert.match(student, /JSON\.parse\(qrText\)/);
   assert.match(student, /await stopCamera\(\)/);
   assert.match(student, /limitedUse: true/);
-  assert.match(student, /router\.push\("\/reward"\)/);
-  assert.match(student, /router\.push\("\/journey"\)/);
+  // Both check-in modes now display their server-confirmed reward in a popup.
+  assert.match(student, /setAttendanceResult\(data\)/);
+  assert.match(student, /<AttendanceCelebration result=\{attendanceResult\} onClose=\{closeCelebration\} \/>/);
 });

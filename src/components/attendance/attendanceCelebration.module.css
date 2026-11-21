@@ -1,0 +1,188 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 20px;
+  background: rgba(15, 22, 48, .78);
+  backdrop-filter: blur(10px);
+}
+.dialog {
+  position: relative;
+  width: min(100%, 520px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
+  padding: 34px 34px 26px;
+  border: 2px solid #eadffb;
+  border-radius: 28px;
+  background: linear-gradient(150deg, #fff 0%, #fff8e7 49%, #f4edff 100%);
+  box-shadow: 0 26px 90px rgba(7, 13, 41, .45);
+  text-align: center;
+  animation: celebrationAppear .4s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+.close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid #e4dbea;
+  border-radius: 100px;
+  background: white;
+  color: #453b61;
+  cursor: pointer;
+}
+.illustration {
+  display: grid;
+  width: 88px;
+  height: 88px;
+  margin: 0 auto 13px;
+  place-items: center;
+  border: 4px solid #fff;
+  border-radius: 26px;
+  background: linear-gradient(145deg, #ffe194, #ff8ac8);
+  box-shadow: 0 10px 24px #bb5d8933;
+  color: #71317a;
+  transform: rotate(-6deg);
+}
+.eyebrow {
+  color: #8e3871;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+.dialog h2 {
+  margin: 8px 0 6px;
+  color: #202143;
+  font-size: clamp(28px, 7vw, 42px);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: 1.1;
+}
+.description {
+  margin: 0 auto 18px;
+  color: #55576f;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.description strong { color: #27263e; }
+.xp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin: 15px 0;
+  padding: 18px;
+  border: 2px solid #f1d783;
+  border-radius: 19px;
+  background: #fff0b9;
+  color: #9c5d0f;
+}
+.xp span, .xp strong { display: block; text-align: left; }
+.xp span { font-size: 12px; font-weight: 850; letter-spacing: .1em; }
+.xp strong { font-size: 34px; font-weight: 950; line-height: 1.1; }
+.badges {
+  margin: 16px 0;
+  padding: 15px;
+  border: 1px solid #dec6f8;
+  border-radius: 18px;
+  background: #f4ebff;
+}
+.badgeHeading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 12px;
+  color: #6b298b;
+  font-size: 16px;
+  font-weight: 900;
+}
+.badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 7px auto;
+  padding: 10px 14px;
+  border: 1px solid #d0b8e9;
+  border-radius: 12px;
+  background: white;
+  color: #402469;
+  font-size: 15px;
+}
+.encouragement {
+  margin: 16px 0;
+  color: #684b80;
+  font-size: 13px;
+  font-weight: 650;
+}
+.stats {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin: 14px 0 18px;
+  color: #615c71;
+  font-size: 13px;
+}
+.stats strong { margin-left: 5px; color: #27213f; }
+.pending {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid #ecd28f;
+  border-radius: 15px;
+  background: #fff8e7;
+  color: #645125;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+.actions a {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 13px;
+  border-radius: 13px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+.primary { background: #c72442; color: white; }
+.secondary { border: 1px solid #c8bad7; background: white; color: #4a3066; }
+.done {
+  min-height: 40px;
+  margin-top: 8px;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #55506d;
+  font-weight: 750;
+  cursor: pointer;
+}
+.close:focus-visible, .done:focus-visible, .actions a:focus-visible {
+  outline: 3px solid #7048cd;
+  outline-offset: 3px;
+}
+@keyframes celebrationAppear {
+  from { opacity: 0; transform: translateY(24px) scale(.91); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (max-width: 560px) {
+  .dialog { padding: 30px 19px 18px; border-radius: 22px; }
+  .actions { grid-template-columns: 1fr; }
+  .xp strong { font-size: 30px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialog { animation: none; }
+}
