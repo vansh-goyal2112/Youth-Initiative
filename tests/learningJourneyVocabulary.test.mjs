@@ -20,7 +20,11 @@ test("student pages use XP, levels and badges instead of overlapping progress ja
   const journey = readFileSync(new URL("../src/app/journey/page.js", import.meta.url), "utf8");
   const home = readFileSync(new URL("../src/app/dashboard/page.js", import.meta.url), "utf8");
   assert.doesNotMatch(home, /Workshops by Area|dashboard-skills-section|gameData\.skillTracks/);
-  assert.doesNotMatch(journey, /Workshops by Area|skill-track-section|SkillTrackCard|gameData\.skillTracks/);
+  // This client change is Home-only: Journey keeps its existing area progress.
+  assert.match(journey, /Workshops by Area/);
+  assert.match(journey, /skill-track-section/);
+  assert.match(journey, /SkillTrackCard/);
+  assert.match(journey, /gameData\.skillTracks/);
   // The underlying category progress remains available for badge rules.
   const badges = readFileSync(new URL("../src/app/badges/page.js", import.meta.url), "utf8");
   const progressApi = readFileSync(new URL("../src/app/api/gamification/route.js", import.meta.url), "utf8");
