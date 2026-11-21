@@ -8,8 +8,11 @@ import {
 import {
   cosmosNow,
   createCosmosDocument,
+  queryCosmosDocuments,
   readCosmosDocument,
 } from "@/services/cosmosData";
+
+import { generateManualAttendanceCode } from "@/services/attendanceManualCode.mjs";
 
 export const runtime = "nodejs";
 
@@ -119,6 +122,23 @@ export async function POST(
             1000
       ).toISOString();
 
+    // Keep this four-digit fallback unique among currently active sessions.
+    // A later concurrency collision is rejected rather than selecting the wrong session.
+    let manualCode = null;
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const candidate = generateManualAttendanceCode();
+      const clashes = await queryCosmosDocuments("attendanceSessions",
+        "SELECT TOP 1 c.id FROM c WHERE c.manualCode = @code AND c.active = true AND c.expiresAt > @now",
+        [{ name: "@code", value: candidate }, { name: "@now", value: cosmosNow() }]);
+      if (clashes.length === 0) {
+        manualCode = candidate;
+        break;
+      }
+    }
+    if (!manualCode) {
+      return Response.json({ success: false, message: "Unable to allocate an attendance code. Try again." }, { status: 503 });
+    }
+
     const attendanceSessionId =
       crypto.randomUUID();
 
@@ -137,6 +157,7 @@ export async function POST(
 
         code:
           attendanceCode,
+        manualCode,
 
         active:
           true,
@@ -157,6 +178,7 @@ export async function POST(
 
       code:
         attendanceCode,
+      manualCode,
 
       workshop,
 

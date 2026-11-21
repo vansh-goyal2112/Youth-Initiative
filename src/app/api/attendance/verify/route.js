@@ -12,13 +12,45 @@ import {
 
 import {
   cosmosNow,
+  createCosmosDocument,
+  isCosmosConflict,
   isCosmosPreconditionFailed,
   queryCosmosDocuments,
   readCosmosDocument,
   replaceCosmosDocument,
 } from "@/services/cosmosData";
 
+import {
+  isValidManualAttendanceCode,
+  nextManualCodeAttempt,
+} from "@/services/attendanceManualCode.mjs";
+
 export const runtime = "nodejs";
+
+// A four-digit code has only 10,000 combinations. Reserve each attempt
+// against a durable, per-student 15-minute counter before looking up the code.
+async function reserveManualCodeAttempt(studentId) {
+  const id = "attendance-code-attempts:" + studentId;
+  const existing = await readCosmosDocument("attendanceSessions", id);
+  const check = nextManualCodeAttempt(existing);
+  if (!check.allowed) return false;
+  try {
+    if (existing) {
+      await replaceCosmosDocument("attendanceSessions", existing, {
+        ...check.next, updatedAt: cosmosNow(),
+      });
+    } else {
+      await createCosmosDocument("attendanceSessions", {
+        id, ...check.next, createdAt: cosmosNow(),
+      });
+    }
+    return true;
+  } catch (error) {
+    // Concurrent attempts do not skip rate limiting.
+    if (isCosmosConflict(error) || isCosmosPreconditionFailed(error)) return false;
+    throw error;
+  }
+}
 
 export async function POST(request) {
   try {
@@ -36,18 +68,17 @@ export async function POST(request) {
     const {
       attendanceSessionId,
       code,
+      manualCode,
     } = await request.json();
 
-    if (
-      !attendanceSessionId ||
-      !code
-    ) {
+    const manual = manualCode !== undefined;
+    if (manual ? !isValidManualAttendanceCode(manualCode) : (!attendanceSessionId || !code)) {
       return Response.json(
         {
           success: false,
 
           message:
-            "Invalid attendance QR code.",
+            manual ? "Enter a four-digit attendance code." : "Invalid attendance QR code.",
         },
         {
           status: 400,
@@ -60,11 +91,27 @@ export async function POST(request) {
       from Cosmos DB.
     */
 
-    const session =
-      await readCosmosDocument(
-        "attendanceSessions",
-        attendanceSessionId
-      );
+    let session;
+    if (manual) {
+      if (!(await reserveManualCodeAttempt(studentId))) {
+        return Response.json({ success: false,
+          message: "Too many code attempts. Please wait 15 minutes or scan the QR code.",
+        }, { status: 429 });
+      }
+      const matches = await queryCosmosDocuments("attendanceSessions",
+        "SELECT TOP 2 * FROM c WHERE c.manualCode = @code AND c.active = true AND c.expiresAt > @now",
+        [{ name: "@code", value: manualCode }, { name: "@now", value: cosmosNow() }]);
+      if (matches.length !== 1) {
+        return Response.json({ success: false,
+          message: matches.length > 1
+            ? "This code is ambiguous. Ask the instructor to generate a new one."
+            : "Incorrect or expired attendance code.",
+        }, { status: matches.length > 1 ? 409 : 401 });
+      }
+      session = matches[0];
+    } else {
+      session = await readCosmosDocument("attendanceSessions", attendanceSessionId);
+    }
 
     if (!session) {
       return Response.json(
@@ -95,6 +142,7 @@ export async function POST(request) {
     }
 
     if (
+      !manual &&
       session.code !==
       code
     ) {
