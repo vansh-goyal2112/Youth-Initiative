@@ -20,11 +20,14 @@ test("student pages use XP, levels and badges instead of overlapping progress ja
   const journey = readFileSync(new URL("../src/app/journey/page.js", import.meta.url), "utf8");
   const home = readFileSync(new URL("../src/app/dashboard/page.js", import.meta.url), "utf8");
   assert.doesNotMatch(home, /Workshops by Area|dashboard-skills-section|gameData\.skillTracks/);
-  // This client change is Home-only: Journey keeps its existing area progress.
-  assert.match(journey, /Workshops by Area/);
-  assert.match(journey, /skill-track-section/);
-  assert.match(journey, /SkillTrackCard/);
-  assert.match(journey, /gameData\.skillTracks/);
+  // Journey now prioritizes next steps; area progress remains in the
+  // gamification data model and is still used by the badges page.
+  assert.match(journey, /Recommended workshops/);
+  assert.match(journey, /Future pathways \(SAIT programs\)/);
+  assert.match(journey, /Upcoming at SAIT/);
+  assert.match(journey, /AdventureTrail/);
+  assert.match(journey, /See my badges/);
+  assert.doesNotMatch(journey, /Workshops by Area|skill-track-section|SkillTrackCard/);
   // The underlying category progress remains available for badge rules.
   const badges = readFileSync(new URL("../src/app/badges/page.js", import.meta.url), "utf8");
   const progressApi = readFileSync(new URL("../src/app/api/gamification/route.js", import.meta.url), "utf8");
