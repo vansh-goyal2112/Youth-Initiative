@@ -61,3 +61,27 @@ test("awards do not rerandomize on the read path or modify student XP during cat
   assert.match(processor, /creditXp\(student, xpReward\)/);
   assert.match(processor, /points:\s*xpReward/);
 });
+
+test("one thousand new workshops have varied stable XP without changing existing staff values", () => {
+  const counts = new Set();
+  for (let i = 0; i < 1000; i += 1) {
+    const id = `new-workshop-${i}`;
+    const reward = automaticWorkshopXp(id);
+    assert.ok(WORKSHOP_XP_OPTIONS.includes(reward));
+    assert.equal(automaticWorkshopXp(id), reward);
+    assert.equal(needsLegacyXpAssignment({id, xpReward: reward, xpRewardSource: "automatic", importedFromExcel: true}), false);
+    counts.add(reward);
+  }
+  assert.equal(counts.size, WORKSHOP_XP_OPTIONS.length);
+  assert.equal(needsLegacyXpAssignment({id:"staff", xpReward:175, xpRewardSource:"manual", importedFromExcel:true}), false);
+  assert.equal(awardForCompletion({xpReward:175}, "qr"), 175);
+  assert.equal(awardForCompletion({xpReward:175}, "self_reported"), 87);
+});
+
+test("catalogue replacement checks each completed scheduled session's XP transaction", () => {
+  const importRoute = readFileSync(new URL("../src/app/api/admin/workshops/import/route.js", import.meta.url), "utf8");
+  const retirement = readFileSync(new URL("../src/services/workshopRetirement.js", import.meta.url), "utf8");
+  assert.match(importRoute, /completionTransactionId\(completion\.studentId, old\.id, completion\.sessionId \|\| null\)/);
+  assert.match(retirement, /completionTransactionId\(registration\.studentId, id, registration\.sessionId \|\| null\)/);
+  assert.doesNotMatch(importRoute, /\`\$\{completion\.studentId\}_\$\{old\.id\}\`/);
+});

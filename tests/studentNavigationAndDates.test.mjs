@@ -67,4 +67,16 @@ test("Home shows only Workshops, Badges and Total XP tiles without journal stamp
   assert.equal((hub.match(/className=\{styles\.overviewStat\}/g) || []).length, 3);
   assert.doesNotMatch(hub, /Reflections|JournalStamps|milestoneStrip|stats\.reflectedCount/);
   assert.match(hub, /section === "mission"/);
+  assert.match(hub, /section === "all" && \(/);
+  assert.match(hub, /styles\.statsOnly/);
+  assert.match(src("../src/components/gamification/skillQuestHub.module.css"), /\.overview\.statsOnly \{/);
+});
+
+test("Home leads with the registered next workshop before recommendations", () => {
+  const dashboard = src("../src/app/dashboard/page.js");
+  assert.ok(dashboard.indexOf("dashboard-next-adventure") < dashboard.indexOf("dashboard-recommendation-section"));
+  assert.match(dashboard, /daysUntilWorkshop\(getWorkshopSchedule\(registration\.workshop, registration\.sessionId\)\.startDate\)/);
+  assert.match(dashboard, /daysUntilWorkshop\(getWorkshopSchedule\(first\.workshop, first\.sessionId\)\.startDate\)/);
+  assert.match(dashboard, /daysUntilWorkshop\(getWorkshopSchedule\(second\.workshop, second\.sessionId\)\.startDate\)/);
+  assert.match(dashboard, /\["completed", "cancelled"\]\.includes\(registration\.status\)/);
 });

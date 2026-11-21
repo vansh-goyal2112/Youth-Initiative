@@ -21,7 +21,11 @@ export function getWorkshopSchedule(workshop = {}, sessionId = null, today = new
   const sessions = hasSessionRecords ? workshop.sessions
     .filter(item => item && (item.status === "active" || !item.status) && formatWorkshopDate(item.startDate))
     .sort((a,b) => String(a.startDate).localeCompare(String(b.startDate))) : [];
-  const selected = sessionId ? sessions.find(item => item.id === sessionId) : null;
+  // A registered student's original session date remains visible even if the
+  // session is later archived. Unselected catalogue cards still use active sessions.
+  const selected = sessionId && hasSessionRecords
+    ? workshop.sessions.find(item => item?.id === sessionId && formatWorkshopDate(item.startDate)) || null
+    : null;
   const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
   const next = selected || sessions.find(item => item.startDate >= todayKey) || sessions[0] || null;
   return {

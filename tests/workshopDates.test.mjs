@@ -41,3 +41,17 @@ test("an active session supplies its own date and time, not stale legacy values"
  assert.deepEqual(schedule,{startDate:"2026-12-05",endDate:null,time:"13:00"});
  assert.equal(workshopDateRange(schedule),"5 Dec 2026");
 });
+
+test("a registered session keeps its own date after being archived", async () => {
+  const { getWorkshopSchedule, workshopDateRange } = await import("../src/utils/workshopDate.mjs");
+  const workshop = {
+    startDate: "2026-09-05",
+    sessions: [
+      { id: "original", status: "archived", startDate: "2026-12-05", time: "09:00" },
+      { id: "new", status: "active", startDate: "2026-12-19", time: "14:00" },
+    ],
+  };
+  assert.equal(workshopDateRange(getWorkshopSchedule(workshop, "original")), "5 Dec 2026");
+  assert.equal(getWorkshopSchedule(workshop, "original").time, "09:00");
+  assert.equal(workshopDateRange(getWorkshopSchedule(workshop, null, new Date("2026-11-21"))), "19 Dec 2026");
+});

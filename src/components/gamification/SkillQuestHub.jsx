@@ -105,7 +105,8 @@ export default function SkillQuestHub({
       )}
 
       {(section === "all" || section === "level") && (
-      <div className={styles.overview} aria-label="Your learning progress">
+      <div className={`${styles.overview} ${section === "level" ? styles.statsOnly : ""}`} aria-label="Your learning progress">
+        {section === "all" && (
         <div className={styles.xpPanel}>
           <div className={styles.xpTop}>
             <span><Zap size={17} aria-hidden="true"/> LEVEL PROGRESS</span>
@@ -121,6 +122,7 @@ export default function SkillQuestHub({
           ><div style={{ width: `${xpProgress}%` }}/></div>
           <p>{gameData.rank} · {gameData.nextLevelXp ? "Keep discovering to level up!" : "Amazing progress!"}</p>
         </div>
+        )}
         <div className={styles.overviewStat}>
           <BookOpen size={22} aria-hidden="true"/>
           <strong>{gameData.completedWorkshops}</strong>

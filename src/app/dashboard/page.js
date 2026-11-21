@@ -249,15 +249,15 @@ export default function DashboardPage() {
   const upcomingRegistrations = useMemo(() => {
     return registrations
       .filter((registration) => {
-        if (registration.status === "completed" || !registration.workshop) {
+        if (["completed", "cancelled"].includes(registration.status) || !registration.workshop) {
           return false;
         }
-        const days = daysUntilWorkshop(registration.workshop.startDate);
+        const days = daysUntilWorkshop(getWorkshopSchedule(registration.workshop, registration.sessionId).startDate);
         return days === null || days >= 0;
       })
       .sort((first, second) => {
-        const firstDays = daysUntilWorkshop(first.workshop.startDate);
-        const secondDays = daysUntilWorkshop(second.workshop.startDate);
+        const firstDays = daysUntilWorkshop(getWorkshopSchedule(first.workshop, first.sessionId).startDate);
+        const secondDays = daysUntilWorkshop(getWorkshopSchedule(second.workshop, second.sessionId).startDate);
         return (firstDays === null ? Infinity : firstDays)
           - (secondDays === null ? Infinity : secondDays);
       });
@@ -444,10 +444,7 @@ export default function DashboardPage() {
             </h1>
 
             <p>
-              Keep exploring,
-              building skills and
-              discovering where your
-              interests can take you.
+              Discover workshops. Earn XP. Unlock badges.
             </p>
           </div>
 
@@ -553,6 +550,34 @@ export default function DashboardPage() {
           gameData={gameData} student={student}
         />
 
+        {/* NEXT WORKSHOP */}
+        <section className="dashboard-section dashboard-next-adventure">
+          <div className="dashboard-section-heading">
+            <div>
+              <span>YOUR NEXT WORKSHOP</span>
+              <h2>Next Stop on Your Journey</h2>
+            </div>
+            <Link href="/registered-workshops">
+              View My Workshops <ChevronRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
+          {nextWorkshop ? (
+            <NextWorkshopCard registration={nextWorkshop} />
+          ) : (
+            <div className="dashboard-empty-workshop">
+              <div><Rocket size={31} aria-hidden="true" /></div>
+              <section>
+                <span>A NEW ADVENTURE AWAITS</span>
+                <h3>Find a workshop you like!</h3>
+                <p>Try something new. Earn XP. Build your learning journey.</p>
+                <Link href="/workshops">
+                  Explore Workshops <ChevronRight size={16} aria-hidden="true"/>
+                </Link>
+              </section>
+            </div>
+          )}
+        </section>
+
         {/* 3. RECOMMENDED FOR YOU */}
 
         <section className="dashboard-section dashboard-recommendation-section">
@@ -656,34 +681,6 @@ export default function DashboardPage() {
         <SkillQuestHub section="mission"
           gameData={gameData} student={student}
         />
-
-        {/* Additional workshop and skill progress, after the client-requested main sections. */}
-        <section className="dashboard-section dashboard-next-adventure">
-          <div className="dashboard-section-heading">
-            <div>
-              <span>YOUR NEXT WORKSHOP</span>
-              <h2>Next Stop on Your Journey</h2>
-            </div>
-            <Link href="/registered-workshops">
-              View My Workshops <ChevronRight size={16} aria-hidden="true" />
-            </Link>
-          </div>
-          {nextWorkshop ? (
-            <NextWorkshopCard registration={nextWorkshop} />
-          ) : (
-            <div className="dashboard-empty-workshop">
-              <div><Rocket size={31} aria-hidden="true" /></div>
-              <section>
-                <span>A NEW ADVENTURE AWAITS</span>
-                <h3>Find a workshop you like!</h3>
-                <p>Try something new. Earn XP. Build your learning journey.</p>
-                <Link href="/workshops">
-                  Explore Workshops <ChevronRight size={16} aria-hidden="true"/>
-                </Link>
-              </section>
-            </div>
-          )}
-        </section>
 
         {/* Workshop participation by area */}
 

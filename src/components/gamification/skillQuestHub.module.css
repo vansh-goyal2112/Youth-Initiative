@@ -36,6 +36,9 @@
 .levelIsland > small { font-size:12px;line-height:1.25;font-weight:900; }
 .islandXp {margin-top:10px;border-radius:999px;padding:5px 12px;background:#7946a0;color:#fff;font-size:13px;font-weight:900;}
 .overview { display:grid; grid-template-columns:minmax(0,2.15fr) repeat(3,minmax(100px,1fr)); align-items:stretch; gap:12px; margin:20px 0 22px; }
+.overview.statsOnly { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.overview.statsOnly .overviewStat:nth-child(2) svg { color:#d39a18;fill:#fff2bf; }
+.overview.statsOnly .overviewStat:nth-child(3) svg { color:#178c81;fill:#d9f8e9; }
 .xpPanel,.overviewStat { border:2px solid #dae8f6;border-radius:20px;background:#fff; box-shadow:0 5px 0 #e1eaf3; }
 .xpPanel { padding:17px 18px; }
 .xpTop {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}

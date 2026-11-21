@@ -1,5 +1,6 @@
 import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
+import { completionTransactionId } from "@/services/completionRules.mjs";
 import { automaticWorkshopXp, needsLegacyXpAssignment } from "@/services/workshopXpAssignment.mjs";
 
 import {
@@ -501,7 +502,7 @@ export async function POST(
         );
         for (const completion of completions) {
           const transaction = await readCosmosDocument(
-            "xpTransactions", `${completion.studentId}_${old.id}`
+            "xpTransactions", completionTransactionId(completion.studentId, old.id, completion.sessionId || null)
           );
           if (transaction?.status !== "completed") {
             return Response.json({ success: false, code: "PENDING_REWARDS",
