@@ -416,8 +416,8 @@ export default function HomePage() {
                 <div>
                   <h3>Create your student account</h3>
                   <p>
-                    Enter your basic details and complete parent-supported
-                    account setup.
+                    Enter your details. If you&apos;re under 18, add a parent or guardian&apos;s
+                    email so they can confirm and help set up your account.
                   </p>
                 </div>
               </div>
@@ -440,8 +440,8 @@ export default function HomePage() {
                 <div>
                   <h3>Attend workshops</h3>
                   <p>
-                    Register externally, participate and scan an attendance
-                    code.
+                    Find a workshop, register at sait.ca, attend, and scan the QR code
+                    to check in. Been to one before? Add it yourself.
                   </p>
                 </div>
               </div>
