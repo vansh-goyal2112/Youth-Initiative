@@ -120,6 +120,9 @@ export default function CompletionReviewsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <h2 className="text-base font-extrabold text-slate-900">{claim.workshopTitle}</h2>
+                      <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-[10px] font-extrabold tracking-wide text-sky-800">
+                        Self-reported
+                      </span>
                       <span className={"rounded-full px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide " +
                         (claim.reviewStatus === "pending_review" ? "bg-amber-100 text-amber-900" :
                          claim.reviewStatus === "approved" ? "bg-emerald-100 text-emerald-900" : "bg-rose-100 text-rose-900")}>{claim.reviewStatus?.replaceAll("_", " ")}</span>
