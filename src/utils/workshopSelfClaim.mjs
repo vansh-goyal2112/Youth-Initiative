@@ -31,3 +31,28 @@ export function getSelfClaimCategory(workshop, schoolGrade) {
   if (!bounds) return null;
   return bounds.maxGrade < grade ? "earlier" : "current";
 }
+
+
+/**
+ * A completed or reversed workshop stays claimed even if it had multiple
+ * sessions. Keep upcoming registrations eligible for genuine past attendance.
+ * Include legacy attendance and review flags to avoid re-offering old claims.
+ *
+ * This is specific to the past-attendance claim picker; do not apply it to
+ * normal workshop registration or workshop history.
+ */
+export function getClaimedWorkshopIds(registrations = []) {
+  const claimed = Array.isArray(registrations) ? registrations : [];
+  return new Set(
+    claimed
+      .filter(item => item && (
+        item.status === "completed" ||
+        item.status === "reversed" ||
+        item.attendanceStatus === "verified" ||
+        item.attendanceStatus === "self_reported" ||
+        ["pending_review", "approved", "reversed"].includes(item.reviewStatus)
+      ))
+      .map(item => item.workshopId)
+      .filter(id => typeof id === "string" && id.trim().length > 0)
+  );
+}

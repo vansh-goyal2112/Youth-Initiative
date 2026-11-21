@@ -8,7 +8,7 @@ import { processWorkshopCompletion } from "@/services/gamificationAdmin";
 import { completionTransactionId, awardForCompletion } from "@/services/completionRules.mjs";
 import { resolveWorkshopSessions } from "@/services/workshopSessions.mjs";
 import { ensureWorkshopCatalogueXp, ensureWorkshopXpAssigned } from "@/services/workshopXpMigration";
-import { getSelfClaimCategory } from "@/utils/workshopSelfClaim.mjs";
+import { getSelfClaimCategory, getClaimedWorkshopIds } from "@/utils/workshopSelfClaim.mjs";
 import { schoolGradeNumber } from "@/utils/workshopGrades.mjs";
 
 export const runtime = "nodejs";
@@ -28,25 +28,23 @@ export async function GET(request) {
       queryCosmosDocuments("workshops",
         "SELECT * FROM c WHERE NOT IS_DEFINED(c.status) OR c.status != 'deleted'"),
       queryCosmosDocuments("registrations",
-        "SELECT c.workshopId, c.sessionId, c.status, c.reviewStatus FROM c WHERE c.studentId = @id",
+        "SELECT c.workshopId, c.status, c.reviewStatus, c.attendanceStatus FROM c WHERE c.studentId = @id",
         [{ name: "@id", value: uid }]),
     ]);
     const resolvedWorkshops = await ensureWorkshopCatalogueXp(workshops);
-    const claimed = new Set(registrations.filter(item =>
-      item.status === "completed" || item.status === "reversed"
-    ).map(item => item.workshopId + ":" + (item.sessionId || "legacy")));
+    // A workshop can have several sessions, but only one past completion
+    // claim is allowed per program. Hide the entire claimed workshop.
+    const claimedWorkshops = getClaimedWorkshopIds(registrations);
     const today = new Date().toISOString().slice(0, 10);
     return Response.json({
       success: true,
       workshops: resolvedWorkshops
-        .filter(item => item.id && item.title && getSelfClaimCategory(item, student.schoolGrade))
+        .filter(item => item.id && item.title && !claimedWorkshops.has(item.id) && getSelfClaimCategory(item, student.schoolGrade))
         .map(item => {
           const claimCategory = getSelfClaimCategory(item, student.schoolGrade);
-          const sessions = resolveWorkshopSessions(item)
-            .filter(session => !session.startDate || session.startDate <= today)
-            .filter(session => !claimed.has(item.id + ":" + session.id));
-          const hasSessions = resolveWorkshopSessions(item).length > 0;
-          if (!hasSessions && claimed.has(item.id + ":legacy")) return null;
+          const knownSessions = resolveWorkshopSessions(item);
+          const sessions = knownSessions.filter(session => !session.startDate || session.startDate <= today);
+          const hasSessions = knownSessions.length > 0;
           if (hasSessions && sessions.length === 0) return null;
           return {
             id: item.id, title: item.title, programArea: item.programArea || "",
@@ -115,9 +113,13 @@ export async function POST(request) {
     const registrations = await queryCosmosDocuments("registrations",
       "SELECT * FROM c WHERE c.studentId = @studentId AND c.workshopId = @workshopId",
       [{ name: "@studentId", value: uid }, { name: "@workshopId", value: workshopId }]);
-    if (registrations.some(item => (item.sessionId || null) === sessionId &&
-        (item.status === "completed" || item.status === "reversed"))) {
-      return Response.json({ message: "A completion already exists for this workshop. Ask the program team if it needs correction." }, { status: 409 });
+    // Enforce the same workshop-level rule on the server even if the
+    // student bypasses the dropdown or selects another session.
+    if (getClaimedWorkshopIds(registrations).has(workshopId)) {
+      return Response.json({
+        message: "This workshop has already been claimed or completed. Ask the program team if it needs correction.",
+        alreadyClaimed: true,
+      }, { status: 409 });
     }
     const transactionId = completionTransactionId(uid, workshopId, sessionId);
     if (await readCosmosDocument("xpTransactions", transactionId)) {
