@@ -12,7 +12,6 @@ import {
   Award,
   BookOpen,
   Compass,
-  Cpu,
   Home,
   LoaderCircle,
   Map,
@@ -336,63 +335,6 @@ export default function JourneyPage() {
         </div>
 
 
-        <section className="skill-track-section">
-
-          <div className="game-section-heading">
-
-            <div>
-              <span>
-                SKILL PROGRESSION
-              </span>
-
-              <h2>
-                Workshops by Area
-              </h2>
-            </div>
-
-            <p>
-              Explore new subjects. Each workshop helps you grow.
-            </p>
-
-          </div>
-
-          {gameData.skillTracks.length ===
-          0 ? (
-            <div className="game-empty-card">
-              <Compass size={42} />
-
-              <h3>
-                Your journey starts here
-              </h3>
-
-              <p>
-                Complete a workshop. See what you can learn next.
-              </p>
-
-              <Link href="/workshops">
-                Explore Workshops
-              </Link>
-            </div>
-          ) : (
-            <div className="skill-track-grid">
-
-              {gameData.skillTracks.map(
-                (track) => (
-                  <SkillTrackCard
-                    key={
-                      track.category
-                    }
-                    track={track}
-                  />
-                )
-              )}
-
-            </div>
-          )}
-
-        </section>
-
-
         {/* FUTURE SAIT PATHWAYS SECTION */}
         {pathways.length > 0 && (
           <section className="quest-section">
@@ -538,59 +480,3 @@ function GameStat({
     </div>
   );
 }
-
-
-function SkillTrackCard({
-  track,
-}) {
-  return (
-    <article className="skill-track-card">
-
-      <div className="skill-track-top">
-
-        <div className="skill-track-icon">
-          <Cpu size={22} />
-        </div>
-
-        <span>
-          Level {track.level}
-        </span>
-
-      </div>
-
-      <h3>
-        {track.category}
-      </h3>
-
-      <p>
-        {track.completed} workshop
-        {track.completed !== 1
-          ? "s"
-          : ""}{" "}
-        completed
-      </p>
-
-      <div className="skill-track-progress">
-        <div
-          style={{
-            width:
-              `${track.progressPercentage}%`,
-          }}
-        />
-      </div>
-
-      <div className="skill-track-footer">
-        <span>
-          {track.xp} XP
-        </span>
-
-        <span>
-          {track.progressPercentage}%
-        </span>
-      </div>
-
-    </article>
-  );
-}
-
-

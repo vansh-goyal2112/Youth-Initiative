@@ -23,7 +23,6 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronRight,
-  Compass,
   Flame,
   Home,
   LoaderCircle,
@@ -36,7 +35,6 @@ import {
   Target,
   Trophy,
   UserRound,
-  Zap,
   GraduationCap,
   ExternalLink,
 } from "lucide-react";
@@ -676,120 +674,6 @@ export default function DashboardPage() {
 
         {/* 5. DISCOVERY CORNER */}
         <DiscoverySpinner workshops={workshops} registrations={registrations} />
-
-        {/* Workshop participation by area */}
-
-        <section className="dashboard-section dashboard-skills-section">
-          <div className="dashboard-section-heading">
-            <div>
-              <span>
-                YOUR PROGRESS
-              </span>
-
-              <h2>
-                Workshops by Area
-              </h2>
-            </div>
-
-            <Link href="/journey">
-              Full journey
-              <ChevronRight
-                size={16}
-              />
-            </Link>
-          </div>
-
-          {gameData.skillTracks
-            .length > 0 ? (
-            <div className="dashboard-skill-grid">
-              {gameData.skillTracks
-                .slice(0, 3)
-                .map(
-                  (track) => (
-                    <article
-                      className="dashboard-skill-card"
-                      key={
-                        track.category
-                      }
-                    >
-                      <div className="dashboard-skill-header">
-                        <div className="dashboard-skill-icon">
-                          <Zap
-                            size={20}
-                          />
-                        </div>
-
-                        <span>
-                          LVL{" "}
-                          {
-                            track.level
-                          }
-                        </span>
-                      </div>
-
-                      <h3>
-                        {
-                          track.category
-                        }
-                      </h3>
-
-                      <p>
-                        {
-                          track.completed
-                        }{" "}
-                        workshop
-                        {track.completed !==
-                        1
-                          ? "s"
-                          : ""}{" "}
-                        completed
-                      </p>
-
-                      <div className="dashboard-skill-progress">
-                        <div
-                          style={{
-                            width:
-                              `${track.progressPercentage}%`,
-                          }}
-                        />
-                      </div>
-
-                      <footer>
-                        <span>
-                          {track.xp} XP
-                        </span>
-
-                        <strong>
-                          {
-                            track.progressPercentage
-                          }
-                          %
-                        </strong>
-                      </footer>
-                    </article>
-                  )
-                )}
-            </div>
-          ) : (
-            <div className="dashboard-no-skills">
-              <Compass
-                size={31}
-              />
-
-              <div>
-                <strong>
-                  No workshops completed yet
-                </strong>
-
-                <span>
-                  Complete your first
-                  workshop to start
-                  building your skills.
-                </span>
-              </div>
-            </div>
-          )}
-        </section>
 
         <UpcomingAdventures workshops={workshops} registrations={registrations} />
 
