@@ -1121,7 +1121,7 @@ img {
 
 .skill-stat-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 9px;
   margin-top: 12px;
 }
@@ -1153,53 +1153,48 @@ img {
   font-size: 8px;
 }
 
-.weekly-challenge-card {
+.landing-recommended-card {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   margin-top: 12px;
   padding: 14px;
+  border: 1px solid #e1d7f4;
   border-radius: 13px;
-  background: #fff7e6;
+  background: #f7f4fd;
 }
 
-.weekly-challenge-icon {
+.landing-recommended-icon {
   display: grid;
   place-items: center;
   width: 42px;
   height: 42px;
   border-radius: 12px;
-  background: var(--gold);
-  color: white;
+  background: #eee6fa;
+  color: var(--purple);
 }
 
-.weekly-challenge-card span,
-.weekly-challenge-card strong {
+.landing-recommended-card span,
+.landing-recommended-card strong {
   display: block;
 }
 
-.weekly-challenge-card span {
-  color: #9c7624;
-  font-size: 7px;
-  font-weight: 900;
-  text-transform: uppercase;
+.landing-recommended-card span {
+  color: var(--purple);
+  font-size: 10px;
+  font-weight: 800;
 }
 
-.weekly-challenge-card strong {
+.landing-recommended-card strong {
   margin-top: 2px;
-  font-size: 11px;
+  font-size: 14px;
 }
 
-.weekly-challenge-card p {
+.landing-recommended-card p {
   margin: 3px 0 0;
-  color: #9a895f;
-  font-size: 8px;
-}
-
-.weekly-reward {
-  color: #a87500;
-  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: 11px;
 }
 
 .badge-preview-row {
@@ -1686,14 +1681,6 @@ img {
   .skill-quest-dashboard {
     padding: 18px;
     border-radius: 20px;
-  }
-
-  .weekly-challenge-card {
-    grid-template-columns: auto 1fr;
-  }
-
-  .weekly-reward {
-    grid-column: 2;
   }
 
   .landing-final-cta-content {

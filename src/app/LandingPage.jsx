@@ -497,7 +497,7 @@ export default function HomePage() {
 
               <div>
                 <Target size={20} />
-                Complete personalized learning challenges
+                Explore your learning journey at SAIT
               </div>
 
               <div>
@@ -548,26 +548,18 @@ export default function HomePage() {
                 <strong>5</strong>
                 <span>Completed</span>
               </div>
-
-              <div>
-                <Zap size={20} />
-                <strong>3</strong>
-                <span>Streak</span>
-              </div>
             </div>
 
-            <div className="weekly-challenge-card">
-              <div className="weekly-challenge-icon">
-                <Target size={23} />
+            <div className="landing-recommended-card">
+              <div className="landing-recommended-icon">
+                <Code2 size={23} aria-hidden="true" />
               </div>
 
               <div>
-                <span>Weekly challenge</span>
-                <strong>Explore a new skill</strong>
-                <p>Register for a workshop in a new category.</p>
+                <span>Recommended for you</span>
+                <strong>Introduction to Robotics</strong>
+                <p>Build and program a robot in a hands-on workshop.</p>
               </div>
-
-              <strong className="weekly-reward">Earn XP</strong>
             </div>
 
             <div className="badge-preview-row">
