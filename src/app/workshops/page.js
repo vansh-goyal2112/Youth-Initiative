@@ -20,6 +20,7 @@ import {
 
 import WorkshopCard from "@/components/workshops/WorkshopCard";
 import { workshopGradeOptions, matchesWorkshopGrade } from "@/utils/workshopGrades.mjs";
+import { groupWorkshopsByAvailability } from "@/utils/workshopAvailability.mjs";
 
 import {
   studentFetch,
@@ -142,6 +143,11 @@ export default function WorkshopsPage() {
     modeFilter,
     gradeFilter,
   ]);
+
+  const { currentWorkshops, closedWorkshops } = useMemo(
+    () => groupWorkshopsByAvailability(filteredWorkshops),
+    [filteredWorkshops]
+  );
 
   const activeFilterCount = [
     categoryFilter,
@@ -367,14 +373,41 @@ export default function WorkshopsPage() {
             </button>
           </div>
         ) : (
-          <div className="student-workshop-grid">
-            {filteredWorkshops.map((workshop) => (
-              <WorkshopCard
-                key={workshop.id}
-                workshop={workshop}
-              />
-            ))}
-          </div>
+          <>
+            {currentWorkshops.length > 0 && (
+              <div className="student-workshop-grid">
+                {currentWorkshops.map((workshop) => (
+                  <WorkshopCard
+                    key={workshop.id}
+                    workshop={workshop}
+                  />
+                ))}
+              </div>
+            )}
+
+            {closedWorkshops.length > 0 && (
+              <section className="mt-10" aria-labelledby="closed-workshops-heading">
+                <div className="workshop-results-heading">
+                  <h2 id="closed-workshops-heading">
+                    Registration closed ({closedWorkshops.length})
+                  </h2>
+                  <p>
+                    These programs are not accepting new registrations.
+                    Already attended one? Claim half of its workshop XP
+                    through Previously Completed, subject to staff review.
+                  </p>
+                </div>
+                <div className="student-workshop-grid">
+                  {closedWorkshops.map((workshop) => (
+                    <WorkshopCard
+                      key={workshop.id}
+                      workshop={workshop}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </>
         )}
       </section>
 

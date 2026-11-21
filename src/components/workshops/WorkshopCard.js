@@ -10,10 +10,16 @@ import {
 import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 import { getWorkshopSchedule, workshopDateRange } from "@/utils/workshopDate.mjs";
 import { getConfiguredWorkshopXp } from "@/utils/workshopXpDisplay.mjs";
+import { isRegistrationClosed } from "@/utils/workshopAvailability.mjs";
+import { awardForCompletion } from "@/services/completionRules.mjs";
 
 export default function WorkshopCard({ workshop }) {
   const dateLabel = workshopDateRange(getWorkshopSchedule(workshop));
   const xpReward = getConfiguredWorkshopXp(workshop);
+  const registrationClosed = isRegistrationClosed(workshop);
+  const pastAttendanceXp = registrationClosed && xpReward !== null
+    ? awardForCompletion({ xpReward }, "self_reported")
+    : null;
 
   const eligibilityLabel =
     workshop.grade ||
@@ -36,7 +42,7 @@ export default function WorkshopCard({ workshop }) {
 
         <h2>{workshop.title}</h2>
 
-        {workshop.availabilityStatus === "closed" && (
+        {registrationClosed && (
           <span className="workshop-availability-status">
             Registration closed
           </span>
@@ -70,7 +76,9 @@ export default function WorkshopCard({ workshop }) {
 
         <div className="workshop-card-footer">
           <span className="workshop-card-reward">
-            {xpReward === null ? <strong>XP not set</strong> : <>Earn <strong>{xpReward} XP</strong></>}
+            {xpReward === null ? <strong>XP not set</strong> : registrationClosed
+              ? <>Workshop reward: <strong>{xpReward} XP</strong></>
+              : <>Earn <strong>{xpReward} XP</strong></>}
             <small className="workshop-program-area"><BookOpen size={13} aria-hidden="true" /> {workshop.programArea || "Program area not listed"}</small>
           </span>
 
@@ -79,6 +87,21 @@ export default function WorkshopCard({ workshop }) {
             <ArrowRight size={16} />
           </Link>
         </div>
+
+        {registrationClosed && (
+          <p className="mt-3 text-xs text-slate-600">
+            {pastAttendanceXp !== null
+              ? `Attended previously? Claim ${pastAttendanceXp} XP (half reward).`
+              : "Attended previously? You may claim past attendance."}
+            {" "}
+            <Link
+              className="font-bold text-rose-700 underline underline-offset-2"
+              href={`/completed-workshops?workshop=${encodeURIComponent(workshop.id)}#previously-completed`}
+            >
+              Previously Completed
+            </Link>
+          </p>
+        )}
       </div>
     </article>
   );
