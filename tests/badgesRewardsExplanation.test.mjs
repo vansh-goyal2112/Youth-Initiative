@@ -9,16 +9,21 @@ test("Badges & Rewards explains that students redeem XP in person at SAIT events
   const page = source("../src/app/badges/page.js");
   assert.match(page, /How rewards work/);
   assert.match(page, /Bring your XP to SAIT events\. Staff will show you the rewards available that day\./);
-  assert.match(page, /SAIT staff will redeem it in person and subtract the required XP from your Current XP balance\./);
+  assert.match(page, /SAIT staff will redeem it in person and subtract the required XP from your XP available to spend\./);
   assert.match(page, /Rewards vary by event, and online redemption is not available\./);
-  assert.match(page, /Current XP · Available to redeem/);
+  assert.match(page, /XP available to spend/);
+  assert.match(page, /Lifetime XP/);
 });
 
-test("spendable Current XP uses the live gamification balance, not lifetime Total XP", () => {
+test("spendable XP uses the current balance, while Lifetime XP sets the level", () => {
   const page = source("../src/app/badges/page.js");
   assert.match(page, /gameData\.currentXp \?\? gameData\.totalXp/);
-  assert.match(page, /Available to redeem at SAIT events/);
-  assert.match(page, /Total XP tracks how much you have earned across your journey; Current XP is what you can still redeem\./);
+  assert.match(page, /XP available to spend at SAIT events/);
+  assert.match(page, /XP available to spend decreases when staff redeem rewards/);
+  assert.match(page, /Lifetime XP tracks the XP you have earned and determines your level; redeeming rewards never reduces it/);
+  assert.match(page, /If an incorrect workshop completion is reversed, staff may correct your earned XP/);
+  const gamification = source("../src/app/api/gamification/route.js");
+  assert.match(gamification, /getLevelInformation\(\s*totalXp\s*\)/);
   const student = { totalXp: 450, currentXp: 230 };
   assert.deepEqual(getXpBalances(student), {
     totalXp: 450, currentXp: 230, xpCorrectionDebt: 0,
