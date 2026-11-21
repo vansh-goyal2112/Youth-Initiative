@@ -188,7 +188,7 @@ export default function HomePage() {
             <div className="hero-benefits hero-reveal-five">
               <div>
                 <CheckCircle2 size={17} />
-                Parent-supported accounts
+                Parent-verified accounts
               </div>
 
               <div>
