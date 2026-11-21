@@ -10,8 +10,6 @@ import {
   ChevronRight,
   Compass,
   Flag,
-  Gift,
-  LockKeyhole,
   Map,
   Rocket,
   ShieldCheck,
@@ -21,14 +19,9 @@ import {
   WandSparkles,
   Zap,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import { studentFetch } from "@/services/studentApi";
-import {
-  getReflectionStats,
-  LEARNING_MOMENTS,
-  REFLECTION_MOODS,
-} from "@/services/skillQuestEngagement.mjs";
 import styles from "./skillQuestHub.module.css";
 
 const questIcons = {
@@ -46,32 +39,19 @@ function safePercentage(current, total) {
 
 export default function SkillQuestHub({
   gameData,
-  registrations = [],
   student,
-  onRegistrationsRefresh,
   section = "all",
 }) {
   const quests = Array.isArray(gameData?.quests) ? gameData.quests : [];
-  const stats = useMemo(() => getReflectionStats(registrations), [registrations]);
 
   const [selectedQuestId, setSelectedQuestId] = useState(null);
   const [focusSaving, setFocusSaving] = useState(false);
   const [focusError, setFocusError] = useState("");
   const [focusSuccess, setFocusSuccess] = useState("");
 
-  const [reflectionId, setReflectionId] = useState(null);
-  const [mood, setMood] = useState("");
-  const [moment, setMoment] = useState("");
-  const [reflectionSaving, setReflectionSaving] = useState(false);
-  const [reflectionError, setReflectionError] = useState("");
-  const [reflectionSuccess, setReflectionSuccess] = useState("");
-
   const focusId = selectedQuestId || gameData?.activeQuestId || null;
   const unfinished = quests.filter((quest) => !quest.completed);
   const focusQuest = quests.find((quest) => quest.id === focusId) || unfinished[0] || quests[0];
-  const nextReflection = stats.pending[0];
-  const reflectionWorkshop = stats.pending.find((item) => item.id === reflectionId) || nextReflection;
-  const reflectionOpen = Boolean(reflectionId) && Boolean(reflectionWorkshop);
   const firstName = String(student?.firstName || "Explorer").trim().split(/\s+/)[0];
   const xp = Number(gameData?.totalXp) || 0;
   const xpProgress = Math.max(0, Math.min(100, Number(gameData?.progressPercentage) || 0));
@@ -99,40 +79,6 @@ export default function SkillQuestHub({
     }
   }
 
-  async function saveReflection(event) {
-    event.preventDefault();
-    if (reflectionSaving || !reflectionWorkshop || !mood || !moment) return;
-
-    setReflectionError("");
-    setReflectionSuccess("");
-    setReflectionSaving(true);
-
-    try {
-      const response = await studentFetch("/api/gamification/reflect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          registrationId: reflectionWorkshop.id,
-          mood,
-          moment,
-        }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Could not save reflection.");
-
-      setReflectionId(null);
-      setMood("");
-      setMoment("");
-      setReflectionSuccess("Your workshop reflection was saved.");
-      if (typeof onRegistrationsRefresh === "function") {
-        await onRegistrationsRefresh();
-      }
-    } catch (error) {
-      setReflectionError(error.message || "Could not save your reflection.");
-    } finally {
-      setReflectionSaving(false);
-    }
-  }
 
   return (
     <div className={styles.hub}>
@@ -186,14 +132,14 @@ export default function SkillQuestHub({
           <span>Badges</span>
         </div>
         <div className={styles.overviewStat}>
-          <Gift size={22} aria-hidden="true"/>
-          <strong>{stats.reflectedCount}</strong>
-          <span>Reflections</span>
+          <Star size={22} aria-hidden="true"/>
+          <strong>{gameData.totalXp}</strong>
+          <span>Total XP</span>
         </div>
       </div>
       )}
 
-      {(section === "all" || section === "mission" || section === "journal") && (
+      {(section === "all" || section === "mission") && (
       <div className={`${styles.twoColumns} ${section === "all" ? "" : styles.singleColumn}`}>
         {(section === "all" || section === "mission") && (
         <section className={styles.panel} aria-labelledby="my-mission-heading">
@@ -243,106 +189,10 @@ export default function SkillQuestHub({
         </section>
         )}
 
-        {(section === "all" || section === "journal") && (
-        <section className={styles.panel} aria-labelledby="reflection-heading">
-          <div className={styles.sectionHeading}>
-            <span className={styles.sectionSymbol}><Sparkles size={22} aria-hidden="true"/></span>
-            <div><span className={styles.eyebrow}>AFTER YOUR WORKSHOP</span><h3 id="reflection-heading">Workshop Reflections</h3></div>
-          </div>
-          <p className={styles.panelLead}>Every workshop is more than a date. Save how you felt and what you tried—your personal story grows with you.</p>
-          <div className={styles.stampProgress}>
-            <span className={styles.stampIcon}><Award size={25} aria-hidden="true"/></span>
-            <div>
-              <strong>{stats.reflectedCount} {stats.reflectedCount === 1 ? "reflection" : "reflections"} saved</strong>
-              <p>{stats.completedCount ? `${stats.reflectedCount} of ${stats.completedCount} verified workshops reflected on` : "Complete your first workshop to share what you learned"}</p>
-            </div>
-          </div>
-
-          {nextReflection ? (
-            <div className={styles.reflectionPrompt}>
-              <div className={styles.pendingIcon}><BookOpen size={26} aria-hidden="true"/></div>
-              <span className={styles.eyebrow}>A NEW STORY IS WAITING</span>
-              <h4>{nextReflection.workshop?.title || "Your completed workshop"}</h4>
-              <p>You attended this workshop! Ready to remember what you learned?</p>
-              {!reflectionOpen && (
-                <button className={styles.reflectButton} type="button" onClick={() => {setReflectionId(nextReflection.id);setReflectionError("");}}>
-                  Share What I Learned <ArrowRight size={17} aria-hidden="true"/>
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className={styles.reflectionEmpty}>
-              <span className={styles.bigStar} aria-hidden="true">{stats.reflectedCount > 0 ? "✦" : "★"}</span>
-              <strong>{stats.reflectedCount > 0 ? "You're all caught up!" : "Your story starts here"}</strong>
-              <p>{stats.reflectedCount > 0 ? "Your workshop reflections are saved. Keep exploring!" : "After attending a workshop, you can share what you learned."}</p>
-              <Link href="/workshops">Discover Workshops <ArrowRight size={16} aria-hidden="true"/></Link>
-            </div>
-          )}
-
-          {reflectionOpen && (
-            <form className={styles.reflectionForm} onSubmit={saveReflection}>
-              <div className={styles.formHeader}>
-                <strong>Capture your learning moment</strong>
-                <button type="button" className={styles.closeButton} onClick={() => {setReflectionId(null);setReflectionError("");}} aria-label="Close reflection form">×</button>
-              </div>
-              <fieldset>
-                <legend>How did you feel after the workshop?</legend>
-                <div className={styles.moodGrid}>
-                  {REFLECTION_MOODS.map((option) => (
-                    <label className={`${styles.moodOption} ${mood === option.id ? styles.optionSelected : ""}`} key={option.id}>
-                      <input type="radio" name="reflectionMood" value={option.id} checked={mood===option.id} onChange={() => setMood(option.id)} required/>
-                      <span aria-hidden="true">{option.emoji}</span>
-                      <small>{option.label}</small>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <fieldset>
-                <legend>What is one thing you did?</legend>
-                <div className={styles.momentGrid}>
-                  {LEARNING_MOMENTS.map((option) => (
-                    <label className={`${styles.momentOption} ${moment === option.id ? styles.optionSelected : ""}`} key={option.id}>
-                      <input type="radio" name="learningMoment" value={option.id} checked={moment === option.id} onChange={() => setMoment(option.id)} required/>
-                      <span>{option.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <button className={styles.reflectButton} type="submit" disabled={reflectionSaving || !mood || !moment}>
-                {reflectionSaving ? "Saving your reflection…" : "Save My Reflection"} <Check size={17} aria-hidden="true"/>
-              </button>
-              {reflectionError && <p className={styles.error} role="alert">{reflectionError}</p>}
-            </form>
-          )}
-          {reflectionSuccess && <p role="status" className={styles.success}>{reflectionSuccess}</p>}
-          {stats.recent.length > 0 && (
-            <div className={styles.journalRecent}>
-              <h4>Recent Reflections</h4>
-              {stats.recent.map((item) => {
-                const moodOption = REFLECTION_MOODS.find((opt) => opt.id === item.reflection.mood);
-                return <div className={styles.journalEntry} key={item.id}>
-                  <span aria-hidden="true">{moodOption?.emoji || "⭐"}</span>
-                  <div><strong>{item.workshop?.title || "Workshop completed"}</strong><small>{LEARNING_MOMENTS.find((opt) => opt.id === item.reflection.moment)?.label || "Learning recorded"}</small></div>
-                  <CheckCircle2 size={19} aria-label="Saved" />
-                </div>;
-              })}
-            </div>
-          )}
-        </section>
-        )}
       </div>
       )}
 
-      {(section === "all" || section === "level") && (
-      <div className={styles.milestoneStrip} aria-label="Your Learning Journey milestones">
-        <div><Rocket size={23} aria-hidden="true"/><strong>{gameData.completedWorkshops}</strong><span>Workshops Completed</span></div>
-        <span className={styles.stripDivider} aria-hidden="true">✦</span>
-        <div><Compass size={23} aria-hidden="true"/><strong>{gameData.categoryCount}</strong><span>Skill Areas</span></div>
-        <span className={styles.stripDivider} aria-hidden="true">✦</span>
-        <div><Award size={23} aria-hidden="true"/><strong>{stats.reflectedCount}</strong><span>Reflections Saved</span></div>
-        <Link href="/journey">Keep Adventuring <ArrowRight size={17} aria-hidden="true"/></Link>
-      </div>
-      )}
+
     </div>
   );
 }
