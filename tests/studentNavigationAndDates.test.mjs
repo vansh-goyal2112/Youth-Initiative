@@ -53,3 +53,18 @@ test("empty dates also hide empty or stale time rows on student screens", () => 
   assert.match(detail,/dateLabel && schedule.time && <InformationItem/);
   assert.match(registered,/dateLabel && schedule.time && <div>/);
 });
+
+test("Home shows only Workshops, Badges and Total XP tiles without journal stamps", () => {
+  const dashboard = src("../src/app/dashboard/page.js");
+  const hub = src("../src/components/gamification/SkillQuestHub.jsx");
+  const journey = src("../src/app/journey/page.js");
+  assert.match(dashboard, /<SkillQuestHub section="level"/);
+  assert.doesNotMatch(dashboard, /<SkillQuestHub section="journal"/);
+  assert.doesNotMatch(journey, /<JournalStamps/);
+  assert.match(hub, /<span>Workshops<\/span>/);
+  assert.match(hub, /<span>Badges<\/span>/);
+  assert.match(hub, /<span>Total XP<\/span>/);
+  assert.equal((hub.match(/className=\{styles\.overviewStat\}/g) || []).length, 3);
+  assert.doesNotMatch(hub, /Reflections|JournalStamps|milestoneStrip|stats\.reflectedCount/);
+  assert.match(hub, /section === "mission"/);
+});
