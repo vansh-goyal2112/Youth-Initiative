@@ -21,15 +21,22 @@ import {
 import WorkshopCard from "@/components/workshops/WorkshopCard";
 import { workshopGradeOptions, matchesWorkshopGrade } from "@/utils/workshopGrades.mjs";
 import { groupWorkshopsByAvailability } from "@/utils/workshopAvailability.mjs";
+import { getWorkshopCatalogueViewState } from "@/utils/workshopCatalogueView.mjs";
+import { useAuth } from "@/contexts/AuthContext";
 
 import {
   studentFetch,
 } from "@/services/studentApi";
 
 export default function WorkshopsPage() {
+  const { user, student, loading: authLoading } = useAuth();
+  const sessionKey = user ? `${user.uid}:${student?.schoolGrade ?? ""}` : null;
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [gradeRequired, setGradeRequired] = useState(false);
+  const [loadedForKey, setLoadedForKey] = useState(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   const [searchText, setSearchText] = useState("");
   const [categoryFilter, setCategoryFilter] =
@@ -45,29 +52,55 @@ export default function WorkshopsPage() {
     useState(false);
 
   useEffect(() => {
-    async function loadWorkshops() {
-      try {
-        setLoading(true);
+    // Firebase restores its session and validates the student profile
+    // asynchronously after a direct URL visit or full page refresh.
+    // Requesting workshops before that completes causes a false empty/error view.
+    if (authLoading) return;
 
+    let cancelled = false;
+
+    // Signed-out display is derived from the auth state itself. No
+    // synchronous state reset is needed, and stale results are never rendered.
+    if (!user) return;
+
+    async function loadWorkshops() {
+      setLoading(true);
+      setErrorMessage("");
+      setGradeRequired(false);
+      setLoadedForKey(null);
+      setWorkshops([]);
+
+      try {
         const response = await studentFetch("/api/workshops", { cache: "no-store" });
-        const responseData = await response.json();
+        const data = await response.json().catch(() => null);
 
         if (!response.ok) {
-          throw new Error(responseData.message);
+          throw new Error(data?.message || "Workshops could not be loaded.");
+        }
+        if (!Array.isArray(data?.workshops)) {
+          throw new Error("The workshop catalogue response was invalid. Please try again.");
         }
 
-        setWorkshops(responseData.workshops);
+        if (cancelled) return;
+        setWorkshops(data.workshops);
+        setGradeRequired(data.gradeRequired === true);
       } catch (error) {
-        setErrorMessage(
-          error.message || "Workshops could not be loaded."
-        );
+        if (cancelled) return;
+        setWorkshops([]);
+        setErrorMessage(error?.message || "Workshops could not be loaded.");
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoadedForKey(sessionKey);
+          setLoading(false);
+        }
       }
     }
 
-    loadWorkshops();
-  }, []);
+    void loadWorkshops();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user, sessionKey, retryKey]);
 
   const categories = useMemo(
     () =>
@@ -162,6 +195,64 @@ export default function WorkshopsPage() {
     setProgramFilter("all");
     setModeFilter("all");
     setGradeFilter("all");
+  }
+
+  const viewState = getWorkshopCatalogueViewState({
+    authLoading,
+    authenticated: Boolean(user),
+    loading,
+    loadedForKey,
+    sessionKey,
+    gradeRequired,
+    schoolGrade: student?.schoolGrade,
+    errorMessage,
+  });
+
+  // No count, filters, or empty-result messaging until the student's
+  // authenticated catalogue request has actually completed successfully.
+  if (viewState !== "ready") {
+    return (
+      <main className="student-workshops-page min-h-screen">
+        <section className="student-content-container flex min-h-[65vh] items-center justify-center py-14">
+          {viewState === "loading" ? (
+            <div className="student-workshop-status" role="status">
+              <LoaderCircle size={35} className="button-spinner" />
+              <p>Loading your workshops...</p>
+            </div>
+          ) : (
+            <div className="mx-auto w-full max-w-lg rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
+              <BookOpen size={44} className="mx-auto mb-4 text-rose-700" aria-hidden="true" />
+              {viewState === "login" ? (
+                <>
+                  <h1 className="text-2xl font-bold text-slate-900">Log in to view workshops</h1>
+                  <p className="mt-3 text-slate-600">Sign in to see workshops that match your school grade.</p>
+                  <Link href="/login" className="mt-6 inline-flex rounded-xl bg-rose-700 px-6 py-3 font-semibold text-white hover:bg-rose-800">
+                    Log in
+                  </Link>
+                </>
+              ) : viewState === "grade" ? (
+                <>
+                  <h1 className="text-2xl font-bold text-slate-900">Add your school grade</h1>
+                  <p className="mt-3 text-slate-600">We need your current grade to show workshops that are right for you.</p>
+                  <Link href="/edit-profile" className="mt-6 inline-flex rounded-xl bg-rose-700 px-6 py-3 font-semibold text-white hover:bg-rose-800">
+                    Update My Identity
+                  </Link>
+                </>
+              ) : (
+                <div role="alert">
+                  <h1 className="text-2xl font-bold text-slate-900">Workshops could not be loaded</h1>
+                  <p className="mt-3 text-slate-600">{errorMessage}</p>
+                  <button type="button" onClick={() => setRetryKey(key => key + 1)}
+                    className="mt-6 rounded-xl bg-rose-700 px-6 py-3 font-semibold text-white hover:bg-rose-800">
+                    Try again
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -343,19 +434,7 @@ export default function WorkshopsPage() {
           </div>
         </div>
 
-        {loading ? (
-          <div className="student-workshop-status">
-            <LoaderCircle
-              size={35}
-              className="button-spinner"
-            />
-            <p>Loading workshops...</p>
-          </div>
-        ) : errorMessage ? (
-          <div className="student-workshop-error">
-            {errorMessage}
-          </div>
-        ) : filteredWorkshops.length === 0 ? (
+        {filteredWorkshops.length === 0 ? (
           <div className="student-workshop-empty">
             <BookOpen size={48} />
 
