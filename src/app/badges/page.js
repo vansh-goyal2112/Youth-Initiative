@@ -379,7 +379,7 @@ export default function BadgesPage() {
             </h1>
 
             <p>
-              Complete workshops, earn XP, and unlock badges. Redeem your Current XP in person at SAIT events.
+              Complete workshops, earn XP, and unlock badges. Spend your available XP on rewards at SAIT events.
             </p>
           </div>
 
@@ -412,14 +412,14 @@ export default function BadgesPage() {
               </strong>
 
               <span>
-                Total XP
+                Lifetime XP
               </span>
             </div>
 
             <div>
               <Gift size={23} />
               <strong>{gameData.currentXp ?? gameData.totalXp}</strong>
-              <span>Current XP · Available to redeem</span>
+              <span>XP available to spend</span>
             </div>
 
             <div>
@@ -455,16 +455,16 @@ export default function BadgesPage() {
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-slate-700 md:text-base">
                 Bring your XP to SAIT events. Staff will show you the rewards available that day.
-                If you choose a reward, SAIT staff will redeem it in person and subtract the required XP from your Current XP balance.
+                If you choose a reward, SAIT staff will redeem it in person and subtract the required XP from your XP available to spend.
               </p>
               <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-white px-4 py-3">
-                <strong className="text-2xl font-black text-slate-900" aria-label={`Current XP available to redeem: ${gameData.currentXp ?? gameData.totalXp}`}>
+                <strong className="text-2xl font-black text-slate-900" aria-label={`XP available to spend: ${gameData.currentXp ?? gameData.totalXp}`}>
                   {gameData.currentXp ?? gameData.totalXp} XP
                 </strong>
-                <span className="text-sm font-semibold text-slate-600">Available to redeem at SAIT events</span>
+                <span className="text-sm font-semibold text-slate-600">XP available to spend at SAIT events</span>
               </div>
               <p className="mt-3 text-xs leading-relaxed text-slate-600">
-                Total XP tracks how much you have earned across your journey; Current XP is what you can still redeem.
+                XP available to spend decreases when staff redeem rewards. Lifetime XP tracks the XP you have earned and determines your level; redeeming rewards never reduces it. If an incorrect workshop completion is reversed, staff may correct your earned XP.
                 Rewards vary by event, and online redemption is not available.
               </p>
             </div>
