@@ -68,7 +68,9 @@ test("self-claim API uses historical eligibility both when listing and submittin
   assert.match(api, /status: 403/);
   assert.match(api, /gradeRequired: true/);
   assert.match(api, /WHERE NOT IS_DEFINED\(c\.status\) OR c\.status != 'deleted'/);
-  assert.match(api, /status === "completed" \|\| item\.status === "reversed"/);
+  // Claimed programs are filtered and blocked at workshop scope, not only per session.
+  assert.match(api, /const claimedWorkshops = getClaimedWorkshopIds\(registrations\)/);
+  assert.match(api, /getClaimedWorkshopIds\(registrations\)\.has\(workshopId\)/);
   assert.match(api, /completionTransactionId\(uid, workshopId, sessionId\)/);
   assert.match(api, /awardForCompletion\(workshop, "self_reported"\)/);
   assert.match(api, /reviewStatus: "pending_review"/);

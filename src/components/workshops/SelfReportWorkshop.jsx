@@ -59,14 +59,19 @@ export default function SelfReportWorkshop({ onClaimed }) {
         body: JSON.stringify({ workshopId: selected, sessionId: sessionId || null, completedOn, attested: confirmed }),
       }, { limitedUse: true });
       const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.message || "Could not save your completion.");
+      if (!response.ok || !result.success) {
+        // Another tab may have submitted this workshop already. Remove the
+        // stale option immediately rather than inviting another duplicate.
+        if (response.status === 409 && result.alreadyClaimed === true) {
+          setWorkshops(current => current.filter(item => item.id !== selected));
+          setSelected(""); setSessionId(""); setCompletedOn(""); setConfirmed(false);
+        }
+        throw new Error(result.message || "Could not save your completion.");
+      }
       setMessage(result.message);
-      setWorkshops(current => current.flatMap(item => {
-        if (item.id !== selected) return [item];
-        if (!sessionId || !item.sessions?.length) return [];
-        const remaining = item.sessions.filter(session => session.id !== sessionId);
-        return remaining.length ? [{ ...item, sessions: remaining }] : [];
-      }));
+      // A workshop can contain multiple sessions; after a successful claim,
+      // remove the whole program from the dropdown rather than just one date.
+      setWorkshops(current => current.filter(item => item.id !== selected));
       setSelected(""); setSessionId(""); setCompletedOn(""); setConfirmed(false);
       if (typeof onClaimed === "function") onClaimed();
     } catch (cause) {
