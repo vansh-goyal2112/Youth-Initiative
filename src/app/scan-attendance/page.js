@@ -1,15 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Keyboard, LoaderCircle, QrCode } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useAuth } from "@/contexts/AuthContext";
 import { studentFetch } from "@/services/studentApi";
+import AttendanceCelebration from "@/components/attendance/AttendanceCelebration";
 
 export default function ScanAttendancePage() {
-  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const scannerReference = useRef(null);
   const verifyingReference = useRef(false);
@@ -19,6 +18,7 @@ export default function ScanAttendancePage() {
   const [scanning, setScanning] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [attendanceResult, setAttendanceResult] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -56,21 +56,23 @@ export default function ScanAttendancePage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Attendance could not be verified.");
 
-      // Both QR and manual code use the same verified attendance and full-XP flow.
-      if (data.rewardPending || !data.reward) {
-        router.push("/journey");
-        return;
-      }
-      sessionStorage.setItem("latestReward", JSON.stringify({
-        workshop: data.workshop,
-        reward: data.reward,
-      }));
-      router.push("/reward");
+      // Both QR and manual codes use the same verified completion and reward.
+      // Celebrate only the actual server-confirmed XP and badge awards.
+      // A pending reward is confirmed without guessing any XP or badges.
+      setAttendanceResult(data);
+      setVerifying(false);
     } catch (error) {
       setErrorMessage(error.message || "Attendance could not be verified.");
       setVerifying(false);
       verifyingReference.current = false;
     }
+  }
+
+  function closeCelebration() {
+    setAttendanceResult(null);
+    setManualCode("");
+    setVerifying(false);
+    verifyingReference.current = false;
   }
 
   async function verifyQr(qrText) {
@@ -91,7 +93,7 @@ export default function ScanAttendancePage() {
   }
 
   async function startScanner() {
-    if (scanning || verifying || authLoading || !user) return;
+    if (scanning || verifying || attendanceResult || authLoading || !user) return;
     try {
       setErrorMessage("");
       const scanner = new Html5Qrcode("attendance-reader");
@@ -116,7 +118,7 @@ export default function ScanAttendancePage() {
 
   function submitManualCode(event) {
     event.preventDefault();
-    if (verifying || authLoading || !user) return;
+    if (verifying || attendanceResult || authLoading || !user) return;
     if (!/^[0-9]{4}$/.test(manualCode)) {
       setErrorMessage("Enter the four-digit code shown by your instructor.");
       return;
@@ -197,6 +199,9 @@ export default function ScanAttendancePage() {
             <><QrCode size={18} /> Scan QR instead</>}
         </button>
       </section>
+      {attendanceResult && (
+        <AttendanceCelebration result={attendanceResult} onClose={closeCelebration} />
+      )}
     </main>
   );
 }
