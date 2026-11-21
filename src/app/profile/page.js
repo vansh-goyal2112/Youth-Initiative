@@ -220,7 +220,7 @@ export default function ProfilePage() {
 
         <div className={styles.heroInner}>
           <div className={styles.heroIntro}>
-            <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true"/> MY LEARNING JOURNEY PASSPORT</span>
+            <span className={styles.eyebrow}><Sparkles size={17} aria-hidden="true"/> My Learning Journey</span>
             <h1 id="profile-heading">My Explorer Profile</h1>
             <p>See what you&apos;ve learned. Find what comes next.</p>
           </div>
