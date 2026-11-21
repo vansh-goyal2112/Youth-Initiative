@@ -8,6 +8,8 @@ export default function CompletionReviewsPage() {
   const [claims, setClaims] = useState([]);
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkApproving, setBulkApproving] = useState(false);
   const [filter, setFilter] = useState("pending_review");
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
@@ -48,25 +50,76 @@ export default function CompletionReviewsPage() {
         .some(value => String(value || "").toLowerCase().includes(query))));
   }, [claims, filter, search]);
 
+  const eligible = filtered.filter(claim => claim.reviewStatus === "pending_review" && claim.status === "completed");
+  const selected = eligible.filter(claim => selectedIds.includes(claim.id));
+  const busy = Boolean(workingId) || bulkApproving;
+
+  async function requestAction(claim, action) {
+    const response = await adminFetch("/api/admin/completions", {
+      method: action === "approve" ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        registrationId: claim.id, action, ...(action === "reverse" ? { reason } : {}),
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) throw new Error(result.message || "The completion could not be updated.");
+    return result;
+  }
+
   async function takeAction(claim, action) {
-    if (workingId) return;
+    if (busy) return;
     setWorkingId(claim.id); setError(""); setMessage("");
     try {
-      const response = await adminFetch("/api/admin/completions", {
-        method: action === "approve" ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          registrationId: claim.id, action, ...(action === "reverse" ? { reason } : {}),
-        }),
-      });
-      const result = await response.json();
-      if (!response.ok || !result.success) throw new Error(result.message || "The completion could not be updated.");
+      const result = await requestAction(claim, action);
       setMessage(result.message || "Completion updated.");
+      setSelectedIds(ids => ids.filter(id => id !== claim.id));
       setReason(""); setReversingId("");
       setRefresh(v => v + 1);
     } catch (cause) {
       setError(cause.message || "Could not update this completion.");
     } finally { setWorkingId(""); }
+  }
+
+  async function approveSelected() {
+    if (busy || loading || !selected.length) return;
+    if (!window.confirm(`Approve ${selected.length} selected ${selected.length === 1 ? "claim" : "claims"}? No additional XP will be awarded.`)) return;
+
+    setBulkApproving(true);
+    setError("");
+    setMessage("");
+    setReversingId("");
+    setReason("");
+    const succeeded = new Set();
+    let alreadyApproved = 0;
+    try {
+      // Limit concurrent requests while keeping each approval permissioned and audited.
+      for (let offset = 0; offset < selected.length; offset += 4) {
+        const batch = selected.slice(offset, offset + 4);
+        const results = await Promise.allSettled(batch.map(claim => requestAction(claim, "approve")));
+        results.forEach((result, index) => {
+          if (result.status !== "fulfilled") return;
+          succeeded.add(batch[index].id);
+          if (result.value.alreadyApproved) alreadyApproved += 1;
+        });
+      }
+      const approvedCount = succeeded.size - alreadyApproved;
+      const failedCount = selected.length - succeeded.size;
+      const summary = [
+        approvedCount > 0 && `Approved ${approvedCount}.`,
+        alreadyApproved > 0 && `Already approved: ${alreadyApproved}.`,
+      ].filter(Boolean).join(" ");
+      if (summary) setMessage(summary);
+      if (failedCount) setError(`Could not confirm approval for ${failedCount} ${failedCount === 1 ? "claim" : "claims"}. Review the refreshed list before retrying.`);
+      setClaims(current => current.map(claim =>
+        succeeded.has(claim.id) ? { ...claim, reviewStatus: "approved" } : claim
+      ));
+      setSelectedIds(ids => ids.filter(id => !succeeded.has(id)));
+      setLoading(true);
+      setRefresh(value => value + 1);
+    } finally {
+      setBulkApproving(false);
+    }
   }
 
   const pending = claims.filter(item => item.reviewStatus === "pending_review").length;
@@ -80,7 +133,7 @@ export default function CompletionReviewsPage() {
           <h1 className="text-3xl font-black tracking-tight">Review <span className="text-rose-600">claims</span></h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Review self-reported workshops, approve genuine attendance, and reverse incorrect claims. Half XP is awarded when students report a workshop; approval does not award it twice.</p>
         </div>
-        <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50" onClick={() => {setLoading(true);setRefresh(n=>n+1);}}>
+        <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50" disabled={busy || loading} onClick={() => {setSelectedIds([]);setLoading(true);setRefresh(n=>n+1);}}>
           <RefreshCw size={17}/> Refresh
         </button>
       </div>
@@ -100,15 +153,32 @@ export default function CompletionReviewsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
           <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3">
             <Search size={17} className="text-slate-400"/>
-            <input className="w-full min-h-11 border-0 bg-transparent py-2 text-sm outline-none" placeholder="Search student, Youth ID, workshop…" aria-label="Search completion claims" value={search} onChange={event => setSearch(event.target.value)}/>
+            <input className="w-full min-h-11 border-0 bg-transparent py-2 text-sm outline-none" placeholder="Search student, Youth ID, workshop…" aria-label="Search completion claims" disabled={bulkApproving} value={search} onChange={event => { setSearch(event.target.value); setSelectedIds([]); }}/>
           </div>
-          <select className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700" aria-label="Review status" value={filter} onChange={event => setFilter(event.target.value)}>
+          <select className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700" aria-label="Review status" disabled={bulkApproving} value={filter} onChange={event => { setFilter(event.target.value); setSelectedIds([]); }}>
             <option value="pending_review">Pending review</option>
             <option value="approved">Approved</option>
             <option value="reversed">Reversed</option>
             <option value="all">All claims</option>
           </select>
         </div>
+        {!loading && eligible.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
+            <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+              <input type="checkbox" className="size-4 accent-emerald-700" disabled={busy}
+                checked={selected.length === eligible.length}
+                onChange={event => setSelectedIds(event.target.checked ? eligible.map(claim => claim.id) : [])} />
+              Select all visible pending claims
+            </label>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-slate-600" aria-live="polite">{selected.length} selected</span>
+              <button type="button" disabled={busy || selected.length === 0} onClick={approveSelected}
+                className="min-h-10 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-50">
+                {bulkApproving ? "Approving selected…" : "Approve selected"}
+              </button>
+            </div>
+          </div>
+        )}
         {message && <p className="m-4 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800" role="status"><CheckCircle2 size={16} className="mr-2 inline"/>{message}</p>}
         {error && <p className="m-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-800" role="alert"><XCircle size={16} className="mr-2 inline"/>{error}</p>}
         {loading ? <p className="flex items-center gap-2 p-8 text-sm text-slate-500"><LoaderCircle className="animate-spin" size={19}/> Loading completion reviews…</p> :
@@ -117,6 +187,15 @@ export default function CompletionReviewsPage() {
             {filtered.map(claim => (
               <article key={claim.id} className="p-4 md:p-5">
                 <div className="flex flex-wrap items-start justify-between gap-4">
+                  {claim.reviewStatus === "pending_review" && claim.status === "completed" && (
+                    <input type="checkbox" className="mt-1 size-4 accent-emerald-700" disabled={busy}
+                      aria-label={`Select ${claim.workshopTitle} claim for ${claim.name}`}
+                      checked={selectedIds.includes(claim.id)}
+                      onChange={event => {
+                        const checked = event.target.checked;
+                        setSelectedIds(ids => checked ? [...ids, claim.id] : ids.filter(id => id !== claim.id));
+                      }} />
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <h2 className="text-base font-extrabold text-slate-900">{claim.workshopTitle}</h2>
@@ -136,13 +215,13 @@ export default function CompletionReviewsPage() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {claim.reviewStatus === "pending_review" && (
-                      <button type="button" disabled={!!workingId} onClick={() => takeAction(claim, "approve")}
+                      <button type="button" disabled={busy} onClick={() => takeAction(claim, "approve")}
                         className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-extrabold text-white hover:bg-emerald-800 disabled:opacity-50">
                         {workingId === claim.id ? <LoaderCircle size={15} className="animate-spin"/> : <CheckCircle2 size={16}/>} Approve
                       </button>
                     )}
                     {canReverse && claim.reviewStatus !== "reversed" && (
-                      <button type="button" disabled={!!workingId} onClick={() => { setReversingId(current => current === claim.id ? "" : claim.id); setReason(""); }}
+                      <button type="button" disabled={busy} onClick={() => { setReversingId(current => current === claim.id ? "" : claim.id); setReason(""); }}
                         className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-extrabold text-rose-800 hover:bg-rose-100 disabled:opacity-50">
                         <RotateCcw size={15}/> Reverse
                       </button>
@@ -155,7 +234,7 @@ export default function CompletionReviewsPage() {
                       <textarea className="mt-2 min-h-[86px] w-full rounded-xl border border-rose-200 bg-white p-3 text-sm text-slate-800" required minLength={5} maxLength={250} placeholder="Explain why this completion should be reversed" value={reason} onChange={event => setReason(event.target.value)}/>
                     </label>
                     <div className="flex items-start gap-2 text-xs text-rose-800"><ShieldCheck size={15} className="shrink-0"/> Reversing removes unearned XP, recalculates badges, and may record an internal correction if XP was already spent.</div>
-                    <button type="submit" disabled={!!workingId || reason.trim().length < 5} className="min-h-10 rounded-xl bg-rose-700 px-4 py-2 text-xs font-extrabold text-white hover:bg-rose-800 disabled:opacity-50">Confirm reversal</button>
+                    <button type="submit" disabled={busy || reason.trim().length < 5} className="min-h-10 rounded-xl bg-rose-700 px-4 py-2 text-xs font-extrabold text-white hover:bg-rose-800 disabled:opacity-50">Confirm reversal</button>
                   </form>
                 )}
               </article>
