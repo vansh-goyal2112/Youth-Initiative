@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Camera, KeyboardRound, LoaderCircle, QrCode } from "lucide-react";
+import { Camera, Keyboard, LoaderCircle, QrCode } from "lucide-react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useAuth } from "@/contexts/AuthContext";
 import { studentFetch } from "@/services/studentApi";
@@ -168,7 +168,7 @@ export default function ScanAttendancePage() {
             />
             <button type="submit" className="attendance-scan-button" disabled={verifying || authLoading || !user || manualCode.length !== 4}>
               {verifying ? <><LoaderCircle size={20} className="button-spinner" /> Checking your attendance...</> :
-                <><KeyboardRound size={20} /> Mark attendance</>}
+                <><Keyboard size={20} /> Mark attendance</>}
             </button>
           </form>
         )}
@@ -193,7 +193,7 @@ export default function ScanAttendancePage() {
           className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:border-rose-300 hover:text-rose-700 disabled:opacity-50"
           disabled={verifying}
           onClick={() => void changeMode(mode === "qr" ? "code" : "qr")}>
-          {mode === "qr" ? <><KeyboardRound size={18} /> Enter code instead</> :
+          {mode === "qr" ? <><Keyboard size={18} /> Enter code instead</> :
             <><QrCode size={18} /> Scan QR instead</>}
         </button>
       </section>
