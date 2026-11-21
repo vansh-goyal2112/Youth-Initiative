@@ -102,6 +102,20 @@ test("production server: public onboarding and recovery pages load; APIs require
         assert.equal(response.status, 404, `${method} ${pathname}`);
       }
     });
+    await t.test("admin dashboard counts and redemption require authorization", async () => {
+      const page = await fetch(baseUrl + "/admin/redeem-xp", { signal: AbortSignal.timeout(10_000) });
+      assert.equal(page.status, 200);
+      for (const [path, method] of [
+        ["/api/admin/rewards?search=Student", "GET"],
+        ["/api/admin/rewards?view=recent", "GET"],
+        ["/api/admin/rewards", "POST"],
+        ["/api/admin/completions?summary=1", "GET"],
+        ["/api/admin/students?pendingCount=1", "GET"],
+      ]) {
+        const response = await fetch(baseUrl + path, { method, signal: AbortSignal.timeout(10_000) });
+        assert.equal(response.status, 401, `${method} ${path}`);
+      }
+    });
   } catch (error) {
     throw Error(`${error.message}\nServer log tail:\n${logs.slice(-4_000)}`);
   } finally {

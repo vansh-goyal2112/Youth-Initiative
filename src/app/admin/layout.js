@@ -6,21 +6,27 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import {
-  BookOpen, LayoutDashboard, LogOut, QrCode, Users, ShieldCheck,
+  BookOpen, LayoutDashboard, LogOut, ShieldCheck,
   FileText, ClipboardList, KeyRound, Menu, X, ChevronRight, PanelLeftClose, BarChart3,
 } from "lucide-react";
 import { auth } from "@/services/firebase";
 import AdminGuard from "@/components/admin/AdminGuard";
+import { adminWorkspaces } from "@/components/admin/adminWorkspaces";
 
 const navigation = [
   { title: "Overview", items: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard }] },
   { title: "Operations", items: [
-    { href: "/admin/students", label: "Students", icon: Users, permission: "students.view" },
-    { href: "/admin/workshops", label: "Workshops", icon: BookOpen, permission: "workshops.view" },
-    { href: "/admin/badges", label: "Badges", icon: ShieldCheck, permission: "badges.manage" },
+    adminWorkspaces.students,
+    adminWorkspaces.workshops,
+    adminWorkspaces.badges,
     { href: "/admin/media", label: "Media library", icon: BookOpen, permission: "workshops.edit" },
-    { href: "/admin/attendance", label: "Attendance", icon: QrCode, permission: "attendance.manage" },
-    { href: "/admin/completions", label: "Completion reviews", icon: ClipboardList, permission: "completion.review" },
+  ] },
+  { title: "Check-ins & rewards", items: [
+    adminWorkspaces.attendance,
+    adminWorkspaces.redeem,
+    adminWorkspaces.claims,
+  ] },
+  { title: "Reporting", items: [
     { href: "/admin/reports", label: "Student reports", icon: FileText, permission: "reports.generate" },
     { href: "/admin/engagement", label: "Engagement insights", icon: BarChart3, permission: "attendance.view" },
     { href: "/admin/feedback", label: "Workshop feedback", icon: ClipboardList, permission: "reports.generate" },

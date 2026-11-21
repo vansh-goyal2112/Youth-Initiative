@@ -35,6 +35,15 @@ function badgeEligibility(registrations) {
 export async function GET(request) {
   try {
     await requireAdminPermission(request, "completion.review");
+    if (new URL(request.url).searchParams.get("summary") === "1") {
+      const [count] = await queryCosmosDocuments("registrations",
+        `SELECT VALUE COUNT(1) FROM c WHERE c.completionSource = "self_reported"
+         AND (c.reviewStatus = "pending_review" OR NOT IS_DEFINED(c.reviewStatus)
+           OR IS_NULL(c.reviewStatus) OR c.reviewStatus = "")`
+      );
+      return Response.json({ count: count ?? 0 }, { headers: { "Cache-Control": "private, no-store" } });
+    }
+
     const records = await queryCosmosDocuments("registrations",
       "SELECT TOP 150 * FROM c WHERE c.completionSource = @source ORDER BY c.reportedAt DESC",
       [{ name: "@source", value: "self_reported" }]

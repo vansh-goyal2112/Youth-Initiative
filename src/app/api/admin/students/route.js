@@ -369,6 +369,13 @@ export async function GET(
 ) {
   try {
     await requireAdminPermission(request, "students.view");
+    if (new URL(request.url).searchParams.get("pendingCount") === "1") {
+      const [count] = await queryCosmosDocuments("pendingRegistrations",
+        'SELECT VALUE COUNT(1) FROM c WHERE c.status != "account_created"'
+      );
+      return Response.json({ count: count ?? 0 }, { headers: { "Cache-Control": "private, no-store" } });
+    }
+
 
     const studentDocuments =
       await queryCosmosDocuments(

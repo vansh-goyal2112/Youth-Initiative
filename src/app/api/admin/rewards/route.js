@@ -7,12 +7,67 @@ import { getXpBalances, redeemXp } from "@/services/xpBalance.mjs";
 
 export const runtime = "nodejs";
 
+function studentName(student) {
+  return student.fullName || [student.firstName, student.lastName].filter(Boolean).join(" ") || "Student";
+}
+
+async function findStudents(search) {
+  const students = await queryCosmosDocuments(
+    "students",
+    `SELECT TOP 25 c.id, c.fullName, c.firstName, c.lastName, c.youthId, c.accountStatus
+     FROM c
+     WHERE (NOT IS_DEFINED(c.role) OR IS_NULL(c.role) OR c.role = "student" OR c.role = "")
+       AND (CONTAINS(c.fullName, @search, true)
+         OR CONTAINS(c.firstName, @search, true)
+         OR CONTAINS(c.lastName, @search, true)
+         OR CONTAINS(c.youthId, @search, true)
+         OR CONTAINS(CONCAT(IIF(IS_STRING(c.firstName), c.firstName, ""), " ", IIF(IS_STRING(c.lastName), c.lastName, "")), @search, true))`,
+    [{ name: "@search", value: search }]
+  );
+  return students.map(student => ({
+    id: student.id,
+    name: studentName(student),
+    youthId: student.youthId || "",
+    accountStatus: student.accountStatus || "active",
+  })).sort((first, second) => first.name.localeCompare(second.name));
+}
+
+async function recentRedemptions() {
+  const history = await queryCosmosDocuments(
+    "xpTransactions",
+    `SELECT TOP 20 c.id, c.studentId, c.points, c.note, c.createdAt, c.status
+     FROM c WHERE c.action = "xp_redemption" AND c.status IN ("completed", "processing")
+     ORDER BY c.createdAt DESC`
+  );
+  const uniqueIds = [...new Set(history.map(item => item.studentId).filter(Boolean))];
+  const names = new Map(await Promise.all(uniqueIds.map(async id => {
+    const student = await readCosmosDocument("students", id);
+    return [id, student ? studentName(student) : "Student"];
+  })));
+  return history.map(item => ({
+    id: item.id, name: names.get(item.studentId) || "Student", amount: item.points,
+    note: item.note || "", createdAt: item.createdAt, status: item.status,
+  }));
+}
+
 // Redemption transactions are append-only records, with a stable request ID.
 // A pending record is not blindly replayed: the student balance may already have changed.
 export async function GET(request) {
   try {
     await requireAdminPermission(request, "xp.redeem");
-    const studentId = new URL(request.url).searchParams.get("studentId")?.trim();
+    const params = new URL(request.url).searchParams;
+    const headers = { "Cache-Control": "private, no-store" };
+    if (params.has("search")) {
+      const search = params.get("search").trim().replace(/\s+/g, " ");
+      if (search.length < 2 || search.length > 100) {
+        return Response.json({ message: "Enter between 2 and 100 characters." }, { status: 400 });
+      }
+      return Response.json({ students: await findStudents(search) }, { headers });
+    }
+    if (params.get("view") === "recent") {
+      return Response.json({ history: await recentRedemptions() }, { headers });
+    }
+    const studentId = params.get("studentId")?.trim();
     if (!studentId || studentId.length > 128) {
       return Response.json({ message: "Student ID is required." }, { status: 400 });
     }
