@@ -596,8 +596,8 @@ export default function HomePage() {
             <span>Your next experience starts here</span>
             <h2>Explore. Learn. Achieve. Discover your future.</h2>
             <p>
-              Create your Youth Initiatives account and start building your
-              personal learning journey.
+              Create your SAIT Youth Initiatives account and start building your
+              Learning Journey.
             </p>
           </div>
 
