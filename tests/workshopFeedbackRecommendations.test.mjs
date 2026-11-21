@@ -15,14 +15,14 @@ test("feedback includes five short questions and rewards 20 XP",()=>{
 
 test("upcoming workshop recommendations are not surveys or generic sorting",()=>{
   const workshops=[
-    {id:"ai",title:"Artificial Intelligence",category:"Technology",learningMode:"online",status:"active"},
-    {id:"welding",title:"Welding",category:"Trades",learningMode:"in-person",status:"active"},
+    {id:"ai",title:"Artificial Intelligence",category:"Technology",learningMode:"online",status:"active",grade:"Grades 6 - 12"},
+    {id:"welding",title:"Welding",category:"Trades",learningMode:"in-person",status:"active",grade:"Grades 6 - 12"},
     {id:"deleted",title:"Old AI",category:"Technology",status:"inactive"}
   ];
   const matches=recommendYouthWorkshops({
     workshops,
     registrations:[{workshopId:"historical",status:"completed",workshopSnapshot:{category:"Technology"}}],
-    student:{interests:["artificial intelligence"],learningMode:"online"}
+    student:{schoolGrade:"8",interests:["artificial intelligence"],learningMode:"online"}
   });
   assert.equal(matches[0].id,"ai");
   assert.ok(matches[0].recommendationReasons.length);

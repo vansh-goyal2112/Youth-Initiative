@@ -1,16 +1,20 @@
 import { daysUntilWorkshop } from "./upcomingWorkshops.mjs";
+import { matchesStudentGrade } from "./workshopGrades.mjs";
+import { isRegistrationClosed } from "./workshopAvailability.mjs";
 
 export function getDiscoverableWorkshops(
   workshops = [],
   registrations = [],
-  today = new Date()
+  today = new Date(),
+  schoolGrade = null
 ) {
   const registeredIds = new Set(
     registrations.map((registration) => registration?.workshopId).filter(Boolean)
   );
 
   return workshops.filter((workshop) => {
-    if (!workshop?.id || workshop.status !== "active" || registeredIds.has(workshop.id)) {
+    if (!workshop?.id || workshop.status !== "active" || isRegistrationClosed(workshop) ||
+        !matchesStudentGrade(workshop, schoolGrade) || registeredIds.has(workshop.id)) {
       return false;
     }
     const daysAway = daysUntilWorkshop(workshop.startDate, today);

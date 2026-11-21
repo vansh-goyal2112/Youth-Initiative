@@ -11,10 +11,10 @@ import styles from "./discoverySpinner.module.css";
  * A small, optional interaction that reveals real catalogued workshops.
  * No rewards or registration changes occur from spinning.
  */
-export default function DiscoverySpinner({ workshops = [], registrations = [] }) {
+export default function DiscoverySpinner({ workshops = [], registrations = [], schoolGrade = null }) {
   const choices = useMemo(
-    () => getDiscoverableWorkshops(workshops, registrations),
-    [workshops, registrations]
+    () => getDiscoverableWorkshops(workshops, registrations, new Date(), schoolGrade),
+    [workshops, registrations, schoolGrade]
   );
   const [selectedWorkshop, setSelectedWorkshop] = useState(null);
   const [spins, setSpins] = useState(0);

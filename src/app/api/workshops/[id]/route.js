@@ -11,7 +11,7 @@ import {
   getWorkshopEligibility,
 } from "@/services/workshopEligibility";
 import { ensureWorkshopXpAssigned } from "@/services/workshopXpMigration";
-import { normalizeWorkshopGrades } from "@/utils/workshopGrades.mjs";
+import { normalizeWorkshopGrades, matchesStudentGrade } from "@/utils/workshopGrades.mjs";
 
 export const runtime = "nodejs";
 
@@ -92,6 +92,11 @@ export async function GET(
     }
 
     const normalizedWorkshop = normalizeWorkshopGrades(workshop);
+    if (!matchesStudentGrade(normalizedWorkshop, student.schoolGrade)) {
+      return Response.json({ success: false,
+        message: "This workshop is not available for your current school grade.",
+      }, { status: 403 });
+    }
     const eligibility = getWorkshopEligibility(
       normalizedWorkshop,
       student

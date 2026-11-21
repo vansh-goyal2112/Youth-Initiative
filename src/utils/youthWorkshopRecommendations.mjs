@@ -1,3 +1,6 @@
+import { matchesStudentGrade } from "./workshopGrades.mjs";
+import { isRegistrationClosed } from "./workshopAvailability.mjs";
+
 export function recommendYouthWorkshops({workshops=[],registrations=[],student={}}) {
   student = student || {};
   const joined=new Set(registrations.filter(r=>r.status!=="cancelled").map(r=>r.workshopId));
@@ -7,7 +10,7 @@ export function recommendYouthWorkshops({workshops=[],registrations=[],student={
   const areas=new Set(history.map(w=>String(w.category||"").toLowerCase()).filter(Boolean));
   const now=Date.now();
   return workshops.filter(w=>{
-    if(w.status!=="active"||joined.has(w.id))return false;
+    if(w.status!=="active"||isRegistrationClosed(w)||joined.has(w.id)||!matchesStudentGrade(w,student.schoolGrade))return false;
     if(w.endDate && new Date(w.endDate+"T23:59:59").getTime()<now)return false;
     return true;
   }).map(w=>{

@@ -8,6 +8,8 @@ import {
 import {
   getWorkshopEligibility,
 } from "./workshopEligibility.js";
+import { matchesStudentGrade } from "../utils/workshopGrades.mjs";
+import { isRegistrationClosed } from "../utils/workshopAvailability.mjs";
 
 export const WORKSHOP_RECOMMENDATION_WEIGHTS = Object.freeze({
   interestCategory: 30,
@@ -178,6 +180,8 @@ export function recommendWorkshops(
     .filter(
       (workshop) =>
         workshop.status === "active" &&
+        !isRegistrationClosed(workshop) &&
+        matchesStudentGrade(workshop, student.schoolGrade) &&
         !excludedIds.has(workshop.id) &&
         getWorkshopEligibility(workshop, student, today).status !==
           "ineligible"

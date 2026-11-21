@@ -324,6 +324,7 @@ test("recommends programs using only supported matching evidence", () => {
   const program = makeProgram({ learningMode: "online" });
   const recommendations = recommendSaitPrograms({
     student: {
+      schoolGrade: "8",
       interests: ["coding"],
       learningMode: "online",
     },
@@ -353,6 +354,7 @@ test("recommends programs using only supported matching evidence", () => {
 
   const noMatch = recommendSaitPrograms({
     student: {
+      schoolGrade: "8",
       interests: ["health"],
     },
     completedWorkshops: [],
@@ -381,7 +383,7 @@ test("handles incomplete profiles and preserves explicit interest mappings", () 
 test("matches completed workshop skills and excludes unrelated activities", () => {
   const program = makeProgram();
   const recommendations = recommendSaitPrograms({
-    student: { interests: [] },
+    student: { schoolGrade: "8", interests: [] },
     completedWorkshops: [
       {
         id: "coding-workshop",
@@ -399,7 +401,7 @@ test("matches completed workshop skills and excludes unrelated activities", () =
   ]);
 
   const unrelated = recommendSaitPrograms({
-    student: { interests: [] },
+    student: { schoolGrade: "8", interests: [] },
     completedWorkshops: [
       {
         id: "unrelated-workshop",

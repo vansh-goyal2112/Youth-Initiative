@@ -82,3 +82,17 @@ export function matchesWorkshopGrade(workshop, selectedGrade) {
   const grade = Number(selectedGrade);
   return Boolean(bounds && bounds.minGrade <= grade && grade <= bounds.maxGrade);
 }
+
+/** Only display grade-limited opportunities to a student whose saved grade matches. */
+export function schoolGradeNumber(schoolGrade) {
+  if (schoolGrade === "K") return 0;
+  return typeof schoolGrade === "string" && /^(?:[1-9]|1[0-2])$/.test(schoolGrade)
+    ? Number(schoolGrade)
+    : null;
+}
+
+export function matchesStudentGrade(program, schoolGrade) {
+  const grade = schoolGradeNumber(schoolGrade);
+  const bounds = getWorkshopGradeBounds(program);
+  return grade !== null && Boolean(bounds && grade >= bounds.minGrade && grade <= bounds.maxGrade);
+}

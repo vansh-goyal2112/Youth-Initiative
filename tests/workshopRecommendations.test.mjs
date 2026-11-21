@@ -24,6 +24,7 @@ function workshop(overrides) {
     status: "active",
     audience: "students",
     learningMode: null,
+    grade: "Grades 6 - 12",
     ...overrides,
   };
 }
