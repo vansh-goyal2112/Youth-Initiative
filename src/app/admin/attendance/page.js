@@ -119,7 +119,7 @@ export default function AdminAttendancePage() {
                 <p className="mt-2 font-mono text-4xl font-black tracking-[0.25em] text-slate-900" aria-label={`Four-digit attendance code: ${manualCode.split("").join(" ")}`}>{manualCode}</p>
                 <p className="mt-2 text-xs text-slate-500">Students can select “Enter code instead” on Scan Attendance. This code expires with the QR.</p>
               </div>
-            )
+            )}
             <div className="admin-attendance-active-badge"><span/> Check-in session created</div>
             {workshop && <p className="admin-attendance-session-title">{workshop.title}</p>}
             {expiresAt && <div className="admin-attendance-expiry"><Clock3 size={17}/> Code expires at <strong>{new Date(expiresAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</strong></div>}
