@@ -343,15 +343,6 @@ export default function DashboardPage() {
     )[0] ||
     "Explorer";
 
-  async function refreshRegistrations() {
-    const response = await studentFetch("/api/registrations");
-    const updated = await response.json();
-    if (!response.ok) {
-      throw new Error(updated.message || "Could not refresh journal progress.");
-    }
-    setRegistrations(updated.registrations || []);
-  }
-
   return (
     <main className={`student-dashboard ${dashboardSkin.dashboardQuest}`}>
       {/* DESKTOP HEADER */}
@@ -559,8 +550,7 @@ export default function DashboardPage() {
       <section className="student-content-container dashboard-main">
         {/* LEVEL PROGRESS (the separate Skill Quest HQ introduction has been removed) */}
         <SkillQuestHub section="level"
-          gameData={gameData} student={student} registrations={registrations}
-          onRegistrationsRefresh={refreshRegistrations}
+          gameData={gameData} student={student}
         />
 
         {/* 3. RECOMMENDED FOR YOU */}
@@ -664,8 +654,7 @@ export default function DashboardPage() {
 
         {/* Student workshop choices (legacy source key retained) */}
         <SkillQuestHub section="mission"
-          gameData={gameData} student={student} registrations={registrations}
-          onRegistrationsRefresh={refreshRegistrations}
+          gameData={gameData} student={student}
         />
 
         {/* Additional workshop and skill progress, after the client-requested main sections. */}
