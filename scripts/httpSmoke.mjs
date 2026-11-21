@@ -109,6 +109,7 @@ test("production server: public onboarding and recovery pages load; APIs require
         ["/api/admin/rewards?search=Student", "GET"],
         ["/api/admin/rewards?view=recent", "GET"],
         ["/api/admin/rewards", "POST"],
+        ["/api/admin/xp-adjust", "POST"],
         ["/api/admin/completions?summary=1", "GET"],
         ["/api/admin/students?pendingCount=1", "GET"],
         ["/api/admin/students?studentId=test", "GET"],

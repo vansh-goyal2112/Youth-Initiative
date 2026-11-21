@@ -16,7 +16,7 @@ const guides = {
     steps: [
       { text: "Search by name, Youth ID or email. Match the Youth ID before opening a profile." },
       { permission: "students.edit", text: "To fix a grade, choose Edit student profile, select the correct school grade, and save." },
-      { permission: "xp.adjust", text: "To correct an XP award, open the student profile and find Correct erroneous XP. Enter the amount and the reason, then select Remove erroneous XP." },
+      { permission: "xp.adjust", text: "To grant or correct XP, open the student profile and find Adjust student XP. Choose Grant XP or Correct erroneous XP, then enter the amount and reason." },
     ],
     tip: "Students waiting for account activation are listed above the directory.",
   },
