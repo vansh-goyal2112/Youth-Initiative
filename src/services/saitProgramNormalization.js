@@ -304,7 +304,7 @@ function findDuration(text) {
   return match?.[1]?.trim() || null;
 }
 
-function getMatchedTopics(text) {
+export function getMatchedTopics(text) {
   return PROGRAM_TOPICS.filter(({ terms }) =>
     terms.some((term) => textIncludesTerm(text, term))
   );

@@ -2,6 +2,8 @@ import { getWorkshopGradeBounds, matchesStudentGrade, schoolGradeNumber } from "
 
 import {
   assertValidSaitProgram,
+  findSaitCategory,
+  getMatchedTopics,
   normalizeMatchText,
   textIncludesTerm,
 } from "./saitProgramNormalization.js";
@@ -32,7 +34,7 @@ export const SAIT_INTEREST_PATHWAY_MAPPINGS = Object.freeze({
   },
   coding: {
     category: "Technology",
-    subjects: ["coding", "programming"],
+    subjects: ["coding", "programming", "software development"],
   },
   culinary: {
     category: "Culinary & Hospitality",
@@ -83,8 +85,6 @@ function getWorkshopText(workshop) {
   return [
     workshop.title,
     workshop.description,
-    workshop.category,
-    workshop.programArea,
     ...(Array.isArray(workshop.topics) ? workshop.topics : []),
     ...(Array.isArray(workshop.subjects) ? workshop.subjects : []),
     ...(Array.isArray(workshop.skills) ? workshop.skills : []),
@@ -103,112 +103,80 @@ function getRecommendationReasons(
   let score = 0;
   const reasons = [];
   const matchedWorkshopIds = new Set();
-  const programCategory = normalizeCategory(program.category);
-  const relatedCategories = program.relatedWorkshopCategories.map(
-    normalizeCategory
+  const programText = [program.title, program.description].join(" ");
+  const titleCategory = findSaitCategory(program.title);
+  const programCategory = titleCategory === "General"
+    ? findSaitCategory(program.description)
+    : titleCategory;
+  const categoryInterestMatch = interests.some((interest) =>
+    SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]?.category === programCategory
   );
-  const relatedTopics = program.relatedWorkshopTopics;
 
-  const categoryInterestMatch = interests.find((interest) => {
-    const category =
-      SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]?.category;
-    return category && normalizeCategory(category) === programCategory;
+  const subjectMatches = interests.flatMap((interest) => {
+    const terms = SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]?.subjects ||
+      [normalizeMatchText(interest)];
+    const titleTerm = terms.find((term) => textIncludesTerm(program.title, term));
+    const term = titleTerm || terms.find((candidate) => textIncludesTerm(program.description, candidate));
+    return term ? [{ term, points: titleTerm ? 1 : 0.5 }] : [];
   });
+  subjectMatches.sort((first, second) => second.points - first.points);
 
   if (categoryInterestMatch) {
     score += weights.interestCategory;
-    reasons.push(`Matches your interest in ${categoryInterestMatch}`);
   }
 
-  const subjectInterestMatch = interests
-    .map((interest) => {
-      const supportedSubjects =
-        SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]
-          ?.subjects || [normalizeMatchText(interest)];
-
-      const programSubject = program.subjects.find((subject) =>
-        supportedSubjects.some(
-          (supportedSubject) =>
-            normalizeMatchText(subject) ===
-            normalizeMatchText(supportedSubject)
-        )
-      );
-
-      return programSubject
-        ? {
-            interest,
-            subject: programSubject,
-          }
-        : null;
-    })
-    .find(Boolean);
-
-  if (subjectInterestMatch) {
+  if (subjectMatches.length > 0) {
     score += weights.interestSubject;
-    reasons.push(
-      `Connects your ${subjectInterestMatch.interest} interest with ${subjectInterestMatch.subject}`
-    );
+    const keywordPoints = subjectMatches.reduce((sum, match) => sum + match.points, 0);
+    score += (INTEREST_KEYWORD_BONUS * keywordPoints) / interests.length;
   }
 
-  // Differentiates programs that share a category: a title hit counts fully,
-  // a description-only hit counts half, scaled by the share of interests hit.
-  const keywordWeight = INTEREST_KEYWORD_BONUS;
-
-  if (keywordWeight > 0 && interests.length > 0) {
-    const titleText = String(program.title || "");
-    const bodyText = [program.description, ...(program.subjects || [])]
-      .filter((value) => typeof value === "string")
-      .join(" ");
-    let keywordPoints = 0;
-    let firstHit = null;
-
-    for (const interest of interests) {
-      if (textIncludesTerm(titleText, interest)) {
-        keywordPoints += 1;
-        firstHit = firstHit || interest;
-      } else if (textIncludesTerm(bodyText, interest)) {
-        keywordPoints += 0.5;
-        firstHit = firstHit || interest;
-      }
-    }
-
-    if (keywordPoints > 0) {
-      score += (keywordWeight * keywordPoints) / interests.length;
-      reasons.push(`Program content mentions your ${firstHit} interest`);
-    }
-  }
-
-  const categoryWorkshop = completedWorkshops.find((workshop) =>
-    relatedCategories.includes(normalizeCategory(workshop.category))
+  const specificSubject = subjectMatches.find(({ term }) =>
+    !categoryInterestMatch || term !== normalizeCategory(programCategory)
   );
-
-  if (categoryWorkshop) {
-    score += weights.completedWorkshopCategory;
-    if (categoryWorkshop.id) {
-      matchedWorkshopIds.add(categoryWorkshop.id);
-    }
-    reasons.push(
-      `Builds on your completed ${categoryWorkshop.title} workshop`
-    );
+  if (specificSubject) {
+    reasons.push(`Learn about ${specificSubject.term}.`);
+  } else if (categoryInterestMatch) {
+    const area = { Trades: "the skilled trades", Health: "health care" }[programCategory] ||
+      programCategory.toLowerCase();
+    reasons.push(`Explore a SAIT program in ${area}.`);
   }
 
+  // Stored tags can include words scraped from outside the program description.
+  // Require a topic in both the program and the completed activity before naming it.
+  const supportedTopics = new Set([
+    ...getMatchedTopics(programText).map(({ label }) => label),
+    ...program.relatedWorkshopTopics.filter((topic) => textIncludesTerm(programText, topic)),
+  ]);
   const topicWorkshopMatch = completedWorkshops
-    .map((workshop) => ({
-      workshop,
-      topic: relatedTopics.find((topic) =>
-        textIncludesTerm(getWorkshopText(workshop), topic)
-      ),
-    }))
+    .map((workshop) => {
+      const workshopText = getWorkshopText(workshop);
+      const workshopTopics = new Set(getMatchedTopics(workshopText).map(({ label }) => label));
+      return {
+        workshop,
+        topic: [...supportedTopics].find((topic) =>
+          normalizeCategory(topic) !== normalizeCategory(programCategory) &&
+          (workshopTopics.has(topic) || textIncludesTerm(workshopText, topic))
+        ),
+      };
+    })
     .find(({ topic }) => Boolean(topic));
 
   if (topicWorkshopMatch) {
+    const { workshop, topic } = topicWorkshopMatch;
     score += weights.completedWorkshopTopic;
-    if (topicWorkshopMatch.workshop.id) {
-      matchedWorkshopIds.add(topicWorkshopMatch.workshop.id);
+    if (normalizeCategory(workshop.category) === normalizeCategory(programCategory) &&
+        programCategory !== "General") {
+      score += weights.completedWorkshopCategory;
     }
-    reasons.push(
-      `Connects with ${topicWorkshopMatch.topic} topics from your learning journey`
-    );
+    if (workshop.id) {
+      matchedWorkshopIds.add(workshop.id);
+    }
+    if (workshop.title) {
+      reasons.push(`Keep exploring ${topic.toLowerCase()} after ${workshop.title}.`);
+    } else {
+      reasons.push(`Keep exploring ${topic.toLowerCase()} from a workshop you completed.`);
+    }
   }
 
   const studentLearningMode = student.learningMode;

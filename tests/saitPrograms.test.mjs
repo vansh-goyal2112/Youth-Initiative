@@ -341,10 +341,8 @@ test("recommends programs using only supported matching evidence", () => {
   assert.equal(recommendations.length, 1);
   assert.equal(recommendations[0].score, 100);
   assert.deepEqual(recommendations[0].reasons, [
-    "Matches your interest in coding",
-    "Connects your coding interest with Programming",
-    "Builds on your completed Intro to Coding workshop",
-    "Connects with Coding topics from your learning journey",
+    "Learn about software development.",
+    "Keep exploring coding after Intro to Coding.",
     "Fits your online learning preference",
   ]);
   assert.deepEqual(
@@ -363,6 +361,41 @@ test("recommends programs using only supported matching evidence", () => {
   assert.deepEqual(noMatch, []);
 });
 
+test("uses program-specific evidence for the mixed-interest student", () => {
+  const contaminatedTags = {
+    sourceText: "Coding, programming, artificial intelligence, and 3D printing",
+    relatedWorkshopTopics: ["3D Printing"],
+  };
+  const welding = makeProgram({
+    ...contaminatedTags,
+    title: "Welding",
+    description: "Learn welding and metal fabrication.",
+  });
+  const sonography = makeProgram({
+    ...contaminatedTags,
+    title: "Diagnostic Medical Sonography",
+    description: "Learn how to use ultrasound for diagnostic imaging.",
+  });
+  const programs = [welding, sonography, makeProgram(), makeProgram({
+    title: "Artificial Intelligence",
+    description: "Explore machine learning.",
+  })];
+  const results = recommendSaitPrograms({
+    student: {
+      schoolGrade: "8",
+      interests: ["Coding", "Artificial Intelligence", "Skilled Trades", "Health"],
+    },
+    completedWorkshops: [{ id: "printing", title: "3D Printing", category: "Technology" }],
+    programs,
+  });
+  const byTitle = new Map(results.map((result) => [result.program.title, result]));
+  assert.deepEqual(byTitle.get(welding.title).reasons, ["Explore a SAIT program in the skilled trades."]);
+  assert.deepEqual(byTitle.get(sonography.title).reasons, ["Explore a SAIT program in health care."]);
+  assert.deepEqual(byTitle.get("Software Development Diploma").reasons, ["Learn about software development."]);
+  assert.deepEqual(byTitle.get("Artificial Intelligence").reasons, ["Learn about artificial intelligence."]);
+  assert.ok(results.every(({ matchedWorkshopIds }) => matchedWorkshopIds.length === 0));
+});
+
 test("handles incomplete profiles and preserves explicit interest mappings", () => {
   const recommendations = recommendSaitPrograms({
     student: {},
@@ -375,7 +408,7 @@ test("handles incomplete profiles and preserves explicit interest mappings", () 
     SAIT_INTEREST_PATHWAY_MAPPINGS.coding,
     {
       category: "Technology",
-      subjects: ["coding", "programming"],
+      subjects: ["coding", "programming", "software development"],
     }
   );
 });
