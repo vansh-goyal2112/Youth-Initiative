@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Compass, Gift, QrCode, Sparkles, Trophy, X } from "lucide-react";
+import { BookOpen, CheckCircle2, ChevronLeft, ChevronRight, Gift, QrCode, Sparkles, Trophy, X } from "lucide-react";
 import { studentFetch } from "@/services/studentApi";
 import { useAuth } from "@/contexts/AuthContext";
 import styles from "./welcomeTutorial.module.css";
@@ -11,7 +11,7 @@ const CARDS = [
   {
     id: "welcome",
     eyebrow: "WELCOME, EXPLORER",
-    heading: "Your learning journey starts here.",
+    heading: "Welcome to My Learning Journey.",
     text: "Explore SAIT workshops. Earn XP. See what you can learn next.",
     Icon: Sparkles,
     color: "rose",
@@ -35,17 +35,17 @@ const CARDS = [
   {
     id: "xp",
     eyebrow: "STEP 3 · EARN AND GROW",
-    heading: "Earn XP. Unlock badges.",
-    text: "Earn XP. Reach new levels. Unlock badges. See your XP in Badges & Rewards.",
+    heading: "Earn XP, level up, and unlock badges.",
+    text: "Earn XP by completing workshops. Your Lifetime XP sets your level. See your XP and badges in Badges & Rewards.",
     Icon: Trophy,
     color: "gold",
   },
   {
-    id: "path",
-    eyebrow: "YOUR NEXT ADVENTURE",
-    heading: "Your past adventures count too!",
-    text: "Find workshops picked for you. Explore SAIT programs. Past workshops count too!",
-    Icon: Compass,
+    id: "rewards",
+    eyebrow: "STEP 4 · REDEEM REWARDS",
+    heading: "Redeem rewards at SAIT events.",
+    text: "Ask SAIT staff which rewards are available in person. If you choose one, staff deduct its cost from your XP available to spend. Your Lifetime XP and level stay the same.",
+    Icon: Gift,
     color: "mint",
   },
 ];
@@ -133,7 +133,6 @@ export default function WelcomeTutorial({ user, student }) {
           <p className={styles.eyebrow}>{card.eyebrow}</p>
           <h2 id="student-tutorial-title">{card.heading}</h2>
           <p id="student-tutorial-description">{card.text}</p>
-          {last && <div className={styles.rewardNote}><Gift size={18} aria-hidden="true"/> Redeem your Current XP for SAIT swag at Youth Initiatives events!</div>}
         </div>
         <div className={styles.footer}>
           <div className={styles.dots} role="group" aria-label="Tutorial steps">

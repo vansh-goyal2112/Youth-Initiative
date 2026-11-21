@@ -16,7 +16,6 @@
 .eyebrow {font-size:11px;font-weight:900;letter-spacing:2px;color:#c1273d;margin:0 0 13px;}
 .content h2 {font-size:clamp(25px,4vw,34px);font-weight:900;line-height:1.17;letter-spacing:-1px;margin:0 0 15px;}
 .content>p:last-of-type {color:#5c6b83;font-size:15px;line-height:1.7;margin:0 auto;max-width:435px;}
-.rewardNote {display:flex;align-items:center;gap:9px;justify-content:center;margin:18px auto 0;color:#815314;background:#fff6dc;border:1px solid #f2dfa6;border-radius:14px;padding:12px 14px;font-weight:800;font-size:13px;max-width:430px;}
 .footer {display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 28px 28px;border-top:1px solid #eef0f4;}
 .dots {display:flex;align-items:center;gap:7px;}
 .dot,.dotActive {height:9px;width:9px;border:0;border-radius:30px;background:#d6dce6;cursor:pointer;padding:0;transition:all .18s;}
