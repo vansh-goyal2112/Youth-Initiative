@@ -548,7 +548,7 @@ export default function DashboardPage() {
       {/* MAIN CONTENT */}
 
       <section className="student-content-container dashboard-main">
-        {/* LEVEL PROGRESS (the separate Skill Quest HQ introduction has been removed) */}
+        {/* HOME: LEARNING PROGRESS */}
         <SkillQuestHub section="level"
           gameData={gameData} student={student}
         />
