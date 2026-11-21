@@ -60,6 +60,7 @@ test("Home shows only Workshops, Badges and Total XP tiles without journal stamp
   const journey = src("../src/app/journey/page.js");
   assert.match(dashboard, /<SkillQuestHub section="level"/);
   assert.doesNotMatch(dashboard, /<SkillQuestHub section="journal"/);
+  assert.doesNotMatch(dashboard, /<SkillQuestHub section="mission"/);
   assert.doesNotMatch(journey, /<JournalStamps/);
   assert.match(hub, /<span>Workshops<\/span>/);
   assert.match(hub, /<span>Badges<\/span>/);

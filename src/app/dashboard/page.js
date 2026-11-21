@@ -677,11 +677,6 @@ export default function DashboardPage() {
         {/* 5. DISCOVERY CORNER */}
         <DiscoverySpinner workshops={workshops} registrations={registrations} />
 
-        {/* Student workshop choices (legacy source key retained) */}
-        <SkillQuestHub section="mission"
-          gameData={gameData} student={student}
-        />
-
         {/* Workshop participation by area */}
 
         <section className="dashboard-section dashboard-skills-section">
