@@ -48,7 +48,7 @@ export default function WorkshopsPage() {
       try {
         setLoading(true);
 
-        const response = await studentFetch("/api/workshops");
+        const response = await studentFetch("/api/workshops", { cache: "no-store" });
         const responseData = await response.json();
 
         if (!response.ok) {

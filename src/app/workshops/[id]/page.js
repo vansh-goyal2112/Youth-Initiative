@@ -19,6 +19,7 @@ import {
 
 import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 import { getWorkshopSchedule, workshopDateRange } from "@/utils/workshopDate.mjs";
+import { getConfiguredWorkshopXp } from "@/utils/workshopXpDisplay.mjs";
 
 import {
   studentFetch,
@@ -36,7 +37,8 @@ export default function WorkshopDetailsPage() {
     async function loadWorkshop() {
       try {
         const response = await studentFetch(
-          `/api/workshops/${encodeURIComponent(params.id)}`
+          `/api/workshops/${encodeURIComponent(params.id)}`,
+          { cache: "no-store" }
         );
 
         const responseData = await response.json();
@@ -94,6 +96,7 @@ export default function WorkshopDetailsPage() {
   const sessionsUnavailable = managedSessions && activeSessions.length === 0;
   const schedule = getWorkshopSchedule(workshop);
   const dateLabel = workshopDateRange(schedule);
+  const xpReward = getConfiguredWorkshopXp(workshop);
 
   return (
     <main className="workshop-details-page">
@@ -203,7 +206,7 @@ export default function WorkshopDetailsPage() {
             <div>
               <span>Workshop Reward</span>
               <strong>
-                +{workshop.xpReward ?? 100} XP
+                {xpReward === null ? "XP not set" : `+${xpReward} XP`}
               </strong>
             </div>
           </div>

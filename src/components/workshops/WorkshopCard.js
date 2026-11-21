@@ -9,9 +9,11 @@ import {
 
 import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 import { getWorkshopSchedule, workshopDateRange } from "@/utils/workshopDate.mjs";
+import { getConfiguredWorkshopXp } from "@/utils/workshopXpDisplay.mjs";
 
 export default function WorkshopCard({ workshop }) {
   const dateLabel = workshopDateRange(getWorkshopSchedule(workshop));
+  const xpReward = getConfiguredWorkshopXp(workshop);
 
   const eligibilityLabel =
     workshop.grade ||
@@ -68,7 +70,7 @@ export default function WorkshopCard({ workshop }) {
 
         <div className="workshop-card-footer">
           <span className="workshop-card-reward">
-            Earn <strong>{workshop.xpReward ?? 100} XP</strong>
+            {xpReward === null ? <strong>XP not set</strong> : <>Earn <strong>{xpReward} XP</strong></>}
             <small className="workshop-program-area"><BookOpen size={13} aria-hidden="true" /> {workshop.programArea || "Program area not listed"}</small>
           </span>
 

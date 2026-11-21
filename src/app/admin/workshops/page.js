@@ -22,6 +22,7 @@ import {
 import * as XLSX from "xlsx";
 
 import { adminFetch } from "@/services/adminApi";
+import { getConfiguredWorkshopXp } from "@/utils/workshopXpDisplay.mjs";
 import WorkshopSessionsPanel from "@/components/admin/WorkshopSessionsPanel";
 import MediaUploader from "@/components/admin/MediaUploader";
 
@@ -258,7 +259,7 @@ export default function AdminWorkshopsPage() {
         workshop.capacity ?? "",
 
       xpReward:
-        workshop.xpReward ?? 100,
+        getConfiguredWorkshopXp(workshop) ?? "",
 
       status:
         workshop.status || "active",
@@ -282,7 +283,7 @@ export default function AdminWorkshopsPage() {
       description: workshop.description || "",
       informationUrl: workshop.informationUrl || "",
       learningMode: workshop.learningMode || "in-person",
-      xpReward: workshop.xpReward ?? 100,
+      xpReward: getConfiguredWorkshopXp(workshop) ?? "",
       status: "inactive",
     });
     setShowForm(true);
@@ -724,7 +725,7 @@ export default function AdminWorkshopsPage() {
                       </td>
 
                       <td>
-                        {workshop.xpReward ?? 100}
+                        {getConfiguredWorkshopXp(workshop) ?? "Not set"}
                       </td>
 
                       <td>

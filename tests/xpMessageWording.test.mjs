@@ -23,8 +23,9 @@ test("XP messages do not promise fixed rewards", () => {
 });
 
 test("real XP values stay on workshop cards and counters", () => {
-  assert.match(read("../src/components/workshops/WorkshopCard.js"), /workshop\.xpReward/);
-  assert.match(read("../src/app/workshops/[id]/page.js"), /workshop\.xpReward/);
+  assert.match(read("../src/components/workshops/WorkshopCard.js"), /getConfiguredWorkshopXp\(workshop\)/);
+  assert.match(read("../src/app/workshops/[id]/page.js"), /getConfiguredWorkshopXp\(workshop\)/);
+  assert.match(read("../src/utils/workshopXpDisplay.mjs"), /workshop\?\.xpReward/);
   assert.match(read("../src/app/reward/page.js"), /reward\.xpEarned/);
   assert.match(read("../src/app/journey/page.js"), /gameData\.totalXp/);
   // Fixed feedback points remain a business rule. Only the response wording changed.
