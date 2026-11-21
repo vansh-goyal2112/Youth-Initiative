@@ -8,7 +8,7 @@ import DiscoverySpinner from "@/components/gamification/DiscoverySpinner";
 import dashboardSkin from "@/components/gamification/dashboardQuest.module.css";
 import playfulSkin from "@/components/gamification/playfulSkin.module.css";
 import { daysUntilWorkshop } from "@/utils/upcomingWorkshops.mjs";
-import { getWorkshopSchedule, workshopDateRange } from "@/utils/workshopDate.mjs";
+import { getHomeRegisteredSchedule, getHomeWorkshopDateLabel } from "@/utils/homeNextWorkshopSchedule.mjs";
 import Image from "next/image";
 
 import {
@@ -250,12 +250,12 @@ export default function DashboardPage() {
         if (["completed", "cancelled"].includes(registration.status) || !registration.workshop) {
           return false;
         }
-        const days = daysUntilWorkshop(getWorkshopSchedule(registration.workshop, registration.sessionId).startDate);
+        const days = daysUntilWorkshop(getHomeRegisteredSchedule(registration).startDate);
         return days === null || days >= 0;
       })
       .sort((first, second) => {
-        const firstDays = daysUntilWorkshop(getWorkshopSchedule(first.workshop, first.sessionId).startDate);
-        const secondDays = daysUntilWorkshop(getWorkshopSchedule(second.workshop, second.sessionId).startDate);
+        const firstDays = daysUntilWorkshop(getHomeRegisteredSchedule(first).startDate);
+        const secondDays = daysUntilWorkshop(getHomeRegisteredSchedule(second).startDate);
         return (firstDays === null ? Infinity : firstDays)
           - (secondDays === null ? Infinity : secondDays);
       });
@@ -743,7 +743,7 @@ function NextWorkshopCard({
   registration,
 }) {
   const workshop = registration.workshop;
-  const dateLabel = workshopDateRange(getWorkshopSchedule(workshop, registration.sessionId));
+  const dateLabel = getHomeWorkshopDateLabel(registration);
 
   return (
     <article className="dashboard-next-workshop">

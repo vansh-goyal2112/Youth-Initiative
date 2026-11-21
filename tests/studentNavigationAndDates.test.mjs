@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { getHomeRegisteredSchedule, getHomeWorkshopDateLabel } from "../src/utils/homeNextWorkshopSchedule.mjs";
 
 const src = path => readFileSync(new URL(path,import.meta.url),"utf8");
 test("one shared Back link handles student pages without duplicated in-page controls", () => {
@@ -24,13 +25,17 @@ test("all workshop date surfaces use the shared optional schedule", () => {
  for(const path of [
   "../src/components/workshops/WorkshopCard.js",
   "../src/app/workshops/[id]/page.js",
-  "../src/app/registered-workshops/page.js",
-  "../src/app/dashboard/page.js"
+  "../src/app/registered-workshops/page.js"
  ]) {
   const s=src(path);
   assert.match(s,/getWorkshopSchedule\(/,path);
   assert.doesNotMatch(s,/Date to be announced|Workshop date|To be announced/,path);
  }
+ const home=src("../src/app/dashboard/page.js");
+ assert.match(home,/getHomeRegisteredSchedule\(/);
+ assert.match(home,/getHomeWorkshopDateLabel\(registration\)/);
+ assert.match(home,/dateLabel && <div><CalendarDays/);
+ assert.doesNotMatch(home,/Date to be announced|Workshop date|To be announced/);
 });
 
 test("admin schedule screens format dates without changing stored ISO date inputs", () => {
@@ -76,9 +81,9 @@ test("Home shows only Workshops, Badges and Total XP tiles without journal stamp
 test("Home leads with the registered next workshop before recommendations", () => {
   const dashboard = src("../src/app/dashboard/page.js");
   assert.ok(dashboard.indexOf("dashboard-next-adventure") < dashboard.indexOf("dashboard-recommendation-section"));
-  assert.match(dashboard, /daysUntilWorkshop\(getWorkshopSchedule\(registration\.workshop, registration\.sessionId\)\.startDate\)/);
-  assert.match(dashboard, /daysUntilWorkshop\(getWorkshopSchedule\(first\.workshop, first\.sessionId\)\.startDate\)/);
-  assert.match(dashboard, /daysUntilWorkshop\(getWorkshopSchedule\(second\.workshop, second\.sessionId\)\.startDate\)/);
+  assert.match(dashboard, /daysUntilWorkshop\(getHomeRegisteredSchedule\(registration\)\.startDate\)/);
+  assert.match(dashboard, /daysUntilWorkshop\(getHomeRegisteredSchedule\(first\)\.startDate\)/);
+  assert.match(dashboard, /daysUntilWorkshop\(getHomeRegisteredSchedule\(second\)\.startDate\)/);
   assert.match(dashboard, /\["completed", "cancelled"\]\.includes\(registration\.status\)/);
 });
 
@@ -88,4 +93,34 @@ test("Home no longer renders the redundant journey footer", () => {
   assert.match(dashboard, /<UpcomingAdventures/);
   assert.match(dashboard, /<SkillQuestHub section="level"/);
   assert.match(dashboard, /dashboard-next-adventure/);
+});
+
+test("Home next-workshop card shows the registered session date or hides it", () => {
+ const workshop={
+   id:"w1",startDate:"2026-11-06",
+   sessions:[
+     {id:"dec5",status:"active",startDate:"2026-12-05",time:"10:00"},
+     {id:"dec19",status:"active",startDate:"2026-12-19"},
+   ],
+ };
+ const registered={workshop,sessionId:"dec5",sessionSnapshot:{id:"dec5",startDate:"2026-12-05"}};
+ assert.equal(getHomeWorkshopDateLabel(registered),"5 Dec 2026");
+ assert.equal(getHomeRegisteredSchedule(registered).time,"10:00");
+ assert.equal(getHomeWorkshopDateLabel({...registered,sessionId:"dec19"}),"19 Dec 2026");
+
+ // The current session can be removed or archived without changing booking history.
+ const changed={...workshop,sessions:[{id:"dec19",status:"active",startDate:"2026-12-19"}]};
+ assert.equal(getHomeWorkshopDateLabel({...registered,workshop:changed}),"5 Dec 2026");
+ assert.equal(getHomeWorkshopDateLabel({...registered,workshop:{...workshop,sessions:[{id:"dec5",status:"archived",startDate:"2026-12-05"}]}}),"5 Dec 2026");
+
+ // Never substitute another session's date or a legacy parent placeholder.
+ assert.equal(getHomeWorkshopDateLabel({...registered,workshop:changed,sessionSnapshot:null}),"");
+ assert.equal(getHomeWorkshopDateLabel({workshop,sessionId:null}),"");
+ assert.equal(getHomeWorkshopDateLabel({...registered,workshop:{...workshop,sessions:[{id:"dec5",status:"active",startDate:null}]},sessionSnapshot:null}),"");
+ assert.equal(getHomeWorkshopDateLabel({workshop:{id:"w2",startDate:null}}),"");
+ assert.equal(getHomeWorkshopDateLabel({workshop:{id:"w3",startDate:"Workshop date"}}),"");
+
+ // Older workshops with no managed sessions still display a real date.
+ assert.equal(getHomeWorkshopDateLabel({workshop:{id:"legacy",startDate:"2026-12-05"}}),"5 Dec 2026");
+ assert.equal(getHomeWorkshopDateLabel({workshop:{id:"w4",sessions:[]},sessionSnapshot:{startDate:"2026-12-05"}}),"5 Dec 2026");
 });
