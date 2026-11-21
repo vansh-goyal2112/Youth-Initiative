@@ -47,7 +47,8 @@ test("admin schedule screens format dates without changing stored ISO date input
 test("archived schedules never offer an unfulfillable student registration", () => {
   const detail=src("../src/app/workshops/[id]/page.js");
   const confirm=src("../src/app/registration-success/[id]/page.js");
-  assert.match(detail,/sessionsUnavailable \|\| workshop.availabilityStatus === "closed"/);
+  assert.match(detail,/workshop.availabilityStatus === "closed" \? \(/);
+  assert.match(detail, /sessionsUnavailable \? \(/);
   assert.match(confirm,/managedSessions && !activeSelectedSession/);
   assert.match(confirm,/registrationUnavailable \|\|/);
   assert.match(src("../src/app/api/registrations/route.js"),/item.status === "active"/);

@@ -82,10 +82,17 @@ export default function WorkshopCard({ workshop }) {
             <small className="workshop-program-area"><BookOpen size={13} aria-hidden="true" /> {workshop.programArea || "Program area not listed"}</small>
           </span>
 
-          <Link href={`/workshops/${workshop.id}`}>
-            View Details
-            <ArrowRight size={16} />
-          </Link>
+          {registrationClosed ? (
+            <Link href={`/completed-workshops?workshop=${encodeURIComponent(workshop.id)}#previously-completed`}>
+              Previously Completed
+              <ArrowRight size={16} />
+            </Link>
+          ) : (
+            <Link href={`/workshops/${workshop.id}`}>
+              View Details
+              <ArrowRight size={16} />
+            </Link>
+          )}
         </div>
 
         {registrationClosed && (
@@ -93,13 +100,6 @@ export default function WorkshopCard({ workshop }) {
             {pastAttendanceXp !== null
               ? `Attended previously? Claim ${pastAttendanceXp} XP (half reward).`
               : "Attended previously? You may claim past attendance."}
-            {" "}
-            <Link
-              className="font-bold text-rose-700 underline underline-offset-2"
-              href={`/completed-workshops?workshop=${encodeURIComponent(workshop.id)}#previously-completed`}
-            >
-              Previously Completed
-            </Link>
           </p>
         )}
       </div>

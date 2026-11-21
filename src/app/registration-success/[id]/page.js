@@ -298,6 +298,37 @@ function RegistrationSuccessContent() {
     );
   }
 
+  // A closed program cannot be confirmed as a new registration, even via
+  // a previously saved link. Past attendance must use the self-report flow.
+  if (workshop.availabilityStatus === "closed") {
+    return (
+      <main className="registration-confirm-page">
+        <section className="registration-confirm-card">
+          <Image
+            src="/images/landing/sait-logo.jpg"
+            alt="SAIT"
+            width={220}
+            height={70}
+            className="registration-confirm-logo"
+          />
+          <TriangleAlert size={48} aria-hidden="true" />
+          <h1>Registration closed</h1>
+          <p>
+            New registration is unavailable for {workshop.title}.
+            If you attended previously, claim half XP through Previously Completed.
+            SAIT staff may review your claim.
+          </p>
+          <Link
+            href={`/completed-workshops?workshop=${encodeURIComponent(workshop.id)}#previously-completed`}
+            className="registration-confirm-button"
+          >
+            Previously Completed
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="registration-confirm-page">
       <section className="registration-confirm-card">

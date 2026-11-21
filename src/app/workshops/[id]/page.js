@@ -211,7 +211,16 @@ export default function WorkshopDetailsPage() {
             </div>
           </div>
 
-          {activeSessions.length > 0 ? (
+          {workshop.availabilityStatus === "closed" ? (
+            <>
+              <h2>Registration closed</h2>
+              <p>
+                New registrations are unavailable. If you attended this workshop
+                previously, use Previously Completed below to claim half XP.
+                SAIT staff may review your claim.
+              </p>
+            </>
+          ) : activeSessions.length > 0 ? (
             <>
               <h2>Choose your session</h2>
               <p>Pick a date that works for you. Register on the SAIT website.</p>
@@ -228,12 +237,10 @@ export default function WorkshopDetailsPage() {
                 ))}
               </div>
             </>
-          ) : (sessionsUnavailable || workshop.availabilityStatus === "closed") ? (
+          ) : sessionsUnavailable ? (
             <>
               <h2>Registration unavailable</h2>
-              <p>
-                {sessionsUnavailable ? "No active sessions are available. Check SAIT for future dates." : "Registration is closed. Check SAIT for future dates."}
-              </p>
+              <p>No active sessions are available. Check SAIT for future dates.</p>
               {workshop.informationUrl && <a
                 href={workshop.informationUrl}
                 target="_blank"

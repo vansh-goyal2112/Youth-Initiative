@@ -54,6 +54,8 @@ test("Closed cards show full configured reward as reference, half-XP past claim,
   assert.match(card, /Earn <strong>\{xpReward\} XP/);
   assert.match(card, /Claim \$\{pastAttendanceXp\} XP \(half reward\)/);
   assert.match(card, /completed-workshops\?workshop=/);
+  assert.match(card, /registrationClosed \? \(/);
+  assert.match(card, /Previously Completed/);
   assert.match(card, /<Link href=\{\`\/workshops\/\$\{workshop\.id\}\`\}/);
 });
 
@@ -64,4 +66,22 @@ test("past attendance endpoint still includes closed-registration workshops and 
   assert.match(report, /awardForCompletion\(workshop, "self_reported"\)/);
   assert.match(report, /pending_review/);
   assert.doesNotMatch(report, /availabilityStatus\s*!==\s*"closed"/);
+});
+
+test("closed workshops never offer new registration, even with active session data", () => {
+  const detail = source("../src/app/workshops/[id]/page.js");
+  const confirm = source("../src/app/registration-success/[id]/page.js");
+  const api = source("../src/app/api/registrations/route.js");
+
+  assert.match(detail, /workshop\.availabilityStatus === "closed" \? \(/);
+  assert.ok(detail.indexOf('workshop.availabilityStatus === "closed" ? (') <
+    detail.indexOf("activeSessions.length > 0 ? ("));
+  assert.match(detail, /New registrations are unavailable/);
+  assert.match(detail, /Previously Completed below/);
+
+  assert.match(confirm, /if \(workshop\.availabilityStatus === "closed"\) \{/);
+  assert.ok(confirm.indexOf('if (workshop.availabilityStatus === "closed") {') <
+    confirm.indexOf("<h1>\n          Did you complete your"));
+  assert.match(confirm, /completed-workshops\?workshop=/);
+  assert.match(api, /if \(workshop\.availabilityStatus === "closed"\)/);
 });
