@@ -27,21 +27,21 @@ import {
 
 const heroSlides = [
   {
-    image: "/images/landing/youth-coding.png",
+    image: "/images/workshops/03_art-of-the-possible-coding.jpg",
     category: "Digital Youth",
     title: "Build, create and explore technology",
     description:
       "Discover coding, robotics, artificial intelligence and emerging technology.",
   },
   {
-    image: "/images/landing/youth-trades.png",
+    image: "/images/workshops/35_exploring-skilled-trades-for-girls.jpg",
     category: "Skilled Trades",
     title: "Turn curiosity into practical skills",
     description:
       "Experience hands-on learning in real workshop and lab environments.",
   },
   {
-    image: "/images/landing/youth-campus.png",
+    image: "/images/workshops/34_1-day-on-campus-activities.jpg",
     category: "Future Pathways",
     title: "Discover where your skills can take you",
     description:
@@ -81,7 +81,17 @@ const opportunities = [
 ];
 
 export default function HomePage() {
+  const [landingImage, setLandingImage] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/media", { signal: controller.signal })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => { if (!controller.signal.aborted && data?.landingUrl) setLandingImage(data.landingUrl); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const sliderInterval = setInterval(() => {
@@ -213,8 +223,10 @@ export default function HomePage() {
                   }`}
                 >
                   <Image
-                    src={slide.image}
-                    alt={slide.title}
+                    src={index === 0 && landingImage ? landingImage : slide.image}
+                    unoptimized={index === 0 && Boolean(landingImage)}
+                    onError={() => { if (index === 0 && landingImage) setLandingImage(null); }}
+                    alt=""
                     fill
                     sizes="(max-width: 900px) 100vw, 48vw"
                     className="hero-slide-image"
@@ -379,7 +391,7 @@ export default function HomePage() {
         <div className="site-container journey-layout">
           <div className="journey-image-area">
             <Image
-              src="/images/landing/youth-campus.png"
+              src="/images/workshops/34_1-day-on-campus-activities.jpg"
               alt="Youth exploring learning opportunities"
               fill
               sizes="(max-width: 900px) 100vw, 45vw"

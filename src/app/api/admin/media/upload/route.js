@@ -13,6 +13,7 @@ export const runtime = "nodejs";
 const KINDS = Object.freeze({
   workshop: "workshops.edit",
   badge: "badges.manage",
+  landing: "workshops.edit",
   banner: "workshops.edit",
   reward: "workshops.edit",
 });
@@ -21,8 +22,8 @@ export async function GET(request) {
   try {
     await requireAdminPermission(request, "workshops.edit");
     const kind = new URL(request.url).searchParams.get("kind") || "";
-    if (kind !== "banner" && kind !== "reward") {
-      return Response.json({ message: "Only global banner and reward settings can be queried here." }, { status: 400 });
+    if (!["banner", "landing", "reward"].includes(kind)) {
+      return Response.json({ message: "Choose a valid site image setting." }, { status: 400 });
     }
     const record = await readCosmosDocument("admins", "ui-media:" + kind);
     return Response.json({ success: true, url: record?.url || null });
