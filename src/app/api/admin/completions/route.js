@@ -7,30 +7,10 @@ import { recordAdminAudit } from "@/services/adminAudit";
 import { reverseEarnedXp } from "@/services/xpBalance.mjs";
 import { completionTransactionId } from "@/services/completionRules.mjs";
 import { calculateLevel, getLevelName } from "@/services/gamificationAdmin";
-import { findUnmetCustomBadgeIds } from "@/services/customBadges.mjs";
+import { loadBadgeDefinitions } from "@/services/badgeCatalogue";
+import { findUnmetBadgeIds } from "@/services/customBadges.mjs";
 
 export const runtime = "nodejs";
-
-const AUTO_BADGES = new Set([
-  "first-step", "tech-explorer", "skill-builder", "curious-learner", "workshop-champion",
-]);
-
-function badgeEligibility(registrations) {
-  const categories = new Set();
-  let tech = false;
-  for (const registration of registrations) {
-    const category = registration.workshopSnapshot?.category || "General";
-    categories.add(category);
-    if (category === "Technology") tech = true;
-  }
-  const eligible = new Set();
-  if (registrations.length >= 1) eligible.add("first-step");
-  if (tech) eligible.add("tech-explorer");
-  if (registrations.length >= 3) eligible.add("skill-builder");
-  if (categories.size >= 3) eligible.add("curious-learner");
-  if (registrations.length >= 5) eligible.add("workshop-champion");
-  return eligible;
-}
 
 export async function GET(request) {
   try {
@@ -205,8 +185,7 @@ export async function POST(request) {
         reversalReason: reason, completionXpAwarded: false, updatedAt: cosmosNow(),
       });
 
-      // Reconcile built-in and active rule-driven badges using persisted history.
-      // Manually granted or archived custom badges are preserved.
+      // Reconcile active badges against the remaining completion history.
       const remaining = await queryCosmosDocuments("registrations",
         "SELECT * FROM c WHERE c.studentId = @id AND c.status = 'completed'",
         [{ name: "@id", value: record.studentId }]
@@ -216,17 +195,16 @@ export async function POST(request) {
         workshopSnapshot: item.workshopSnapshot ||
           (item.workshopId ? await readCosmosDocument("workshops", item.workshopId) : null),
       })));
-      const eligible = badgeEligibility(completedWithSnapshots);
-      const customDefinitions = await queryCosmosDocuments("admins",
-        "SELECT * FROM c WHERE c.role = @role AND c.status = @status",
-        [{ name: "@role", value: "badge_definition" }, { name: "@status", value: "active" }]
-      );
-      const unmetCustom = new Set(findUnmetCustomBadgeIds(customDefinitions, completedWithSnapshots));
+      const definitions = await loadBadgeDefinitions();
+      const reversedCompletion = {
+        ...record,
+        workshopSnapshot: record.workshopSnapshot ||
+          (record.workshopId ? await readCosmosDocument("workshops", record.workshopId) : null),
+      };
+      const unmetBadges = new Set(findUnmetBadgeIds(definitions, completedWithSnapshots, reversedCompletion));
       const refreshedStudent = await readCosmosDocument("students", record.studentId);
       const oldBadges = Array.isArray(refreshedStudent?.badges) ? refreshedStudent.badges : [];
-      const removed = oldBadges.filter(id =>
-        (AUTO_BADGES.has(id) && !eligible.has(id)) || unmetCustom.has(id)
-      );
+      const removed = oldBadges.filter(id => unmetBadges.has(id));
       const remainingBadges = oldBadges.filter(id => !removed.includes(id));
       if (refreshedStudent) {
         await replaceCosmosDocument("students", refreshedStudent, {

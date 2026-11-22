@@ -5,6 +5,7 @@ import {
 
 import { getXpBalances } from "@/services/xpBalance.mjs";
 import { getLevelInformation } from "@/services/levelProgress.mjs";
+import { loadBadgeDefinitions } from "@/services/badgeCatalogue";
 import { countMatchingSessions } from "@/services/customBadges.mjs";
 import {
   queryCosmosDocuments,
@@ -175,8 +176,8 @@ export async function GET(request) {
         const workshop = workshops[index];
         if (workshop) {
           completedWorkshops.push({ id: workshop.id, ...workshop });
-          completedWithSnapshots.push({ ...batch[index], workshopSnapshot: workshop });
         }
+        completedWithSnapshots.push({ ...batch[index], workshopSnapshot: workshop });
       }
     }
 
@@ -263,12 +264,8 @@ export async function GET(request) {
         technologyCount,
       });
 
-    // Badge catalogue is dynamic, so future rules do not require a redeploy.
-    const customDefinitions = await queryCosmosDocuments("admins",
-      "SELECT * FROM c WHERE c.role = @role",
-      [{ name: "@role", value: "badge_definition" }]
-    );
-    const customBadgeCatalog = customDefinitions.map(definition => ({
+    const definitions = await loadBadgeDefinitions();
+    const badgeCatalog = definitions.map(definition => ({
       id: definition.badgeId,
       name: definition.name,
       description: definition.description || "",
@@ -357,7 +354,8 @@ export async function GET(request) {
 
         badgeCount:
           badges.length,
-        customBadgeCatalog,
+        badgeCatalog,
+        earnedBadgeIds: student.badges,
 
         skillTracks,
 

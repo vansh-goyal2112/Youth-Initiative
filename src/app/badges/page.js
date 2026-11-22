@@ -35,53 +35,13 @@ import {
   studentFetch,
 } from "@/services/studentApi";
 
-const builtinBadgeCatalog = [
-  {
-    id: "first-step",
-    name: "First Step",
-    description:
-      "Complete your first workshop.",
-    icon: Award,
-    type: "completed",
-    target: 1,
-  },
-  {
-    id: "tech-explorer",
-    name: "Tech Explorer",
-    description:
-      "Complete a Technology workshop.",
-    icon: Cpu,
-    type: "technology",
-    target: 1,
-  },
-  {
-    id: "skill-builder",
-    name: "Skill Builder",
-    description:
-      "Complete 3 workshops.",
-    icon: Medal,
-    type: "completed",
-    target: 3,
-  },
-  {
-    id: "curious-learner",
-    name: "Curious Learner",
-    description:
-      "Explore 3 different skill areas.",
-    icon: Sparkles,
-    type: "categories",
-    target: 3,
-  },
-  {
-    id: "workshop-champion",
-    name: "Workshop Champion",
-    description:
-      "Complete 5 workshops.",
-    icon: Trophy,
-    type: "completed",
-    target: 5,
-  },
-];
+const builtInBadgeIcons = {
+  "first-step": Award,
+  "tech-explorer": Cpu,
+  "skill-builder": Medal,
+  "curious-learner": Sparkles,
+  "workshop-champion": Trophy,
+};
 
 export default function BadgesPage() {
   const {
@@ -204,117 +164,11 @@ export default function BadgesPage() {
 
   const earnedBadgeIds =
     useMemo(() => {
-      if (
-        !gameData?.badges
-      ) {
-        return new Set();
-      }
-
-      const ids =
-        gameData.badges.map(
-          (badge) => {
-            if (
-              badge.badgeId
-            ) {
-              return badge.badgeId;
-            }
-
-            const firestoreId =
-              badge.id || "";
-
-            const parts =
-              firestoreId.split(
-                "_"
-              );
-
-            return parts[
-              parts.length -
-                1
-            ];
-          }
-        );
-
-      return new Set(
-        ids
+      const recordedIds = (gameData?.badges || []).map(badge =>
+        badge.badgeId || badge.id?.split("_").at(-1)
       );
-    }, [
-      gameData,
-    ]);
-
-  function getBadgeProgress(
-    badge
-  ) {
-    if (badge.type === "custom") return { current: badge.current || 0, target: badge.target };
-    if (!gameData) {
-      return {
-        current: 0,
-        target:
-          badge.target,
-      };
-    }
-
-    if (
-      badge.type ===
-      "completed"
-    ) {
-      return {
-        current:
-          Math.min(
-            gameData.completedWorkshops,
-            badge.target
-          ),
-
-        target:
-          badge.target,
-      };
-    }
-
-    if (
-      badge.type ===
-      "categories"
-    ) {
-      return {
-        current:
-          Math.min(
-            gameData.categoryCount,
-            badge.target
-          ),
-
-        target:
-          badge.target,
-      };
-    }
-
-    if (
-      badge.type ===
-      "technology"
-    ) {
-      const technologyTrack =
-        gameData.skillTracks.find(
-          (track) =>
-            track.category ===
-            "Technology"
-        );
-
-      return {
-        current:
-          Math.min(
-            technologyTrack?.completed ||
-              0,
-            badge.target
-          ),
-
-        target:
-          badge.target,
-      };
-    }
-
-    return {
-      current: 0,
-      target:
-        badge.target,
-    };
-  }
+      return new Set([...recordedIds, ...(gameData?.earnedBadgeIds || [])]);
+    }, [gameData]);
 
   if (
     authLoading ||
@@ -374,11 +228,9 @@ export default function BadgesPage() {
     );
   }
 
-  const badgeCatalog = [
-    ...builtinBadgeCatalog,
-    ...(gameData.customBadgeCatalog || []).filter(badge => badge.status === "active" ||
-      earnedBadgeIds.has(badge.id)).map(badge => ({ ...badge, type: "custom", icon: Award })),
-  ];
+  const badgeCatalog = (gameData.badgeCatalog || []).filter(badge =>
+    badge.status === "active" || earnedBadgeIds.has(badge.id)
+  );
   const unlockedCount =
     badgeCatalog.filter(
       (badge) =>
@@ -585,23 +437,12 @@ export default function BadgesPage() {
                   badge.id
                 );
 
-              const progress =
-                getBadgeProgress(
-                  badge
-                );
-
-              const progressPercentage =
-                Math.min(
-                  100,
-                  Math.round(
-                    (progress.current /
-                      progress.target) *
-                      100
-                  )
-                );
-
-              const Icon =
-                badge.icon;
+              const progress = {
+                current: Math.min(badge.current, badge.target),
+                target: badge.target,
+              };
+              const progressPercentage = Math.round(progress.current / progress.target * 100);
+              const Icon = builtInBadgeIcons[badge.id] || Award;
 
               return (
                 <article
@@ -616,9 +457,10 @@ export default function BadgesPage() {
                 >
                   <div className="badge-medal-wrapper">
                     <div className="badge-medal-ring">
-                      <Icon
-                        size={37}
-                      />
+                      {badge.artworkUrl ? (
+                        <span aria-hidden="true" className="h-12 w-12 rounded-lg bg-contain bg-center bg-no-repeat"
+                          style={{ backgroundImage: "url(" + JSON.stringify(badge.artworkUrl) + ")" }} />
+                      ) : <Icon size={37} />}
                     </div>
 
                     {unlocked ? (
@@ -724,8 +566,7 @@ export default function BadgesPage() {
             </span>
 
             <h2>
-              Your next badge is
-              waiting.
+              {unlockedCount < badgeCatalog.length ? "Your next badge is waiting." : "Keep building your skills."}
             </h2>
 
             <p>

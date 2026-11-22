@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { completionTransactionId, awardForCompletion } from "@/services/completionRules.mjs";
+import { loadBadgeDefinitions } from "@/services/badgeCatalogue";
 import { countMatchingSessions } from "@/services/customBadges.mjs";
 import { creditXp } from "@/services/xpBalance.mjs";
 import { calculateLevel, getLevelName } from "@/services/levelProgress.mjs";
@@ -182,41 +183,17 @@ export async function processWorkshopCompletion({
         ]
       );
 
-    const completedCategories = new Set();
     const completedWithSnapshots = [];
-
-    for (
-      const registration of
-      completedRegistrations
-    ) {
-      if (
-        !registration.workshopId
-      ) {
-        continue;
-      }
-
-      const completedWorkshop = registration.workshopSnapshot ||
-        await readCosmosDocument("workshops", registration.workshopId);
-
-      if (completedWorkshop) {
-        completedWithSnapshots.push({ ...registration, workshopSnapshot: completedWorkshop });
-        const category =
-          completedWorkshop.category;
-
-        if (category) {
-          completedCategories.add(
-            category
-          );
-        }
-      }
+    for (const registration of completedRegistrations) {
+      const snapshot = registration.workshopSnapshot || (registration.id === registrationId
+        ? workshop
+        : registration.workshopId && await readCosmosDocument("workshops", registration.workshopId));
+      completedWithSnapshots.push({ ...registration, workshopSnapshot: snapshot || null });
     }
-
-    if (
-      workshop.category
-    ) {
-      completedCategories.add(
-        workshop.category
-      );
+    // Both check-in and self-report persist the completion before awarding XP.
+    // Include it explicitly if the completed-history query has yet to see it.
+    if (registrationId && !completedWithSnapshots.some(record => record.id === registrationId)) {
+      completedWithSnapshots.push({ id: registrationId, status: "completed", workshopSnapshot: workshop });
     }
 
     const currentBadges =
@@ -244,58 +221,10 @@ export async function processWorkshopCompletion({
       }
     }
 
-    if (
-      completedWorkshopCount >=
-      1
-    ) {
-      awardBadge(
-        "first-step",
-        "First Step"
-      );
-    }
-
-    if (
-      workshop.category ===
-      "Technology"
-    ) {
-      awardBadge(
-        "tech-explorer",
-        "Tech Explorer"
-      );
-    }
-
-    if (
-      completedWorkshopCount >=
-      3
-    ) {
-      awardBadge(
-        "skill-builder",
-        "Skill Builder"
-      );
-    }
-
-    if (
-      completedCategories.size >=
-      3
-    ) {
-      awardBadge(
-        "curious-learner",
-        "Curious Learner"
-      );
-    }
-
-    if (completedWorkshopCount >= 5) {
-      awardBadge("workshop-champion", "Workshop Champion");
-    }
-
-    // Staff-configured badge definitions live alongside admin records but
-    // have a distinct role and cannot grant administrator privileges.
-    const customDefinitions = await queryCosmosDocuments("admins",
-      "SELECT * FROM c WHERE c.role = @role AND c.status = @status",
-      [{ name: "@role", value: "badge_definition" }, { name: "@status", value: "active" }]
-    );
-    for (const definition of customDefinitions) {
-      if (countMatchingSessions(definition.rule, completedWithSnapshots) >= Number(definition.rule?.minCount || 1)) {
+    const definitions = await loadBadgeDefinitions();
+    for (const definition of definitions) {
+      if (definition.status === "active" &&
+          countMatchingSessions(definition.rule, completedWithSnapshots) >= definition.rule.minCount) {
         awardBadge(definition.badgeId, definition.name);
       }
     }

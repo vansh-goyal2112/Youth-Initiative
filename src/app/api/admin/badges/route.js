@@ -1,10 +1,11 @@
 import crypto from "crypto";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
 import {
-  queryCosmosDocuments, createCosmosDocument, readCosmosDocument,
+  createCosmosDocument, readCosmosDocument, isCosmosConflict,
   replaceCosmosDocument, cosmosNow, isCosmosPreconditionFailed,
 } from "@/services/cosmosData";
-import { validateBadgeDefinition } from "@/services/customBadges.mjs";
+import { BUILT_IN_BADGES, validateBadgeDefinition } from "@/services/customBadges.mjs";
+import { loadBadgeDefinitions } from "@/services/badgeCatalogue";
 
 export const runtime = "nodejs";
 
@@ -13,20 +14,18 @@ export const runtime = "nodejs";
 export async function GET(request) {
   try {
     await requireAdminPermission(request, "badges.manage");
-    const definitions = await queryCosmosDocuments("admins",
-      "SELECT * FROM c WHERE c.role = @role ORDER BY c.createdAt DESC",
-      [{ name: "@role", value: "badge_definition" }]);
+    const definitions = await loadBadgeDefinitions();
     return Response.json({
       success: true, badges: definitions.map(item => ({
         id: item.id, badgeId: item.badgeId, name: item.name,
         description: item.description, rule: item.rule,
         status: item.status, artworkUrl: item.artworkUrl || "",
-        createdAt: item.createdAt, updatedAt: item.updatedAt,
+        createdAt: item.createdAt, updatedAt: item.updatedAt, builtIn: !!item.builtIn,
       })),
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return adminAccessResponse(error) ||
-      Response.json({ message: "Could not load custom badges." }, { status: 500 });
+      Response.json({ message: "Could not load badges." }, { status: 500 });
   }
 }
 
@@ -57,30 +56,36 @@ export async function PUT(request) {
     const actor = await requireAdminPermission(request, "badges.manage");
     const body = await request.json().catch(() => null);
     const id = typeof body?.id === "string" ? body.id.trim() : "";
-    if (!/^badge-def:[0-9a-f-]{36}$/i.test(id)) {
+    const builtIn = BUILT_IN_BADGES.find(badge => badge.id === id);
+    if (!builtIn && !/^badge-def:[0-9a-f-]{36}$/i.test(id)) {
       return Response.json({ message: "Valid badge ID required." }, { status: 400 });
     }
     const existing = await readCosmosDocument("admins", id);
-    if (!existing || existing.role !== "badge_definition") {
+    if ((existing && existing.role !== "badge_definition") || (!existing && !builtIn)) {
       return Response.json({ message: "Badge definition not found." }, { status: 404 });
     }
     let data;
     try { data = validateBadgeDefinition(body); }
     catch (error) { return Response.json({ message: error.message }, { status: 400 }); }
     try {
-      const saved = await replaceCosmosDocument("admins", existing, {
-        ...data, updatedAt: cosmosNow(), updatedBy: actor.uid,
-      });
+      const now = cosmosNow();
+      const updates = { ...data, updatedAt: now, updatedBy: actor.uid };
+      const saved = existing
+        ? await replaceCosmosDocument("admins", existing, updates)
+        : await createCosmosDocument("admins", {
+            id, badgeId: builtIn.badgeId, role: "badge_definition",
+            createdAt: now, createdBy: actor.uid, ...updates,
+          });
       return Response.json({ success: true, badge: saved,
         message: "Badge updated. Archived badges stop new automatic awards; earned badges remain preserved." });
     } catch (error) {
-      if (isCosmosPreconditionFailed(error)) {
+      if (isCosmosPreconditionFailed(error) || isCosmosConflict(error)) {
         return Response.json({ message: "Badge was updated by someone else. Refresh and try again." }, { status: 409 });
       }
       throw error;
     }
   } catch (error) {
     return adminAccessResponse(error) ||
-      Response.json({ message: "Custom badge could not be updated." }, { status: 500 });
+      Response.json({ message: "Badge could not be updated." }, { status: 500 });
   }
 }
