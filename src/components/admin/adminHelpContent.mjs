@@ -111,8 +111,8 @@ const guides = {
     permission: "audit.view",
     intro: "Look up administrative changes made in the portal.",
     steps: [
-      { text: "Use Filter activity to search for a recorded action or resource." },
-      { text: "Check the date and staff member to find the event you were looking for." },
+      { text: "Use Filter activity to search by staff name, action or outcome." },
+      { text: "Check the date and staff member. Attempted means the log has no confirmed outcome." },
     ],
     tip: "Use this page to review what happened before making further changes.",
   },

@@ -6,6 +6,7 @@ import {
 } from "@/services/cosmosData";
 import { BUILT_IN_BADGES, validateBadgeDefinition } from "@/services/customBadges.mjs";
 import { loadBadgeDefinitions } from "@/services/badgeCatalogue";
+import { recordAdminAudit } from "@/services/adminAudit";
 
 export const runtime = "nodejs";
 
@@ -29,9 +30,37 @@ export async function GET(request) {
   }
 }
 
-export async function POST(request) {
+async function changeBadge(request, initialAction, failureMessage, change) {
+  let actor;
+  let action = initialAction;
+  let subject;
+  let response;
   try {
-    const actor = await requireAdminPermission(request, "badges.manage");
+    actor = await requireAdminPermission(request, "badges.manage", { auditAction: initialAction });
+    response = await change(actor, (nextAction, badgeName) => {
+      action = nextAction;
+      subject = badgeName;
+    });
+  } catch (error) {
+    response = adminAccessResponse(error) || Response.json({ message: failureMessage }, { status: 500 });
+  }
+  if (actor) {
+    try {
+      await recordAdminAudit({
+        actorUid: actor.uid, action, resource: "/api/admin/badges",
+        outcome: response.ok ? "success" : "failed", attemptId: actor.auditAttemptId, subject,
+      });
+    } catch (error) {
+      // The original attempt remains in the append-only log. Preserve the
+      // mutation response so staff don't retry a badge that was already saved.
+      console.error("Badge audit outcome could not be recorded:", error?.code);
+    }
+  }
+  return response;
+}
+
+export async function POST(request) {
+  return changeBadge(request, "badge.create", "Custom badge could not be created.", async (actor, describe) => {
     const body = await request.json().catch(() => null);
     let data;
     try { data = validateBadgeDefinition(body); }
@@ -43,17 +72,14 @@ export async function POST(request) {
       role: "badge_definition", ...data,
       createdAt: now, updatedAt: now, createdBy: actor.uid,
     });
+    describe("badge.create", saved.name);
     return Response.json({ success: true, badge: saved,
       message: "Badge created. Its automatic rule is active for future completions." }, { status: 201 });
-  } catch (error) {
-    return adminAccessResponse(error) ||
-      Response.json({ message: "Custom badge could not be created." }, { status: 500 });
-  }
+  });
 }
 
 export async function PUT(request) {
-  try {
-    const actor = await requireAdminPermission(request, "badges.manage");
+  return changeBadge(request, "badge.update", "Badge could not be updated.", async (actor, describe) => {
     const body = await request.json().catch(() => null);
     const id = typeof body?.id === "string" ? body.id.trim() : "";
     const builtIn = BUILT_IN_BADGES.find(badge => badge.id === id);
@@ -67,6 +93,10 @@ export async function PUT(request) {
     let data;
     try { data = validateBadgeDefinition(body); }
     catch (error) { return Response.json({ message: error.message }, { status: 400 }); }
+    const previousStatus = (existing || builtIn).status;
+    const action = previousStatus === data.status ? "badge.update" :
+      data.status === "archived" ? "badge.archive" : "badge.reactivate";
+    describe(action);
     try {
       const now = cosmosNow();
       const updates = { ...data, updatedAt: now, updatedBy: actor.uid };
@@ -76,6 +106,7 @@ export async function PUT(request) {
             id, badgeId: builtIn.badgeId, role: "badge_definition",
             createdAt: now, createdBy: actor.uid, ...updates,
           });
+      describe(action, saved.name);
       return Response.json({ success: true, badge: saved,
         message: "Badge updated. Archived badges stop new automatic awards; earned badges remain preserved." });
     } catch (error) {
@@ -84,8 +115,5 @@ export async function PUT(request) {
       }
       throw error;
     }
-  } catch (error) {
-    return adminAccessResponse(error) ||
-      Response.json({ message: "Badge could not be updated." }, { status: 500 });
-  }
+  });
 }

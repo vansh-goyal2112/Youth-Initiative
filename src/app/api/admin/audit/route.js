@@ -8,7 +8,7 @@ export async function GET(request) {
     await requireAdminPermission(request, "audit.view");
     const events = await getAdminAudit(150);
     return Response.json({ success: true, events }, {
-      headers: { "Cache-Control": "no-store" },
+      headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {
     return adminAccessResponse(error) ||

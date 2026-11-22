@@ -113,6 +113,8 @@ test("production server: public onboarding and recovery pages load; APIs require
         ["/api/admin/completions?summary=1", "GET"],
         ["/api/admin/students?pendingCount=1", "GET"],
         ["/api/admin/students?studentId=test", "GET"],
+        ["/api/admin/audit", "GET"],
+        ["/api/admin/badges", "POST"],
       ]) {
         const response = await fetch(baseUrl + path, { method, signal: AbortSignal.timeout(10_000) });
         assert.equal(response.status, 401, `${method} ${path}`);

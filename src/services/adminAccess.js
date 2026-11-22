@@ -205,7 +205,7 @@ export function adminAccessResponse(
 
   return null;
 }
-export async function requireAdminPermission(request, permission) {
+export async function requireAdminPermission(request, permission, { auditAction = permission } = {}) {
   const admin = await requireActiveAdmin(request);
   if (process.env.ADMIN_REQUIRE_MFA === "true" && !admin.mfaVerified) {
     const error = new Error("Authenticator verification required. Open Account Security to enroll and sign in again.");
@@ -219,9 +219,9 @@ export async function requireAdminPermission(request, permission) {
   }
   // Fail closed if a privileged state-changing request cannot be audited.
   if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) {
-    await recordAdminAudit({
+    admin.auditAttemptId = await recordAdminAudit({
       actorUid: admin.uid,
-      action: permission,
+      action: auditAction,
       resource: new URL(request.url).pathname,
     });
   }
