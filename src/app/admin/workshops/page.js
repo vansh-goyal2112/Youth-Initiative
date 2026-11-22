@@ -1068,7 +1068,7 @@ export default function AdminWorkshopsPage() {
                 }
               />
 
-              {editingWorkshop && <MediaUploader kind="workshop" recordId={editingWorkshop.id} initialUrl={editingWorkshop.image || ""} onUploaded={() => {loadWorkshops();setMessage("Workshop image uploaded and saved.");}} />}
+              {editingWorkshop && <MediaUploader key={editingWorkshop.id} kind="workshop" recordId={editingWorkshop.id} initialUrl={editingWorkshop.image || ""} onUploaded={() => {loadWorkshops();setMessage("Workshop image uploaded and saved.");}} />}
 
               <div className="admin-form-buttons">
                 <button

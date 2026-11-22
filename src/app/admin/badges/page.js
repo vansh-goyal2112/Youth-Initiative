@@ -164,15 +164,15 @@ export default function AdminBadgesPage() {
               </label>}
               <p className="mt-3 text-xs text-slate-600">Each completed session counts once. Archiving stops new awards and keeps badges that students have earned.</p>
             </div>
-            <label className="grid gap-1.5 text-xs font-bold text-slate-700">Artwork HTTPS URL
+            <label className="grid gap-1.5 text-xs font-bold text-slate-700">Artwork URL
               <div className="flex items-center gap-2 rounded-xl border border-slate-300 px-3">
                 <ImagePlus size={18} className="text-slate-500"/>
-                <input type="url" value={draft.artworkUrl} onChange={event=>setDraft(d=>({...d,artworkUrl:event.target.value}))} className="min-h-11 w-full border-0 bg-transparent text-sm outline-none" placeholder="https://.../badge.png"/>
+                <input inputMode="url" value={draft.artworkUrl} onChange={event=>setDraft(d=>({...d,artworkUrl:event.target.value}))} className="min-h-11 w-full border-0 bg-transparent text-sm outline-none" placeholder="https://.../badge.png"/>
               </div>
             </label>
-            {currentBadge?.createdAt && <MediaUploader kind="badge" recordId={selected} initialUrl={draft.artworkUrl} onUploaded={url => setDraft(current=>({...current,artworkUrl:url}))} />}
+            {currentBadge?.createdAt && <MediaUploader key={selected} kind="badge" recordId={selected} initialUrl={draft.artworkUrl} onUploaded={url => setDraft(current=>({...current,artworkUrl:url}))} />}
             {!currentBadge?.createdAt && <p className="text-xs font-semibold text-amber-700">Save this badge to enable artwork uploads.</p>}
-            <p className="text-xs text-slate-500">Artwork recommendation: square PNG or WebP, 512 × 512 px, ideally under 1 MB. Uploaded artwork requires a configured image-storage service; HTTPS URLs can be assigned now.</p>
+            <p className="text-xs text-slate-500">For a sharp badge image, use a square PNG or WebP at 512 × 512 pixels.</p>
             {draft.artworkUrl && <div className="rounded-xl border border-slate-200 p-3"><div className="mx-auto h-28 w-28 rounded-xl bg-slate-100 bg-contain bg-center bg-no-repeat" style={{backgroundImage:"url("+JSON.stringify(draft.artworkUrl)+")"}}/><p className="mt-2 text-center text-xs text-slate-500">Artwork preview</p></div>}
             <div className="flex flex-wrap items-center gap-3">
               <button disabled={saving} type="submit" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-rose-700 px-5 py-2 text-sm font-extrabold text-white hover:bg-rose-800 disabled:opacity-50"><Save size={17}/>{saving?"Saving…":selected?"Save badge":"Create badge"}</button>

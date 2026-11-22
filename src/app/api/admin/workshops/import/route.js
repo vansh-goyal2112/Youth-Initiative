@@ -1,5 +1,5 @@
 import { normalizeWorkshopOption, workshopProgramAreas } from "@/utils/workshopCatalogueFields.mjs";
-import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
+import { WORKSHOP_IMAGE_PLACEHOLDER } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
 import { completionTransactionId } from "@/services/completionRules.mjs";
 import { automaticWorkshopXp, needsLegacyXpAssignment } from "@/services/workshopXpAssignment.mjs";
@@ -550,10 +550,6 @@ export async function POST(
 
     let importedCount =
       0;
-    const existingImages = await queryCosmosDocuments("workshops", "SELECT c.id, c.image, c.imageAssetId FROM c");
-    const byId = new Map(existingImages.map(w => [w.id,w]));
-    const usedImages = workshopImageUsage(existingImages);
-
     for (
       let startIndex = 0;
       startIndex <
@@ -577,15 +573,7 @@ export async function POST(
             admin.uid
           );
 
-        const existing = byId.get(workshopData.id);
-        const validExistingImage = existing?.image && existing.image !== "/images/workshops/50_aviation-bundle.jpg";
-        const assignment = validExistingImage
-          ? {image: existing.image, imageAssetId: existing.imageAssetId || null, imageStatus: existing.imageAssetId ? "assigned" : "custom"}
-          : assignWorkshopImage(workshopData, usedImages);
-        if (assignment.imageAssetId && !validExistingImage) {
-          usedImages.set(assignment.imageAssetId, (usedImages.get(assignment.imageAssetId) || 0) + 1);
-        }
-        await saveImportedWorkshop({ ...workshopData, ...assignment }, mode === "replace");
+        await saveImportedWorkshop({ ...workshopData, ...WORKSHOP_IMAGE_PLACEHOLDER }, mode === "replace");
 
         importedCount += 1;
       }

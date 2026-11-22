@@ -227,7 +227,7 @@ function mergeWorkshop(existing, record) {
     maxGrade: mergeScrapedField("maxGrade"),
     informationUrl: record.informationUrl || existing.informationUrl,
     registrationUrl: record.registrationUrl || existing.registrationUrl,
-    image: mergeScrapedField("image"),
+    image: existing.imageStatus === "custom" ? existing.image : mergeScrapedField("image"),
     learningMode: mergeScrapedField("learningMode"),
     location: mergeScrapedField("location"),
     startDate: mergeScrapedField("startDate"),

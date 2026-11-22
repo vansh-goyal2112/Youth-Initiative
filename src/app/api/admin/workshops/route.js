@@ -1,5 +1,5 @@
 import { retireWorkshopPermanently } from "@/services/workshopRetirement";
-import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
+import { WORKSHOP_IMAGE_PLACEHOLDER } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
 import { automaticWorkshopXp } from "@/services/workshopXpAssignment.mjs";
 import { ensureWorkshopCatalogueXp } from "@/services/workshopXpMigration";
@@ -247,14 +247,10 @@ export async function POST(
     const createdAt =
       cosmosNow();
 
-    const existingImages = await queryCosmosDocuments("workshops", "SELECT c.id, c.image, c.imageAssetId FROM c");
-    const imageAssignment = assignWorkshopImage(
-      { ...workshopData, id: workshopId }, workshopImageUsage(existingImages)
-    );
     await createCosmosDocument(
       "workshops",
       {
-        ...imageAssignment,
+        ...WORKSHOP_IMAGE_PLACEHOLDER,
         id:
           workshopId,
 
@@ -387,20 +383,6 @@ export async function PUT(
         ...buildWorkshopData(
           workshopData, id
         ),
-        // Reassign only automatically chosen images when topic changes.
-        ...(existingWorkshop.imageStatus === "custom" ||
-          (existingWorkshop.image && !existingWorkshop.imageAssetId)
-          ? {}
-          : (existingWorkshop.title !== workshopData.title ||
-             existingWorkshop.programArea !== workshopData.programArea ||
-             existingWorkshop.category !== (workshopData.category || "General"))
-            ? assignWorkshopImage(
-                { ...workshopData, id },
-                workshopImageUsage(await queryCosmosDocuments("workshops",
-                  "SELECT c.id, c.image, c.imageAssetId FROM c"), id)
-              )
-            : {}),
-
         updatedBy:
           admin.uid,
 

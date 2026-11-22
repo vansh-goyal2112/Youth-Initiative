@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { getWorkshopImage } from "@/utils/getWorkshopImage";
+import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 import { getWorkshopSchedule, workshopDateRange } from "@/utils/workshopDate.mjs";
 
 import {
@@ -336,22 +336,11 @@ function RegisteredWorkshopCard({
 
   const schedule = getWorkshopSchedule(workshop, registration.sessionId);
   const dateLabel = workshopDateRange(schedule);
-  const workshopImage =
-    workshop.image ||
-    getWorkshopImage(
-      workshop.category
-    );
-
   return (
     <article className="registered-workshop-card">
       <div className="registered-workshop-image-wrapper">
-        <Image
-          src={workshopImage}
-          alt={workshop.title}
-          fill
-          sizes="(max-width: 700px) 100vw, 420px"
-          className="registered-workshop-image"
-        />
+        <WorkshopArtwork workshop={workshop} sizes="(max-width: 700px) 100vw, 420px"
+          className="registered-workshop-image" />
 
         <span>
           Registered

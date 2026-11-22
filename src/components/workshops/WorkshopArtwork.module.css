@@ -43,12 +43,6 @@
   letter-spacing: .13em;
 }
 
-.heading {
-  font-size: clamp(16px, 2vw, 26px);
-  line-height: 1.15;
-  font-weight: 800;
-}
-
 .caption {
   font-size: clamp(10px, 1vw, 12px);
   color: rgba(255,255,255,.84);

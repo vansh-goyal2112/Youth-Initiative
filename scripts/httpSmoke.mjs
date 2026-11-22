@@ -133,6 +133,21 @@ test("production server: public onboarding and recovery pages load; APIs require
       });
       assert.equal(report.status, 401);
     });
+    await t.test("artwork upload requires admin access and missing images return 404", async () => {
+      const body = new FormData();
+      body.set("kind", "workshop");
+      body.set("recordId", "smoke-test");
+      body.set("file", new Blob(["fake"], { type: "image/png" }), "smoke.png");
+      const upload = await fetch(baseUrl + "/api/admin/media/upload", {
+        method: "POST", body, signal: AbortSignal.timeout(10_000),
+      });
+      assert.equal(upload.status, 401);
+      const image = await fetch(baseUrl + "/api/media/artwork/invalid-id", {
+        signal: AbortSignal.timeout(10_000),
+      });
+      assert.equal(image.status, 404);
+      assert.equal(image.headers.get("cache-control"), "no-store");
+    });
   } catch (error) {
     throw Error(`${error.message}\nServer log tail:\n${logs.slice(-4_000)}`);
   } finally {

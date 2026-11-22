@@ -1,3 +1,5 @@
+import { artworkIdFromPath } from "../utils/mediaArtwork.mjs";
+
 // Admin-configurable badge rules are declarative, never executable code.
 // Counts each completed workshop registration/session once, including self-reports.
 const MATCH_RULES = new Set(["sessions_topic", "sessions_program_area", "sessions_category"]);
@@ -32,7 +34,7 @@ export function validateBadgeDefinition(input) {
   if (name.length < 3 || name.length > 80 || description.length > 250) {
     throw new Error("Enter a badge name of 3–80 characters and a short description.");
   }
-  if (artworkUrl) {
+  if (artworkUrl && !artworkIdFromPath(artworkUrl)) {
     let url;
     try { url = new URL(artworkUrl); } catch { throw new Error("Badge image URL is invalid."); }
     if (url.protocol !== "https:" || url.username || url.password || artworkUrl.length > 500) {

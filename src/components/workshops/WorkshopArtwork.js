@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { BookOpen, Plane } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { getWorkshopImage } from "@/utils/getWorkshopImage";
+import { artworkIdFromPath } from "@/utils/mediaArtwork.mjs";
 import styles from "./WorkshopArtwork.module.css";
 
 // Workshop images may be local assets or URLs imported from SAIT.
@@ -14,7 +15,7 @@ function imageSource(value) {
 
   const source = value.trim();
   if (source.startsWith("/") && !source.startsWith("//")) {
-    return { src: source, remote: false };
+    return { src: source, unoptimized: Boolean(artworkIdFromPath(source)) };
   }
 
   try {
@@ -22,7 +23,7 @@ function imageSource(value) {
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
     // An HTTPS deployment cannot display HTTP images (mixed content).
     if (url.protocol === "http:") url.protocol = "https:";
-    return { src: url.toString(), remote: true };
+    return { src: url.toString(), unoptimized: true };
   } catch {
     return null;
   }
@@ -46,16 +47,12 @@ export default function WorkshopArtwork({
         fill
         sizes={sizes}
         priority={priority}
-        unoptimized={source.remote}
+        unoptimized={source.unoptimized}
         className={className}
         onError={() => setFailedSrc(source.src)}
       />
     );
   }
-
-  const aviation = /aviation|aircraft|pilot/i.test(
-    `${workshop?.title || ""} ${workshop?.category || ""}`
-  );
 
   return (
     <div
@@ -65,10 +62,9 @@ export default function WorkshopArtwork({
     >
       <div className={styles.decoration} aria-hidden="true" />
       <div className={styles.icon} aria-hidden="true">
-        {aviation ? <Plane size={32} strokeWidth={1.7} /> : <BookOpen size={32} strokeWidth={1.7} />}
+        <BookOpen size={32} strokeWidth={1.7} />
       </div>
       <span className={styles.eyebrow}>SAIT YOUTH INITIATIVES</span>
-      <strong className={styles.heading}>{aviation ? "Explore Aviation" : "Explore New Skills"}</strong>
       <span className={styles.caption}>Workshop photo coming soon</span>
     </div>
   );

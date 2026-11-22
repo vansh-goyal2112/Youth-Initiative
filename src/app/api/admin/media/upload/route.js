@@ -1,30 +1,20 @@
 import crypto from "crypto";
-import { getApps } from "firebase-admin/app";
-import { getStorage } from "firebase-admin/storage";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
 import {
-  createCosmosDocument, readCosmosDocument, replaceCosmosDocument, cosmosNow,
+  createCosmosDocument, deleteCosmosDocument, readCosmosDocument, replaceCosmosDocument,
+  cosmosNow, isCosmosConflict, isCosmosPreconditionFailed,
 } from "@/services/cosmosData";
+
+import { MAX_ARTWORK_UPLOAD_BYTES, prepareArtwork } from "@/services/prepareArtwork.mjs";
 
 export const runtime = "nodejs";
 
-const MAX_SIZE = 5 * 1024 * 1024;
-const TYPES = Object.freeze({
-  "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp",
-});
 const KINDS = Object.freeze({
   workshop: "workshops.edit",
   badge: "badges.manage",
   banner: "workshops.edit",
   reward: "workshops.edit",
 });
-
-function verifyMagic(bytes, mime) {
-  if (mime === "image/png") return bytes.length > 8 && bytes.subarray(0, 8).equals(Buffer.from("89504e470d0a1a0a", "hex"));
-  if (mime === "image/jpeg") return bytes.length > 3 && bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
-  if (mime === "image/webp") return bytes.length > 12 && bytes.toString("ascii", 0, 4) === "RIFF" && bytes.toString("ascii", 8, 12) === "WEBP";
-  return false;
-}
 
 export async function GET(request) {
   try {
@@ -43,7 +33,8 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
-    const form = await request.formData();
+    const form = await request.formData().catch(() => null);
+    if (!form) return Response.json({ message: "Select an image to upload." }, { status: 400 });
     const kind = typeof form.get("kind") === "string" ? form.get("kind").trim() : "";
     const recordId = typeof form.get("recordId") === "string" ? form.get("recordId").trim() : "";
     if (!Object.hasOwn(KINDS, kind) || (["workshop", "badge"].includes(kind) && (!recordId || recordId.length > 128))) {
@@ -51,18 +42,9 @@ export async function POST(request) {
     }
     const actor = await requireAdminPermission(request, KINDS[kind]);
     const upload = form.get("file");
-    if (!upload || typeof upload.arrayBuffer !== "function" || upload.size <= 0 || upload.size > MAX_SIZE ||
-        !Object.hasOwn(TYPES, upload.type)) {
-      return Response.json({ message: "Upload a PNG, JPG or WebP image under 5 MB." }, { status: 400 });
-    }
-    const bytes = Buffer.from(await upload.arrayBuffer());
-    if (bytes.length !== upload.size || !verifyMagic(bytes, upload.type)) {
-      return Response.json({ message: "The file does not contain a valid image matching its declared format." }, { status: 400 });
-    }
-    const app = getApps()[0];
-    const bucketName = process.env.FIREBASE_STORAGE_BUCKET || process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-    if (!app || !bucketName) {
-      return Response.json({ message: "Firebase Storage is not configured for this deployment. No image was saved." }, { status: 503 });
+    if (!upload || typeof upload.arrayBuffer !== "function" ||
+        upload.size <= 0 || upload.size > MAX_ARTWORK_UPLOAD_BYTES) {
+      return Response.json({ message: "Upload a PNG, JPG or WebP image up to 5 MB." }, { status: 400 });
     }
     let record = null;
     if (kind === "workshop") {
@@ -75,42 +57,54 @@ export async function POST(request) {
       record = await readCosmosDocument("admins", "ui-media:" + kind);
     }
 
-    const bucket = getStorage(app).bucket(bucketName);
-    const objectName = "youth-initiatives/" + kind + "/" + crypto.randomUUID() + "." + TYPES[upload.type];
-    const token = crypto.randomUUID();
-    await bucket.file(objectName).save(bytes, {
-      resumable: false, contentType: upload.type, validation: "crc32c",
-      metadata: { metadata: { firebaseStorageDownloadTokens: token } },
-    });
-    const url = "https://firebasestorage.googleapis.com/v0/b/" + encodeURIComponent(bucketName) +
-      "/o/" + encodeURIComponent(objectName) + "?alt=media&token=" + token;
-
-    const at = cosmosNow();
-    if (kind === "workshop") {
-      await replaceCosmosDocument("workshops", record, {
-        image: url, imageStatus: "custom", imageAssetId: null,
-        updatedAt: at, updatedBy: actor.uid,
-      });
-    } else if (kind === "badge") {
-      await replaceCosmosDocument("admins", record, {
-        artworkUrl: url, updatedAt: at, updatedBy: actor.uid,
-      });
-    } else {
-      const fields = { url, role: "media_setting", kind, updatedAt: at, updatedBy: actor.uid };
-      if (record) await replaceCosmosDocument("admins", record, fields);
-      else await createCosmosDocument("admins", { id: "ui-media:" + kind, ...fields, createdAt: at });
+    let bytes;
+    try {
+      bytes = await prepareArtwork(Buffer.from(await upload.arrayBuffer()), upload.type);
+    } catch {
+      return Response.json({ message: "Choose a valid still PNG, JPG or WebP image up to 5 MB and 32 megapixels." },
+        { status: 400 });
     }
 
-    return Response.json({
-      success: true, url, sizeBytes: bytes.length, contentType: upload.type,
-      message: "Image uploaded to Firebase Storage and linked to the correct database record.",
+    const id = crypto.randomUUID();
+    const url = "/api/media/artwork/" + id;
+    const assetId = "media-artwork:" + id;
+    const at = cosmosNow();
+    await createCosmosDocument("admins", {
+      id: assetId, role: "media_artwork", bytes: bytes.toString("base64"), createdAt: at,
     });
+
+    try {
+      if (kind === "workshop") {
+        await replaceCosmosDocument("workshops", record, {
+          image: url, imageStatus: "custom", imageAssetId: null,
+          updatedAt: at, updatedBy: actor.uid,
+        });
+      } else if (kind === "badge") {
+        await replaceCosmosDocument("admins", record, {
+          artworkUrl: url, updatedAt: at, updatedBy: actor.uid,
+        });
+      } else {
+        const fields = { url, role: "media_setting", kind, updatedAt: at, updatedBy: actor.uid };
+        if (record) await replaceCosmosDocument("admins", record, fields);
+        else await createCosmosDocument("admins", { id: "ui-media:" + kind, ...fields, createdAt: at });
+      }
+    } catch (error) {
+      // These conditional-write errors guarantee this upload was never linked.
+      if (isCosmosConflict(error) || isCosmosPreconditionFailed(error)) {
+        await deleteCosmosDocument("admins", assetId).catch(() => {});
+        return Response.json({ message: "This record changed during the upload. Refresh and try again." },
+          { status: 409 });
+      }
+      throw error;
+    }
+
+    return Response.json({ success: true, url, sizeBytes: bytes.length, contentType: "image/webp" });
   } catch (error) {
     const denied = adminAccessResponse(error);
     if (denied) return denied;
     console.error("Image upload failed:", error?.message);
     return Response.json({
-      message: "Image could not be uploaded or saved. Verify Firebase Storage is enabled and the service account can write to the bucket.",
+      message: "Image could not be saved. Try again.",
     }, { status: 500 });
   }
 }
