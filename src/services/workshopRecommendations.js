@@ -1,3 +1,4 @@
+import { normalizeWorkshopTags } from "../utils/workshopCatalogueFields.mjs";
 import {
   normalizeMatchText,
   textIncludesTerm,
@@ -52,7 +53,8 @@ function scoreWorkshop(workshop, student, interests, completedWorkshops, weights
   const workshopCategory = normalizeMatchText(workshop.category);
   const workshopText = getWorkshopText(workshop);
 
-  const categoryInterest = interests.find((interest) => {
+  const tags = normalizeWorkshopTags(workshop.interestTags).map(normalizeMatchText);
+  const categoryInterest = !tags.length && interests.find((interest) => {
     const category =
       SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]?.category;
     return category && normalizeMatchText(category) === workshopCategory;
@@ -64,6 +66,7 @@ function scoreWorkshop(workshop, student, interests, completedWorkshops, weights
   }
 
   const topicInterest = interests.find((interest) => {
+    if (tags.length) return tags.includes(normalizeMatchText(interest));
     const terms = [
       normalizeMatchText(interest),
       ...(SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]

@@ -3,7 +3,8 @@ import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAs
 import crypto from "crypto";
 import { automaticWorkshopXp } from "@/services/workshopXpAssignment.mjs";
 import { ensureWorkshopCatalogueXp } from "@/services/workshopXpMigration";
-import { parseGradeRange, formatWorkshopGradeRange } from "@/utils/workshopGrades.mjs";
+import { formatWorkshopGradeRange } from "@/utils/workshopGrades.mjs";
+import { normalizeWorkshopOption, normalizeWorkshopTags, workshopCategories, workshopEditorGradeBounds, workshopProgramAreas } from "@/utils/workshopCatalogueFields.mjs";
 
 import {
   adminAccessResponse,
@@ -35,15 +36,20 @@ function validateWorkshop(
   workshop
 ) {
   if (
-    !workshop?.title?.trim() ||
-    !workshop?.programArea?.trim() ||
-    !workshop?.grade?.trim()
+    typeof workshop?.title !== "string" || !workshop.title.trim() ||
+    typeof workshop?.programArea !== "string" || !workshop.programArea.trim()
   ) {
     return "Title, program area and grade are required.";
   }
 
-  if (!parseGradeRange(workshop.grade)) {
-    return "Enter a grade such as Grade 6 or Grades 6 - 12.";
+  if (!workshopEditorGradeBounds(workshop)) {
+    return "Choose a minimum and maximum grade from Kindergarten to Grade 12.";
+  }
+
+  if (workshop.interestTags !== undefined &&
+      (!Array.isArray(workshop.interestTags) ||
+       workshop.interestTags.some(tag => !normalizeWorkshopTags([tag]).length))) {
+    return "Choose interests from the provided options.";
   }
 
   if (
@@ -77,7 +83,7 @@ function validateWorkshop(
 function buildWorkshopData(
   workshop, workshopId
 ) {
-  const gradeBounds = parseGradeRange(workshop.grade);
+  const gradeBounds = workshopEditorGradeBounds(workshop);
   const capacity =
     workshop.capacity === "" ||
     workshop.capacity === null ||
@@ -96,11 +102,13 @@ function buildWorkshopData(
       workshop.title.trim(),
 
     programArea:
-      workshop.programArea.trim(),
+      normalizeWorkshopOption(workshop.programArea, workshopProgramAreas),
 
     category:
-      workshop.category?.trim() ||
+      normalizeWorkshopOption(workshop.category, workshopCategories) ||
       "General",
+
+    ...(workshop.interestTags !== undefined ? { interestTags: normalizeWorkshopTags(workshop.interestTags) } : {}),
 
     grade:
       formatWorkshopGradeRange(gradeBounds),

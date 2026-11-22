@@ -25,6 +25,37 @@ import { adminFetch } from "@/services/adminApi";
 import { getConfiguredWorkshopXp } from "@/utils/workshopXpDisplay.mjs";
 import WorkshopSessionsPanel from "@/components/admin/WorkshopSessionsPanel";
 import MediaUploader from "@/components/admin/MediaUploader";
+import { getWorkshopGradeBounds } from "@/utils/workshopGrades.mjs";
+import { normalizeWorkshopOption, normalizeWorkshopTags, workshopCategories, workshopInterests, workshopProgramAreas } from "@/utils/workshopCatalogueFields.mjs";
+
+const gradeOptions = Array.from({ length: 13 }, (_, grade) => grade);
+
+function workshopFormFields(workshop) {
+  const bounds = getWorkshopGradeBounds(workshop);
+  return {
+    programArea: normalizeWorkshopOption(workshop.programArea, workshopProgramAreas),
+    category: normalizeWorkshopOption(workshop.category, workshopCategories) || "General",
+    minGrade: bounds?.minGrade ?? "",
+    maxGrade: bounds?.maxGrade ?? "",
+    interestTags: normalizeWorkshopTags(workshop.interestTags),
+  };
+}
+
+function WorkshopSelect({ label, name, value, options, onChange, required = true }) {
+  return (
+    <label className="admin-form-field">
+      <span>{label}</span>
+      <select name={name} value={value} onChange={onChange} required={required}>
+        <option value="">Select {label.toLowerCase()}</option>
+        {options.map(option => (
+          <option value={option} key={option}>
+            {typeof option === "number" ? (option === 0 ? "Kindergarten" : `Grade ${option}`) : option}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 function excelDate(value) {
   if (value === null || value === undefined || value === "") return "";
@@ -44,8 +75,10 @@ function excelDate(value) {
 const emptyWorkshop = {
   title: "",
   programArea: "",
-  category: "",
-  grade: "",
+  category: "General",
+  minGrade: "",
+  maxGrade: "",
+  interestTags: [],
   description: "",
   informationUrl: "",
   registrationUrl:
@@ -221,14 +254,7 @@ export default function AdminWorkshopsPage() {
     setFormData({
       title: workshop.title || "",
 
-      programArea:
-        workshop.programArea || "",
-
-      category:
-        workshop.category || "",
-
-      grade:
-        workshop.grade || "",
+      ...workshopFormFields(workshop),
 
       description:
         workshop.description || "",
@@ -277,9 +303,7 @@ export default function AdminWorkshopsPage() {
     setFormData({
       ...emptyWorkshop,
       title: (workshop.title || "Workshop") + " (Copy)",
-      programArea: workshop.programArea || "",
-      category: workshop.category || "",
-      grade: workshop.grade || "",
+      ...workshopFormFields(workshop),
       description: workshop.description || "",
       informationUrl: workshop.informationUrl || "",
       learningMode: workshop.learningMode || "in-person",
@@ -322,6 +346,8 @@ export default function AdminWorkshopsPage() {
 
           body: JSON.stringify({
             ...formData,
+            minGrade: formData.minGrade === "" ? null : Number(formData.minGrade),
+            maxGrade: formData.maxGrade === "" ? null : Number(formData.maxGrade),
             id: editingWorkshop?.id,
           }),
         }
@@ -838,41 +864,38 @@ export default function AdminWorkshopsPage() {
               />
 
               <div className="admin-form-two-columns">
-                <FormField
-                  label="Program Area"
-                  name="programArea"
-                  value={
-                    formData.programArea
-                  }
-                  onChange={
-                    handleInputChange
-                  }
-                  required
-                />
-
-                <FormField
-                  label="Category"
-                  name="category"
-                  value={
-                    formData.category
-                  }
-                  onChange={
-                    handleInputChange
-                  }
-                />
+                <WorkshopSelect label="Program Area" name="programArea" value={formData.programArea}
+                  options={[...new Set([...workshopProgramAreas, ...workshops.map(workshop =>
+                    normalizeWorkshopOption(workshop.programArea, workshopProgramAreas)).filter(Boolean)])]}
+                  onChange={handleInputChange} />
+                <WorkshopSelect label="Category" name="category" value={formData.category}
+                  options={[...new Set([...workshopCategories, ...workshops.map(workshop =>
+                    normalizeWorkshopOption(workshop.category, workshopCategories)).filter(Boolean)])]}
+                  onChange={handleInputChange} />
               </div>
-
-              <FormField
-                label="Grade"
-                name="grade"
-                value={
-                  formData.grade
-                }
-                onChange={
-                  handleInputChange
-                }
-                required
-              />
+              <div className="admin-form-two-columns">
+                <WorkshopSelect label="Minimum grade" name="minGrade" value={formData.minGrade}
+                  options={gradeOptions} onChange={handleInputChange} />
+                <WorkshopSelect label="Maximum grade" name="maxGrade" value={formData.maxGrade}
+                  options={gradeOptions} onChange={handleInputChange} />
+              </div>
+              <fieldset className="rounded-xl border border-slate-200 p-3">
+                <legend className="px-1 text-sm font-semibold">Interest tags</legend>
+                <div className="flex flex-wrap gap-3 text-sm">
+                  {workshopInterests.map(interest => (
+                    <label key={interest} className="inline-flex items-center gap-2">
+                      <input type="checkbox" checked={formData.interestTags.includes(interest)}
+                        onChange={event => {
+                          const checked = event.target.checked;
+                          setFormData(current => ({ ...current, interestTags: checked
+                            ? [...current.interestTags, interest]
+                            : current.interestTags.filter(tag => tag !== interest) }));
+                        }} />
+                      {interest}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
               <label className="admin-form-field">
                 <span>

@@ -1,3 +1,4 @@
+import { normalizeWorkshopOption, workshopProgramAreas } from "@/utils/workshopCatalogueFields.mjs";
 import { assignWorkshopImage, workshopImageUsage } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
 import { completionTransactionId } from "@/services/completionRules.mjs";
@@ -190,7 +191,7 @@ function buildImportedWorkshop(
       workshop.title.trim(),
 
     programArea:
-      workshop.programArea.trim(),
+      normalizeWorkshopOption(workshop.programArea, workshopProgramAreas),
 
     category:
       getCategory(

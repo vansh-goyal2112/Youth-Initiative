@@ -1,4 +1,5 @@
 import { matchesStudentGrade } from "./workshopGrades.mjs";
+import { normalizeWorkshopTags } from "./workshopCatalogueFields.mjs";
 import { isRegistrationClosed } from "./workshopAvailability.mjs";
 
 export function recommendYouthWorkshops({workshops=[],registrations=[],student={}}) {
@@ -15,7 +16,8 @@ export function recommendYouthWorkshops({workshops=[],registrations=[],student={
     return true;
   }).map(w=>{
     const searchable=[w.title,w.category,w.programArea,w.description].filter(Boolean).join(" ").toLowerCase();
-    const matched=interests.filter(i=>searchable.includes(i));
+    const tags = normalizeWorkshopTags(w.interestTags).map(tag => tag.toLowerCase());
+    const matched = interests.filter(interest => tags.length ? tags.includes(interest) : searchable.includes(interest));
     const category=String(w.category||"").toLowerCase();
     const categoryMatch=areas.has(category);
     const modeMatch=mode==="both"||!mode||w.learningMode==="both"||w.learningMode===mode;

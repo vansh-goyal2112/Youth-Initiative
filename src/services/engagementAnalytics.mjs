@@ -1,3 +1,5 @@
+import { workshopTitleGroup } from "../utils/workshopCatalogueFields.mjs";
+
 export function periodBounds(period, anchor) {
   const start = new Date(Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), anchor.getUTCDate()));
   if (period === "weekly") {
@@ -20,6 +22,7 @@ function isVerifiedInPeriod(registration, start, end) {
 
 export function summarize(workshops, registrations, start, end, now) {
   const bucket = new Map();
+  const workshopGroups = new Map();
   for (const w of workshops) {
     const scheduledDate = String(w.endDate || w.startDate || "").slice(0,10);
     const scheduledInPeriod = /^\d{4}-\d{2}-\d{2}$/.test(scheduledDate) &&
@@ -28,7 +31,16 @@ export function summarize(workshops, registrations, start, end, now) {
     if (!scheduledInPeriod && !attendedHere) continue;
     const lastCheckin = registrations.filter(r => r.workshopId === w.id && isVerifiedInPeriod(r,start,end))
       .map(r => String(r.attendedAt || r.completedAt).slice(0,10)).sort().at(-1);
-    bucket.set(w.id,{
+    const key = workshopTitleGroup(w);
+    workshopGroups.set(w.id, key);
+    const existing = bucket.get(key);
+    if (existing) {
+      existing.capacity = null;
+      const date = scheduledInPeriod ? scheduledDate : lastCheckin;
+      if (date && (existing.date === "—" || date > existing.date)) existing.date = date;
+      continue;
+    }
+    bucket.set(key,{
       workshopId:w.id,title:w.title || "Untitled workshop",programArea:w.programArea || "Uncategorized",
       date:scheduledInPeriod ? scheduledDate : lastCheckin || "—",
       capacity:Number.isFinite(Number(w.capacity)) && Number(w.capacity)>0 ? Number(w.capacity):null,
@@ -36,7 +48,7 @@ export function summarize(workshops, registrations, start, end, now) {
     });
   }
   for (const r of registrations) {
-    const row=bucket.get(r.workshopId);
+    const row=bucket.get(workshopGroups.get(r.workshopId));
     if (!row || !r.studentId) continue;
     row.registrations.add(r.studentId);
     if (isVerifiedInPeriod(r,start,end)) row.attendees.add(r.studentId);

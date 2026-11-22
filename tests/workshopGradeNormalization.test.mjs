@@ -100,7 +100,7 @@ test("student catalogue uses grade range matching and canonical API labels", () 
 test("manual workshop saves and Excel imports persist min/max while keeping import IDs stable", () => {
   const admin = src("../src/app/api/admin/workshops/route.js");
   const importer = src("../src/app/api/admin/workshops/import/route.js");
-  assert.match(admin, /gradeBounds = parseGradeRange\(workshop\.grade\)/);
+  assert.match(admin, /gradeBounds = workshopEditorGradeBounds\(workshop\)/);
   assert.match(admin, /minGrade: gradeBounds\.minGrade/);
   assert.match(admin, /maxGrade: gradeBounds\.maxGrade/);
   assert.match(importer, /minGrade: gradeBounds\?\.minGrade \?\? null/);

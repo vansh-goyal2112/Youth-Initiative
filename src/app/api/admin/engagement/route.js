@@ -28,7 +28,7 @@ export async function GET(request) {
       "SELECT c.workshopId, c.studentId, c.attendanceStatus, c.status, c.attendedAt, c.completedAt FROM c WHERE c.attendanceStatus = @status AND ((c.attendedAt >= @start AND c.attendedAt < @end) OR (NOT IS_DEFINED(c.attendedAt) AND c.completedAt >= @start AND c.completedAt < @end))",
       [{name:"@status",value:"verified"},{name:"@start",value:start},{name:"@end",value:end}]);
     const scheduled = await queryCosmosDocuments("workshops",
-      "SELECT c.id, c.title, c.programArea, c.startDate, c.endDate, c.capacity FROM c WHERE (c.startDate >= @start AND c.startDate < @end) OR (c.endDate >= @start AND c.endDate < @end)",
+      "SELECT c.id, c.title, c.programArea, c.offeringYear, c.audience, c.grade, c.minGrade, c.maxGrade, c.startDate, c.endDate, c.capacity FROM c WHERE (c.startDate >= @start AND c.startDate < @end) OR (c.endDate >= @start AND c.endDate < @end)",
       [{name:"@start",value:start},{name:"@end",value:end}]);
     const scheduledMap = new Map(scheduled.map(w=>[w.id,w]));
     const extraIds = [...new Set(checkedIn.map(r=>r.workshopId).filter(id=>id&&!scheduledMap.has(id)))];

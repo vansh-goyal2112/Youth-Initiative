@@ -13,6 +13,8 @@ import {
 import { ensureWorkshopCatalogueXp } from "@/services/workshopXpMigration";
 import { normalizeWorkshopGrades, matchesStudentGrade } from "@/utils/workshopGrades.mjs";
 
+import { collapseDuplicateWorkshopCards, normalizeWorkshopOption, workshopCategories, workshopProgramAreas } from "@/utils/workshopCatalogueFields.mjs";
+
 export const runtime = "nodejs";
 
 export async function GET(request) {
@@ -62,6 +64,8 @@ export async function GET(request) {
           return {
             id: workshop.id,
             ...normalizedWorkshop,
+            programArea: normalizeWorkshopOption(workshop.programArea, workshopProgramAreas),
+            category: normalizeWorkshopOption(workshop.category, workshopCategories),
             eligibilityStatus: eligibility.status,
             eligibilityMessage: eligibility.reason,
           };
@@ -82,7 +86,7 @@ export async function GET(request) {
 
     return Response.json({
       success: true,
-      workshops,
+      workshops: collapseDuplicateWorkshopCards(workshops),
     });
   } catch (error) {
     const accessResponse =
