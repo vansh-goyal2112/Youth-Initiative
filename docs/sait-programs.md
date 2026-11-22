@@ -5,6 +5,20 @@ the Azure Cosmos DB `saitPrograms` container. This feature uses the existing
 `src/services/cosmos.js` connection and does not change the workshop schema or
 Firebase workshop storage.
 
+## Staff handoff
+
+| What changes | When students see it | Staff action |
+| --- | --- | --- |
+| A youth workshop is added or edited in Workshop Studio | Home and Journey read the current youth workshop catalogue when they load. Active, open workshops that fit the student's eligibility can appear automatically. | Save the workshop with an accurate title, description, interest tags, grade range, and session details. |
+| SAIT adds or updates a post-secondary program on sait.ca | Future pathways read the active SAIT program records in Cosmos DB. Published changes become available after a successful import. | Check the weekly **Ingest SAIT programs and workshops** workflow in GitHub Actions. A repository maintainer can run it on demand after a major catalogue update. Review the attached `sait-ingestion-report` for failures. |
+| SAIT removes or renames a program | An import can add and update records. A record that disappears from the source can remain active in Cosmos DB. | After the annual catalogue update, confirm any apparent removals or renames on sait.ca and ask the catalogue maintainer to mark obsolete records inactive. |
+
+The scheduled workflow is configured for Mondays at 08:00 UTC. The November 9
+and November 16, 2026 runs failed during Azure authentication. The latest run
+validated 135 programs and wrote none. A repository maintainer needs to
+configure the workflow's Cosmos access and confirm a successful write run
+before relying on the weekly refresh. [View the latest checked run](https://github.com/vansh-goyal2112/Youth-Initiative/actions/runs/43921184380).
+
 ## Document schema
 
 Each document contains only application-owned properties:
@@ -109,21 +123,19 @@ rule-based score, with default weights totaling 100:
 | Completed workshop title, description, subject, or skill matches a related topic | 25 |
 | Saved learning preference matches published delivery mode | 15 |
 
-The exported `PROGRAM_RECOMMENDATION_WEIGHTS` can be passed as an override to
-`recommendSaitPrograms`; each weight must be a non-negative finite number.
-Recommendations without a positive evidence match are omitted. Reasons are
-generated from the same matching fields used for scoring.
+The pathway ranking prioritizes the number of distinct student interests
+directly supported by the program's title or description. It then uses the
+weighted score and the program title to break ties. A completed workshop
+contributes when its topic is supported by the program text. A matching
+delivery format can improve an otherwise relevant match. Without a matching
+interest or completed workshop topic, the engine skips the program.
 
-The current student model stores `interests` and `learningMode`. Completed
-workshops are read from the Cosmos `registrations` container with
-`status == "completed"` and joined to the existing `workshops` documents. The
-repository does not currently store student career goals or a separate
-learning-journey skills list, so those are not used as recommendation signals.
-
-Workshop recommendations are not currently returned. Student grade is not
-stored, so youth workshop grade eligibility cannot be verified safely. Grade
-is not inferred from date of birth; the recommendation API only returns
-possible post-secondary program pathways until a verified grade source exists.
+The app uses saved interests, learning preferences, and completed workshop
+records. It prefers the workshop snapshot saved at completion and uses the
+current workshop record for older completions without a snapshot. Pathway
+recommendations require a saved school grade and check any explicit grade
+limits. Home and Journey calculate youth workshop suggestions separately from
+the current student workshop catalogue.
 
 The authenticated endpoint is `GET /api/pathways/recommendations`. It returns
 possible future pathways with scores and evidence-based reasons; it does not

@@ -396,6 +396,21 @@ test("uses program-specific evidence for the mixed-interest student", () => {
   assert.ok(results.every(({ matchedWorkshopIds }) => matchedWorkshopIds.length === 0));
 });
 
+test("delivery preference boosts a relevant program but cannot recommend an unrelated one", () => {
+  const onlineWelding = makeProgram({
+    title: "Welding",
+    description: "Learn welding and metal fabrication.",
+    learningMode: "online",
+  });
+  const result = recommendSaitPrograms({
+    student: { schoolGrade: "8", interests: ["Coding"], learningMode: "online" },
+    completedWorkshops: [],
+    programs: [onlineWelding, makeProgram({ learningMode: "online" })],
+  });
+  assert.deepEqual(result.map(({ program }) => program.title), ["Software Development Diploma"]);
+  assert.ok(result[0].reasons.includes("Fits your online learning preference"));
+});
+
 test("two distinct direct interests rank above three welding pathways", () => {
   const integratedAi = makeProgram({
     title: "Integrated AI",

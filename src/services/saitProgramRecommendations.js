@@ -199,7 +199,8 @@ function getRecommendationReasons(
       programLearningMode === "hybrid"
     );
 
-  if (learningModeMatches) {
+  // Delivery mode can boost an existing subject or history match.
+  if (score > 0 && learningModeMatches) {
     score += weights.learningMode;
     reasons.push(
       studentLearningMode === "both"

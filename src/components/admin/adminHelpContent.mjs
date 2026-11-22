@@ -51,7 +51,7 @@ const guides = {
       { permission: "workshops.create", text: "To add a workshop, choose Create workshop and fill in the program details." },
       { permission: "workshops.edit", text: "Open the workshop editor to update the description, image or grade range. Use the session controls to add or update workshop dates." },
     ],
-    tip: "Check the grade range, date and registration link before sharing a workshop with students.",
+    tip: "Active, open workshops can appear in student recommendations the next time students load Home or Journey. Check the grade range, date and registration link, and add accurate interest tags. Future SAIT pathways use a separate catalogue refreshed by the Ingest SAIT programs and workshops workflow in GitHub Actions.",
   },
   "/admin/badges": {
     title: "Badges",
