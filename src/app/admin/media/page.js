@@ -7,23 +7,17 @@ import { adminFetch } from "@/services/adminApi";
 import MediaUploader from "@/components/admin/MediaUploader";
 
 export default function AdminMediaPage() {
-  const [landing, setLanding] = useState("");
   const [banner, setBanner] = useState("");
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true;
-    async function loadImage(kind, setImage) {
-      try {
-        const response = await adminFetch("/api/admin/media/upload?kind=" + kind);
+    adminFetch("/api/admin/media/upload?kind=banner")
+      .then(async response => {
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Unable to load the image.");
-        if (active) setImage(data.url || "");
-      } catch (cause) {
-        if (active) setError(cause.message || "Unable to load media settings.");
-      }
-    }
-    void loadImage("banner", setBanner);
-    void loadImage("landing", setLanding);
+        if (!response.ok) throw new Error(data.message || "Unable to load the homepage banner.");
+        if (active) setBanner(data.url || "");
+      })
+      .catch(cause=>{if(active)setError(cause.message||"Unable to load media settings.");});
     return()=>{active=false;};
   },[]);
   return (
@@ -36,11 +30,6 @@ export default function AdminMediaPage() {
       <section className="max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
         <div className="flex items-center gap-2"><ImagePlus size={20} className="text-rose-700"/><h2 className="text-lg font-extrabold">Student homepage</h2></div>
         <MediaUploader kind="banner" initialUrl={banner} onUploaded={setBanner}/>
-      </section>
-      <section className="mt-5 max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
-        <h2 className="text-lg font-extrabold">Public landing page</h2>
-        <p className="text-sm text-slate-600">Replace the first image visitors see in the main slideshow.</p>
-        <MediaUploader kind="landing" initialUrl={landing || "/images/workshops/03_art-of-the-possible-coding.jpg"} onUploaded={setLanding}/>
       </section>
       <Link href="/admin/media/reward" className="mt-5 inline-block text-sm font-semibold text-rose-800 underline">Manage reward artwork</Link>
     </main>
