@@ -15,6 +15,44 @@ function csvRow(values) {
   return values.map((value) => '"' + safeCell(value).replace(/"/g, '""') + '"').join(",");
 }
 
+export async function POST(request) {
+  try {
+    const admin = await requireAdminPermission(request, "reports.generate");
+    const body = await request.json().catch(() => null);
+    const search = typeof body?.search === "string" ? body.search.trim().replace(/\s+/g, " ") : "";
+    if (search.length < 2 || search.length > 254) {
+      return Response.json({ message: "Enter between 2 and 254 characters." }, { status: 400 });
+    }
+
+    await recordAdminAudit({
+      actorUid: admin.uid, action: "reports.search", resource: "/api/admin/reports/student",
+    });
+    const matches = await queryCosmosDocuments("students",
+      `SELECT TOP 26 c.firstName, c.lastName, c.fullName, c.dateOfBirth, c.youthId
+       FROM c
+       WHERE (NOT IS_DEFINED(c.role) OR IS_NULL(c.role) OR c.role = "" OR c.role = "student")
+         AND IS_STRING(c.youthId) AND c.youthId != ""
+         AND (CONTAINS(c.fullName, @search, true)
+           OR CONTAINS(c.firstName, @search, true)
+           OR CONTAINS(c.lastName, @search, true)
+           OR CONTAINS(CONCAT(IIF(IS_STRING(c.firstName), c.firstName, ""), " ", IIF(IS_STRING(c.lastName), c.lastName, "")), @search, true)
+           OR CONTAINS(c.contactEmail, @search, true)
+           OR STRINGEQUALS(c.youthId, @search, true))`,
+      [{ name: "@search", value: search }]);
+    const students = matches.slice(0, 25).map(student => ({
+      name: student.fullName || [student.firstName, student.lastName].filter(Boolean).join(" ") || "Student",
+      dateOfBirth: student.dateOfBirth || null,
+      youthId: student.youthId,
+    })).sort((first, second) => first.name.localeCompare(second.name) || first.youthId.localeCompare(second.youthId));
+    return Response.json({ students, hasMore: matches.length > 25 }, {
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  } catch (error) {
+    return adminAccessResponse(error) ||
+      Response.json({ message: "Student search could not be completed." }, { status: 500 });
+  }
+}
+
 export async function GET(request) {
   try {
     const admin = await requireAdminPermission(request, "reports.generate");

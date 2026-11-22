@@ -25,7 +25,7 @@ const guides = {
     permission: "reports.generate",
     intro: "See one student's workshop history, badges and progress.",
     steps: [
-      { text: "Enter the student's exact Youth ID and choose Generate report." },
+      { text: "Search by student name, email or Youth ID. Check the birth date and choose Generate report on the matching student." },
       { text: "Check the name and review the workshop history before sharing the report." },
       { permission: "reports.export", text: "Choose Export CSV if you need a spreadsheet copy." },
     ],

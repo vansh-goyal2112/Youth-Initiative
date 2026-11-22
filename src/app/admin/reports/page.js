@@ -1,7 +1,7 @@
 "use client";
 import "./report-print.css";
 import { useEffect, useState } from "react";
-import { FileText, Download, Search, ShieldCheck, Printer, ArrowUpRight, GraduationCap, Award, Activity, BookOpen, ChartNoAxesCombined, FileSearch, CheckCircle2, Users } from "lucide-react";
+import { FileText, Download, Search, ShieldCheck, Printer, GraduationCap, Award, Activity, BookOpen, ChartNoAxesCombined, FileSearch, CheckCircle2, Users } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
 import { isSelfReportedCompletion } from "@/utils/completionSourceLabels.mjs";
 
@@ -13,25 +13,59 @@ function formatValue(value) {
 }
 function labelFor(key) { return key.replace(/([A-Z])/g, " $1").replace(/[_-]/g, " ").trim(); }
 
+const birthDateFormatter = new Intl.DateTimeFormat("en-CA", {
+  dateStyle: "medium", timeZone: "UTC",
+});
+
+function formatBirthDate(value) {
+  if (!value) return "Not on record";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Not on record" : birthDateFormatter.format(date);
+}
+
 export default function AdminReportsPage() {
-  const [youthId, setYouthId] = useState("");
+  const [search, setSearch] = useState("");
+  const [results, setResults] = useState(null);
+  const [searching, setSearching] = useState(false);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
     const value = new URLSearchParams(window.location.search).get("youthId");
-    if (value && value.length <= 80) queueMicrotask(() => setYouthId(value));
+    if (value && value.length <= 80) queueMicrotask(() => setSearch(value));
   }, []);
 
-  async function loadReport(event) {
-    event?.preventDefault();
-    if (!youthId.trim()) return;
+  async function findStudents(event) {
+    event.preventDefault();
+    const term = search.trim();
+    if (term.length < 2) {
+      setError("Enter at least two characters.");
+      return;
+    }
+    setError("");
+    setSearching(true);
+    setResults(null);
+    setReport(null);
+    try {
+      const response = await adminFetch("/api/admin/reports/student", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ search: term }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Student search unavailable.");
+      setResults(data);
+    } catch (err) { setError(err.message || "Unable to search for students."); }
+    finally { setSearching(false); }
+  }
+
+  async function loadReport(youthId) {
     setError("");
     setLoading(true);
     setReport(null);
     try {
-      const response = await adminFetch("/api/admin/reports/student?youthId=" + encodeURIComponent(youthId.trim()));
+      const response = await adminFetch("/api/admin/reports/student?youthId=" + encodeURIComponent(youthId));
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Report unavailable.");
       setReport(data.report);
@@ -72,21 +106,38 @@ export default function AdminReportsPage() {
       <p>Pull together student participation, achievements and program activity in one secure report.</p>
     </div>
     <section className="admin-report-search-panel">
-      <div className="flex items-center gap-3"><span className="admin-panel-icon"><FileSearch size={23}/></span><div><h2>Find a student report</h2><p>Search using the student’s exact Youth ID.</p></div></div>
-      <form onSubmit={loadReport} className="admin-report-search-form">
-        <label htmlFor="report-youth-id">Youth ID</label>
+      <div className="flex items-center gap-3"><span className="admin-panel-icon"><FileSearch size={23}/></span><div><h2>Find a student report</h2><p>Search by student name, email or Youth ID.</p></div></div>
+      <form onSubmit={findStudents} className="admin-report-search-form">
+        <label htmlFor="report-student-search">Student name, email or Youth ID</label>
         <div className="admin-report-search-row">
-          <div className="admin-report-search-input"><Search size={19}/><input id="report-youth-id" value={youthId} onChange={e => setYouthId(e.target.value)} placeholder="Enter a Youth ID" autoComplete="off" required maxLength={80}/></div>
-          <button disabled={loading} type="submit"><FileText size={18}/>{loading ? "Generating…" : "Generate report"}<ArrowUpRight size={17}/></button>
+          <div className="admin-report-search-input"><Search size={19}/><input id="report-student-search" type="search" value={search} onChange={e => { setSearch(e.target.value); setResults(null); setError(""); }} placeholder="Enter a name, email or Youth ID" autoComplete="off" disabled={searching || loading || exporting} required minLength={2} maxLength={254}/></div>
+          <button disabled={searching || loading || exporting} type="submit"><Search size={18}/>{searching ? "Searching…" : "Search students"}</button>
         </div>
       </form>
+      {searching && <p className="mt-4 text-sm text-slate-600" role="status">Searching for students…</p>}
+      {results?.students.length === 0 && <p className="mt-4 text-sm text-slate-600" role="status">No students found. Try another name, email or Youth ID.</p>}
+      {results?.students.length > 0 && <div className="mt-5">
+        <h3 className="mb-2 text-sm font-bold">Matching students</h3>
+        {results.hasMore && <p className="mb-2 text-sm text-slate-600" role="status">Showing 25 matches. Refine your search to narrow the list.</p>}
+        <ul className="grid gap-2" aria-label="Matching students">
+          {results.students.map((student, index) => <li key={`${student.youthId}-${index}`}>
+            <button type="button" disabled={loading || exporting} onClick={() => loadReport(student.youthId)}
+              className="flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-indigo-600 disabled:opacity-60">
+              <span><strong className="block text-sm text-slate-900">{student.name}</strong>
+                <span className="block text-xs text-slate-600">Birth date: {formatBirthDate(student.dateOfBirth)} · {student.youthId}</span>
+              </span>
+              <span className="text-sm font-semibold text-indigo-800">Generate report</span>
+            </button>
+          </li>)}
+        </ul>
+      </div>}
       {error && <div className="admin-auth-alert error mt-4" role="alert"><ShieldCheck size={18}/><span>{error}</span></div>}
     </section>
 
-    {!report && !loading && <section className="admin-reports-empty">
+    {!report && !loading && !searching && !results && <section className="admin-reports-empty">
       <div className="admin-reports-empty-icon"><FileText size={35}/></div>
       <h2>Student insights start here.</h2>
-      <p>Enter a Youth ID to explore workshop registrations, XP activity, achievements and profile details. Reports are accessible only to authorized team members.</p>
+      <p>Find a student to explore workshop registrations, XP activity, achievements and profile details. Reports are accessible only to authorized team members.</p>
       <div><ShieldCheck size={17}/> Privacy-first, access-controlled reports</div>
     </section>}
 

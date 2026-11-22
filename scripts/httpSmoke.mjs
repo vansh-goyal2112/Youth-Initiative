@@ -118,6 +118,21 @@ test("production server: public onboarding and recovery pages load; APIs require
         assert.equal(response.status, 401, `${method} ${path}`);
       }
     });
+    await t.test("student report search and generation require authorization", async () => {
+      const page = await fetch(baseUrl + "/admin/reports", { signal: AbortSignal.timeout(10_000) });
+      assert.equal(page.status, 200);
+      const search = await fetch(baseUrl + "/api/admin/reports/student", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ search: "student@example.test" }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      assert.equal(search.status, 401);
+      const report = await fetch(baseUrl + "/api/admin/reports/student?youthId=test", {
+        signal: AbortSignal.timeout(10_000),
+      });
+      assert.equal(report.status, 401);
+    });
   } catch (error) {
     throw Error(`${error.message}\nServer log tail:\n${logs.slice(-4_000)}`);
   } finally {
