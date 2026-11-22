@@ -88,7 +88,7 @@ async function createAttendanceCode(
       );
 
     if (
-      !workshop
+      !workshop || workshop.duplicateOf
     ) {
       return Response.json(
         {

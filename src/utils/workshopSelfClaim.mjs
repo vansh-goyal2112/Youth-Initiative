@@ -24,7 +24,7 @@ export function isSchoolOutreachWorkshop(workshop = {}) {
 export function getSelfClaimCategory(workshop, schoolGrade) {
   const grade = schoolGradeNumber(schoolGrade);
   if (grade === null || !workshop || workshop.audience === "educators" ||
-      workshop.status === "deleted") return null;
+      (workshop.status === "deleted" || workshop.duplicateOf)) return null;
   const bounds = getWorkshopGradeBounds(workshop);
   if (bounds && bounds.minGrade > grade) return null;
   if (isSchoolOutreachWorkshop(workshop)) return "outreach";

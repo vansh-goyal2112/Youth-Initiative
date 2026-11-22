@@ -1,9 +1,7 @@
 # SAIT Program Pathways
 
 SAIT post-secondary programs are stored independently from youth workshops in
-the Azure Cosmos DB `saitPrograms` container. This feature uses the existing
-`src/services/cosmos.js` connection and does not change the workshop schema or
-Firebase workshop storage.
+the Azure Cosmos DB `saitPrograms` container. The importer uses the existing Cosmos DB connection. Workshop and badge artwork uploads use the app’s Azure Cosmos DB storage.
 
 ## Staff handoff
 
@@ -13,11 +11,11 @@ Firebase workshop storage.
 | SAIT adds or updates a post-secondary program on sait.ca | Future pathways read the active SAIT program records in Cosmos DB. Published changes become available after a successful import. | Check the weekly **Ingest SAIT programs and workshops** workflow in GitHub Actions. A repository maintainer can run it on demand after a major catalogue update. Review the attached `sait-ingestion-report` for failures. |
 | SAIT removes or renames a program | An import can add and update records. A record that disappears from the source can remain active in Cosmos DB. | After the annual catalogue update, confirm any apparent removals or renames on sait.ca and ask the catalogue maintainer to mark obsolete records inactive. |
 
-The scheduled workflow is configured for Mondays at 08:00 UTC. The November 9
-and November 16, 2026 runs failed during Azure authentication. The latest run
-validated 135 programs and wrote none. A repository maintainer needs to
-configure the workflow's Cosmos access and confirm a successful write run
-before relying on the weekly refresh. [View the latest checked run](https://github.com/vansh-goyal2112/Youth-Initiative/actions/runs/43921184380).
+The schedule runs Mondays at 08:00 UTC. After the Cosmos access secret was
+corrected, the November 21, 2026 manual run updated 135 program records with
+zero failures. Use the workflow’s **Run workflow** button when a catalogue
+refresh is needed before the next scheduled run.
+[Successful import](https://github.com/vansh-goyal2112/Youth-Initiative/actions/runs/44977845089).
 
 ## Document schema
 

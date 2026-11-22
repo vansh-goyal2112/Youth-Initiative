@@ -28,7 +28,7 @@ export default function AdminAttendancePage() {
       .then(async response => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || "Could not load workshops.");
-        if (alive) setWorkshops(Array.isArray(data.workshops) ? data.workshops : []);
+        if (alive) setWorkshops(Array.isArray(data.workshops) ? data.workshops.filter(workshop => !workshop.duplicateOf) : []);
       })
       .catch(error => { if (alive) setErrorMessage(error.message || "Could not load workshops."); })
       .finally(() => { if (alive) setLoadingWorkshops(false); });

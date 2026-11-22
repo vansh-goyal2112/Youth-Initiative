@@ -380,6 +380,7 @@ async function updateWorkshop(
     }
 
     const updates = buildWorkshopData(workshopData, id);
+    if (existingWorkshop.duplicateOf && updates.status === "active") updates.duplicateOf = null;
     const details = auditFieldChanges(existingWorkshop, { ...existingWorkshop, ...updates }, WORKSHOP_AUDIT_FIELDS);
     describeAdminAudit(request, {
       subject: existingWorkshop.title, details, ...(!details.length ? { outcome: "unchanged" } : {}),

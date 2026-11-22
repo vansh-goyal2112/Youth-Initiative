@@ -23,6 +23,7 @@ import * as XLSX from "xlsx";
 
 import { adminFetch } from "@/services/adminApi";
 import { getConfiguredWorkshopXp } from "@/utils/workshopXpDisplay.mjs";
+import WorkshopDuplicates from "@/components/admin/WorkshopDuplicates";
 import WorkshopSessionsPanel from "@/components/admin/WorkshopSessionsPanel";
 import MediaUploader from "@/components/admin/MediaUploader";
 import { getWorkshopGradeBounds } from "@/utils/workshopGrades.mjs";
@@ -617,6 +618,11 @@ export default function AdminWorkshopsPage() {
           {errorMessage}
         </div>
       )}
+
+      <WorkshopDuplicates workshops={workshops} onConsolidated={() => {
+        setMessage("Duplicate marked inactive. The workshop you kept remains active.");
+        loadWorkshops();
+      }} />
 
       <section className="admin-workshop-filters" aria-label="Workshop filters">
         <div className="admin-search-field">

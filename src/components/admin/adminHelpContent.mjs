@@ -133,7 +133,14 @@ const guides = {
       { text: "Under Student homepage, choose the image you want to use." },
       { text: "Upload it and check the preview. Open the student homepage to confirm it looks right." },
     ],
-    tip: "Use the Reward artwork uploader on this page to change the reward celebration image.",
+    tip: "Use Manage reward artwork to open the separate reward image editor.",
+  },
+  "/admin/media/reward": {
+    title: "Reward artwork",
+    permission: "workshops.edit",
+    intro: "Update the image shown with student reward celebrations.",
+    steps: [{ text: "Select an image, upload it, and check the preview." }],
+    tip: "Use Homepage banner for the image on the student homepage.",
   },
 };
 

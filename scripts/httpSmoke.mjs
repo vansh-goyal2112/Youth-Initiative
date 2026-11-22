@@ -115,6 +115,8 @@ test("production server: public onboarding and recovery pages load; APIs require
         ["/api/admin/completions?summary=1", "GET"],
         ["/api/admin/students?pendingCount=1", "GET"],
         ["/api/admin/students?studentId=test", "GET"],
+        ["/api/admin/workshops/duplicates", "GET"],
+        ["/api/admin/workshops/duplicates", "POST"],
         ["/api/admin/audit", "GET"],
         ["/api/admin/badges", "POST"],
       ]) {

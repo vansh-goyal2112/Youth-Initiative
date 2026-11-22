@@ -349,7 +349,7 @@ async function saveImportedWorkshop(
             description: workshopData.description,
             informationUrl: workshopData.informationUrl,
             offeringYear: workshopData.offeringYear,
-            status: "active",
+            status: existingWorkshop.duplicateOf ? "inactive" : "active",
           } : {}),
           // Only non-empty scheduling values explicitly included in Excel override previous scheduling.
           ...(workshopData.startDate ? { startDate: workshopData.startDate } : {}),
@@ -488,9 +488,9 @@ async function importWorkshops(
     if (incomingIds.size !== validWorkshops.length) {
       return Response.json({ message: "Duplicate workshop titles and program areas in spreadsheet." }, { status: 400 });
     }
-    const oldCatalog = await queryCosmosDocuments("workshops", "SELECT c.id, c.title, c.status, c.updatedAt FROM c");
+    const oldCatalog = await queryCosmosDocuments("workshops", "SELECT c.id, c.title, c.status, c.updatedAt, c.duplicateOf FROM c");
     const discontinue = mode === "replace"
-      ? oldCatalog.filter(w => !incomingIds.has(w.id))
+      ? oldCatalog.filter(w => !w.duplicateOf && !incomingIds.has(w.id))
       : [];
     const planToken = crypto.createHash("sha256").update(JSON.stringify({
       catalogue: oldCatalog.map(w => [w.id, w.title, w.status, w.updatedAt]).sort((a,b)=>a[0].localeCompare(b[0])),
