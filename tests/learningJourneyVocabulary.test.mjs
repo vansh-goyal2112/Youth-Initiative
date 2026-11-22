@@ -21,7 +21,7 @@ test("student pages use XP, levels and badges instead of overlapping progress ja
   const home = readFileSync(new URL("../src/app/dashboard/page.js", import.meta.url), "utf8");
   assert.doesNotMatch(home, /Workshops by Area|dashboard-skills-section|gameData\.skillTracks/);
   // Journey prioritizes next steps and the badge page reads catalogue progress.
-  assert.match(journey, /Recommended workshops/);
+  assert.match(journey, /Recommended experiences/);
   assert.match(journey, /Future pathways \(SAIT programs\)/);
   assert.match(journey, /Upcoming at SAIT/);
   assert.match(journey, /AdventureTrail/);
@@ -40,7 +40,7 @@ test("student pages use XP, levels and badges instead of overlapping progress ja
 test("selection response uses plain wording without changing stored IDs", () => {
   const focus = readFileSync(new URL("../src/app/api/gamification/focus/route.js", import.meta.url), "utf8");
   assert.match(focus, /activeQuestId: questId/);
-  assert.match(focus, /Saved! Your workshop interests are updated/);
+  assert.match(focus, /Saved! Your experience interests are updated/);
 });
 
 test("retired Learning Journal UI and endpoint are absent; XP logic remains", () => {

@@ -38,7 +38,7 @@ async function assignArtwork(request) {
       }
     }
 
-    describeAdminAudit(request, { details: [assigned + " workshops received curated artwork", needsImage + " workshops still need artwork"] });
+    describeAdminAudit(request, { details: [assigned + " experiences received curated artwork", needsImage + " experiences still need artwork"] });
     return Response.json(
       { success: true, assigned, needsImage, unchanged },
       { headers: { "Cache-Control": "no-store" } }
@@ -46,9 +46,9 @@ async function assignArtwork(request) {
   } catch (error) {
     const access = adminAccessResponse(error);
     if (access) return access;
-    console.error("Workshop artwork assignment error:", error?.message);
+    console.error("Experience artwork assignment error:", error?.message);
     return Response.json(
-      { message: "Could not assign workshop images." },
+      { message: "Could not assign experience images." },
       { status: 500 }
     );
   }

@@ -71,7 +71,7 @@ export default function SkillQuestHub({
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Could not save your selection.");
       setSelectedQuestId(id);
-      setFocusSuccess("Saved! Keep exploring workshops to earn XP and badges.");
+      setFocusSuccess("Saved! Keep exploring experiences to earn XP and badges.");
     } catch (error) {
       setFocusError(error.message || "Could not save your selection.");
     } finally {
@@ -88,7 +88,7 @@ export default function SkillQuestHub({
         <div className={styles.introText}>
           <span className={styles.kicker}><WandSparkles size={18} aria-hidden="true"/> LEARNING JOURNEY HQ</span>
           <h2 id="quest-hub-title">Ready for your next adventure, {firstName}?</h2>
-          <p>Discover workshops, earn XP, reach new levels, and unlock badges as you learn.</p>
+          <p>Discover experiences, earn XP, reach new levels, and unlock badges as you learn.</p>
           <div className={styles.introActions}>
             <Link href="/journey" className={styles.mainAction}><Map size={18} aria-hidden="true"/> Explore My Map <ArrowRight size={16} aria-hidden="true"/></Link>
             <Link href="/badges" className={styles.secondAction}><Award size={18} aria-hidden="true"/> My Badge Album</Link>
@@ -126,7 +126,7 @@ export default function SkillQuestHub({
         <div className={styles.overviewStat}>
           <BookOpen size={22} aria-hidden="true"/>
           <strong>{gameData.completedWorkshops}</strong>
-          <span>Workshops</span>
+          <span>Experiences</span>
         </div>
         <div className={styles.overviewStat}>
           <Trophy size={22} aria-hidden="true"/>
@@ -184,7 +184,7 @@ export default function SkillQuestHub({
               );
             })}
           </div>
-          <p className={styles.helpText}><ShieldCheck size={16} aria-hidden="true"/> QR-verified attendance earns full XP; self-reported workshops earn half XP and may be reviewed.</p>
+          <p className={styles.helpText}><ShieldCheck size={16} aria-hidden="true"/> QR-verified attendance earns full XP; self-reported experiences earn half XP and may be reviewed.</p>
           {focusError && <p role="alert" className={styles.error}>{focusError}</p>}
           {focusSuccess && <p role="status" className={styles.success}>{focusSuccess}</p>}
           <Link href="/journey" className={styles.panelLink}>See the full Adventure Map <ArrowRight size={16} aria-hidden="true"/></Link>

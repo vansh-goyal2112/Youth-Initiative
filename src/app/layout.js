@@ -8,7 +8,7 @@ export const metadata = {
     template: "%s | SAIT Youth Initiatives",
   },
   description:
-    "Explore workshops, build skills, earn achievements, and discover future SAIT pathways.",
+    "Explore experiences, build skills, earn achievements, and discover future SAIT pathways.",
   applicationName: "SAIT Youth Initiatives",
   manifest: "/manifest.webmanifest",
   appleWebApp: {

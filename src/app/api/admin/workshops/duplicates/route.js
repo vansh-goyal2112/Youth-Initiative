@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 async function checkPair(keepId, duplicateId) {
   if (![keepId, duplicateId].every(id => typeof id === "string" && id.length > 0 && id.length <= 128)) {
-    return { message: "Choose the workshop to keep and the duplicate." };
+    return { message: "Choose the experience to keep and the duplicate." };
   }
   const [keep, duplicate] = await Promise.all([keepId, duplicateId].map(id => readCosmosDocument("workshops", id)));
   const message = checkWorkshopDuplicate(keep, duplicate);
@@ -37,7 +37,7 @@ export async function GET(request) {
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return adminAccessResponse(error) ||
-      Response.json({ message: "Unable to check these workshop records." }, { status: 500 });
+      Response.json({ message: "Unable to check these experience records." }, { status: 500 });
   }
 }
 
@@ -51,7 +51,7 @@ export const POST = withAdminAudit(async request => {
     const { keep, duplicate, message } = await checkPair(body.keepId, body.duplicateId);
     if (message) return Response.json({ message }, { status: 409 });
     if (body.keepVersion !== keep._etag || body.duplicateVersion !== duplicate._etag) {
-      return Response.json({ message: "A workshop changed after your review. Check the pair again." }, { status: 409 });
+      return Response.json({ message: "An experience changed after your review. Check the pair again." }, { status: 409 });
     }
 
     await replaceCosmosDocument("workshops", duplicate, {
@@ -64,6 +64,6 @@ export const POST = withAdminAudit(async request => {
       return Response.json({ message: "The duplicate changed. Review the pair again." }, { status: 409 });
     }
     return adminAccessResponse(error) ||
-      Response.json({ message: "Unable to consolidate the duplicate workshop." }, { status: 500 });
+      Response.json({ message: "Unable to consolidate the duplicate experience." }, { status: 500 });
   }
 });

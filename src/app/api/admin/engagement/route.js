@@ -48,7 +48,7 @@ export async function GET(request) {
         const safe = /^[\s]*[=+@-]/.test(s) ? "'" + s : s;
         return '"' + safe.replace(/"/g,'""') + '"';
       };
-      const data = [["Workshop","Program area","Date","Registered","Verified attendance","Not verified","Attendance rate (%)"],
+      const data = [["Experience","Program area","Date","Registered","Verified attendance","Not verified","Attendance rate (%)"],
         ...result.workshops.map(w=>[w.title,w.programArea,w.date,w.registered,w.attended,w.absent,w.attendanceRate])];
       return new Response(data.map(row=>row.map(quote).join(",")).join("\r\n"), {
         headers:{"Content-Type":"text/csv; charset=utf-8","Content-Disposition":'attachment; filename="workshop-engagement.csv"',"Cache-Control":"private, no-store","X-Content-Type-Options":"nosniff"},

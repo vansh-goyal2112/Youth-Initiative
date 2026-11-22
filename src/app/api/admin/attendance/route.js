@@ -47,7 +47,7 @@ async function createAttendanceCode(
           success: false,
 
           message:
-            "Workshop ID is required.",
+            "Experience ID is required.",
         },
         {
           status: 400,
@@ -95,7 +95,7 @@ async function createAttendanceCode(
           success: false,
 
           message:
-            "Workshop not found.",
+            "Experience not found.",
         },
         {
           status: 404,

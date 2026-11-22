@@ -41,7 +41,7 @@ export function summarize(workshops, registrations, start, end, now) {
       continue;
     }
     bucket.set(key,{
-      workshopId:w.id,title:w.title || "Untitled workshop",programArea:w.programArea || "Uncategorized",
+      workshopId:w.id,title:w.title || "Untitled experience",programArea:w.programArea || "Uncategorized",
       date:scheduledInPeriod ? scheduledDate : lastCheckin || "—",
       capacity:Number.isFinite(Number(w.capacity)) && Number(w.capacity)>0 ? Number(w.capacity):null,
       registrations:new Set(),attendees:new Set(),

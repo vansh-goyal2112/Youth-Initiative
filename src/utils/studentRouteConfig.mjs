@@ -27,17 +27,17 @@ export function studentActiveTab(pathname, originPath = null) {
 
 const routeNames = {
   "/dashboard": "Home",
-  "/workshops": "Workshops",
+  "/workshops": "Experiences",
   "/journey": "Journey",
   "/badges": "Badges",
   "/profile": "Profile",
-  "/registered-workshops": "My Workshops",
-  "/completed-workshops": "Completed Workshops",
+  "/registered-workshops": "My Experiences",
+  "/completed-workshops": "Completed Experiences",
   "/scan-attendance": "Scan Attendance",
 };
 function routeTitle(pathname) {
   return routeNames[pathname] || (
-    pathname?.startsWith("/workshops/") ? "Workshop Details" :
+    pathname?.startsWith("/workshops/") ? "Experience Details" :
     pathname?.startsWith("/registration-success/") ? "Registration" : "Previous Page"
   );
 }
@@ -47,11 +47,11 @@ export function studentBackDestination(pathname, originPath = null) {
   if (isStudentRoute(originPath) && originPath !== pathname) {
     return { href: originPath, label: `Back to ${routeTitle(originPath)}` };
   }
-  if (pathname.startsWith("/workshops/")) return { href: "/workshops", label: "Back to Workshops" };
+  if (pathname.startsWith("/workshops/")) return { href: "/workshops", label: "Back to Experiences" };
   if (["/workshops", "/journey", "/badges", "/profile"].includes(pathname)) return { href: "/dashboard", label: "Back to Home" };
   if (pathname === "/edit-profile") return { href: "/profile", label: "Back to Profile" };
   if (pathname === "/registered-workshops" || pathname === "/completed-workshops") return { href: "/profile", label: "Back to Profile" };
-  if (pathname === "/scan-attendance") return { href: "/registered-workshops", label: "Back to My Workshops" };
-  if (pathname.startsWith("/registration-success/")) return { href: "/workshops", label: "Back to Workshops" };
+  if (pathname === "/scan-attendance") return { href: "/registered-workshops", label: "Back to My Experiences" };
+  if (pathname.startsWith("/registration-success/")) return { href: "/workshops", label: "Back to Experiences" };
   return { href: "/dashboard", label: "Back to Home" };
 }

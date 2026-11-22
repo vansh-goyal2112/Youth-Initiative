@@ -38,8 +38,8 @@ export default function AdventureTrail({ quests = [], showBadgeLink = true }) {
           </span>
           <h2 id="skill-quest-heading">Your Adventure Map</h2>
           <p>
-            Every verified workshop moves your learning story forward.
-            Explore at your own pace—no workshop is locked behind a level.
+            Every verified experience moves your learning story forward.
+            Explore at your own pace—no experience is locked behind a level.
           </p>
         </div>
         <div className={styles.countBadge} aria-label={`${completedCount} of ${quests.length} milestones completed`}>
@@ -103,7 +103,7 @@ export default function AdventureTrail({ quests = [], showBadgeLink = true }) {
                     <span>{current} of {target} completed</span>
                     {status === "current" ? (
                       <Link href="/workshops" className={styles.action}>
-                        Explore workshops <ArrowRight size={16} aria-hidden="true" />
+                        Explore experiences <ArrowRight size={16} aria-hidden="true" />
                       </Link>
                     ) : (
                       <span>{quest.completed ? "Milestone reached!" : "Keep exploring"}</span>

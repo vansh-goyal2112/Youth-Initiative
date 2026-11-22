@@ -36,7 +36,7 @@ const preferences = [
       "In Person",
 
     description:
-      "Learn on campus through hands-on workshops and activities.",
+      "Learn on campus through hands-on experiences and activities.",
 
     icon:
       Building2,

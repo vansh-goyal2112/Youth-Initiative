@@ -23,7 +23,7 @@ export default function SelfReportWorkshop({ onClaimed }) {
     studentFetch("/api/workshops/self-report")
       .then(async response => {
         const result = await response.json();
-        if (!response.ok) throw new Error(result.message || "Unable to load past workshops.");
+        if (!response.ok) throw new Error(result.message || "Unable to load past experiences.");
         if (!active) return;
         const available = Array.isArray(result.workshops) ? result.workshops : [];
         setGradeRequired(Boolean(result.gradeRequired));
@@ -35,11 +35,11 @@ export default function SelfReportWorkshop({ onClaimed }) {
           if (available.some(item => item.id === requestedId)) {
             setSelected(requestedId);
           } else {
-            setError("That workshop has no unclaimed past sessions, or has already been recorded. You can choose another workshop below.");
+            setError("That experience has no unclaimed past sessions, or has already been recorded. You can choose another experience below.");
           }
         }
       })
-      .catch(cause => { if (active) setError(cause.message || "Past workshops unavailable."); })
+      .catch(cause => { if (active) setError(cause.message || "Past experiences unavailable."); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
@@ -84,9 +84,9 @@ export default function SelfReportWorkshop({ onClaimed }) {
       <div className={styles.intro}>
         <span className={styles.icon}><CalendarCheck2 size={25} aria-hidden="true" /></span>
         <div>
-          <p className={styles.eyebrow}>ALREADY ATTENDED A WORKSHOP?</p>
+          <p className={styles.eyebrow}>ALREADY ATTENDED AN EXPERIENCE?</p>
           <h2 id="self-report-title">Add it to your Learning Journey.</h2>
-          <p>Attended a workshop in your current or an earlier grade, or through a school outreach visit? Record it here—no QR code needed.</p>
+          <p>Attended an experience in your current or an earlier grade, or through a school outreach visit? Record it here—no QR code needed.</p>
         </div>
         <button type="button" className={styles.toggle} onClick={() => setExpanded(open => !open)} aria-expanded={expanded} aria-controls="claim-workshop-form">
           {expanded ? "Close" : "Previously Completed"}
@@ -95,15 +95,15 @@ export default function SelfReportWorkshop({ onClaimed }) {
       {expanded && (
         <div id="claim-workshop-form" className={styles.panel}>
           <div className={styles.explainer}><Sparkles size={18} aria-hidden="true"/>
-            Self-reported workshops earn <strong>half the regular XP</strong> immediately and remain subject to admin review.
+            Self-reported experiences earn <strong>half the regular XP</strong> immediately and remain subject to admin review.
           </div>
-          {loading ? <p className={styles.status}><LoaderCircle size={17} aria-hidden="true"/> Loading workshops…</p> :
-          gradeRequired ? <p className={styles.status}>Add your current school grade in My Identity before claiming past workshops.</p> :
-          workshops.length === 0 ? <p className={styles.status}>No unclaimed workshops are available for your current or earlier grades or school outreach activities.</p> :
+          {loading ? <p className={styles.status}><LoaderCircle size={17} aria-hidden="true"/> Loading experiences…</p> :
+          gradeRequired ? <p className={styles.status}>Add your current school grade in My Identity before claiming past experiences.</p> :
+          workshops.length === 0 ? <p className={styles.status}>No unclaimed experiences are available for your current or earlier grades or school outreach activities.</p> :
           <form onSubmit={submit} className={styles.form}>
-            <label className={styles.field}>Workshop
+            <label className={styles.field}>Experience
               <select required value={selected} onChange={event => {setSelected(event.target.value);setSessionId("");setCompletedOn("");}}>
-                <option value="">Choose a workshop you&apos;ve attended</option>
+                <option value="">Choose an experience you&apos;ve attended</option>
                 {[
                   { id: "current", label: "Your current grade" },
                   { id: "earlier", label: "Earlier grades" },
@@ -129,10 +129,10 @@ export default function SelfReportWorkshop({ onClaimed }) {
             <label className={styles.field}>When did you attend?
               <input type="date" max={new Date().toISOString().slice(0, 10)} required value={completedOn} onChange={event => setCompletedOn(event.target.value)}/>
             </label>
-            {workshop && <p className={styles.xpPreview}><Sparkles size={17} aria-hidden="true"/> Earn <strong>{workshop.xpReward} XP</strong> for this self-reported completion (half the workshop reward).</p>}
+            {workshop && <p className={styles.xpPreview}><Sparkles size={17} aria-hidden="true"/> Earn <strong>{workshop.xpReward} XP</strong> for this self-reported completion (half the experience reward).</p>}
             <label className={styles.attestation}>
               <input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} required />
-              <span>I confirm that I actually attended this workshop. SAIT staff may review or reverse this claim.</span>
+              <span>I confirm that I actually attended this experience. SAIT staff may review or reverse this claim.</span>
             </label>
             <button type="submit" disabled={submitting || !selected || !completedOn || !confirmed || (workshop?.sessions?.length > 0 && !sessionId)} className={styles.save}>
               {submitting ? <><LoaderCircle size={18} aria-hidden="true"/> Saving…</> : <><CheckCircle2 size={18} aria-hidden="true"/> Save my completion</>}

@@ -299,7 +299,7 @@ function EditProfileForm({
           <div className={styles.heroCopy}>
             <span className={styles.eyebrow}><Sparkles size={16} aria-hidden="true" /> YOUR LEARNING JOURNEY PASSPORT</span>
             <h1>Edit My Identity</h1>
-            <p>Keep your grade and interests up to date. Find workshops for you.</p>
+            <p>Keep your grade and interests up to date. Find experiences for you.</p>
           </div>
           <span className={styles.heroIcon} aria-hidden="true"><UserRound size={45} /></span>
         </header>
@@ -310,7 +310,7 @@ function EditProfileForm({
               <span className={styles.sectionIcon} aria-hidden="true"><GraduationCap size={23}/></span>
               <div>
                 <h2 id="edit-basics-title">A little about you</h2>
-                <p>Your grade helps us find workshops for you.</p>
+                <p>Your grade helps us find experiences for you.</p>
               </div>
             </div>
             <div className={styles.nameGrid}>
@@ -332,7 +332,7 @@ function EditProfileForm({
                   <option key={index + 1} value={String(index + 1)}>Grade {index + 1}</option>
                 ))}
               </select>
-              <p className={styles.fieldHint}>Add your grade to find workshops for you.</p>
+              <p className={styles.fieldHint}>Add your grade to find experiences for you.</p>
             </div>
           </section>
 
@@ -369,7 +369,7 @@ function EditProfileForm({
               <span className={[styles.sectionIcon, styles.iconGold].join(" ")} aria-hidden="true"><Heart size={23}/></span>
               <div>
                 <h2 id="edit-interests-title">What sparks your curiosity?</h2>
-                <p>Pick up to five interests. Find workshops you like.</p>
+                <p>Pick up to five interests. Find experiences you like.</p>
               </div>
             </div>
             <div className={styles.interestHeading}>

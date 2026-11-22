@@ -75,10 +75,10 @@ export default function WorkshopsPage() {
         const data = await response.json().catch(() => null);
 
         if (!response.ok) {
-          throw new Error(data?.message || "Workshops could not be loaded.");
+          throw new Error(data?.message || "Experiences could not be loaded.");
         }
         if (!Array.isArray(data?.workshops)) {
-          throw new Error("The workshop catalogue response was invalid. Please try again.");
+          throw new Error("The experience catalogue response was invalid. Please try again.");
         }
 
         if (cancelled) return;
@@ -87,7 +87,7 @@ export default function WorkshopsPage() {
       } catch (error) {
         if (cancelled) return;
         setWorkshops([]);
-        setErrorMessage(error?.message || "Workshops could not be loaded.");
+        setErrorMessage(error?.message || "Experiences could not be loaded.");
       } finally {
         if (!cancelled) {
           setLoadedForKey(sessionKey);
@@ -217,15 +217,15 @@ export default function WorkshopsPage() {
           {viewState === "loading" ? (
             <div className="student-workshop-status" role="status">
               <LoaderCircle size={35} className="button-spinner" />
-              <p>Loading your workshops...</p>
+              <p>Loading your experiences...</p>
             </div>
           ) : (
             <div className="mx-auto w-full max-w-lg rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center shadow-sm">
               <BookOpen size={44} className="mx-auto mb-4 text-rose-700" aria-hidden="true" />
               {viewState === "login" ? (
                 <>
-                  <h1 className="text-2xl font-bold text-slate-900">Log in to view workshops</h1>
-                  <p className="mt-3 text-slate-600">Sign in to see workshops that match your school grade.</p>
+                  <h1 className="text-2xl font-bold text-slate-900">Log in to view experiences</h1>
+                  <p className="mt-3 text-slate-600">Sign in to see experiences that match your school grade.</p>
                   <Link href="/login" className="mt-6 inline-flex rounded-xl bg-rose-700 px-6 py-3 font-semibold text-white hover:bg-rose-800">
                     Log in
                   </Link>
@@ -233,14 +233,14 @@ export default function WorkshopsPage() {
               ) : viewState === "grade" ? (
                 <>
                   <h1 className="text-2xl font-bold text-slate-900">Add your school grade</h1>
-                  <p className="mt-3 text-slate-600">We need your current grade to show workshops that are right for you.</p>
+                  <p className="mt-3 text-slate-600">We need your current grade to show experiences that are right for you.</p>
                   <Link href="/edit-profile" className="mt-6 inline-flex rounded-xl bg-rose-700 px-6 py-3 font-semibold text-white hover:bg-rose-800">
                     Update My Identity
                   </Link>
                 </>
               ) : (
                 <div role="alert">
-                  <h1 className="text-2xl font-bold text-slate-900">Workshops could not be loaded</h1>
+                  <h1 className="text-2xl font-bold text-slate-900">Experiences could not be loaded</h1>
                   <p className="mt-3 text-slate-600">{errorMessage}</p>
                   <button type="button" onClick={() => setRetryKey(key => key + 1)}
                     className="mt-6 rounded-xl bg-rose-700 px-6 py-3 font-semibold text-white hover:bg-rose-800">
@@ -275,7 +275,7 @@ export default function WorkshopsPage() {
               href="/workshops"
               className="active"
             >
-              Workshops
+              Experiences
             </Link>
             <Link href="/journey">Journey</Link>
             <Link href="/badges">Badges</Link>
@@ -291,16 +291,16 @@ export default function WorkshopsPage() {
               Explore opportunities
             </span>
 
-            <h1>Find Your Next Workshop</h1>
+            <h1>Find Your Next Experience</h1>
 
             <p>
-              Pick a workshop you like. Explore something new.
+              Pick an experience you like. Explore something new.
             </p>
           </div>
 
           <div className="workshop-hero-stat">
             <strong>{filteredWorkshops.length}</strong>
-            <span>Workshops Available</span>
+            <span>Experiences Available</span>
           </div>
         </div>
       </section>
@@ -308,8 +308,8 @@ export default function WorkshopsPage() {
       <section className="student-content-container workshops-main-content">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 border-l-4 border-l-red-600 bg-white p-5 shadow-sm">
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Already attended a SAIT workshop?</h2>
-            <p className="mt-1 text-sm text-slate-600">Find a workshop you attended. Choose Previously Completed to claim half XP. SAIT staff may review your claim.</p>
+            <h2 className="text-lg font-extrabold text-slate-900">Already attended a SAIT experience?</h2>
+            <p className="mt-1 text-sm text-slate-600">Find an experience you attended. Choose Previously Completed to claim half XP. SAIT staff may review your claim.</p>
           </div>
           <Link
             href="/completed-workshops?claim=1#previously-completed"
@@ -325,7 +325,7 @@ export default function WorkshopsPage() {
 
             <input
               type="search"
-              placeholder="Search workshops..."
+              placeholder="Search experiences..."
               value={searchText}
               onChange={(event) =>
                 setSearchText(event.target.value)
@@ -423,13 +423,13 @@ export default function WorkshopsPage() {
           <div>
             <h2>
               {activeFilterCount > 0 || searchText
-                ? "Matching Workshops"
-                : "All Workshops"}
+                ? "Matching Experiences"
+                : "All Experiences"}
             </h2>
 
             <p>
               Showing {filteredWorkshops.length} of{" "}
-              {workshops.length} workshops
+              {workshops.length} experiences
             </p>
           </div>
         </div>
@@ -438,7 +438,7 @@ export default function WorkshopsPage() {
           <div className="student-workshop-empty">
             <BookOpen size={48} />
 
-            <h2>No workshops found</h2>
+            <h2>No experiences found</h2>
 
             <p>
               Try another search or clear your filters.
@@ -448,7 +448,7 @@ export default function WorkshopsPage() {
               type="button"
               onClick={clearFilters}
             >
-              View All Workshops
+              View All Experiences
             </button>
           </div>
         ) : (
@@ -472,7 +472,7 @@ export default function WorkshopsPage() {
                   </h2>
                   <p>
                     These programs are not accepting new registrations.
-                    Already attended one? Claim half of its workshop XP
+                    Already attended one? Claim half of its experience XP
                     through Previously Completed, subject to staff review.
                   </p>
                 </div>
@@ -501,7 +501,7 @@ export default function WorkshopsPage() {
           className="active"
         >
           <BookOpen size={20} />
-          <span>Workshops</span>
+          <span>Experiences</span>
         </Link>
 
         <Link href="/journey">

@@ -131,7 +131,7 @@ export default function CompletionReviewsPage() {
         <div>
           <span className="mb-2 inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.15em] text-rose-600"><ClipboardCheck size={16}/> Attendance operations</span>
           <h1 className="text-3xl font-black tracking-tight">Review <span className="text-rose-600">claims</span></h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Review self-reported workshops, approve genuine attendance, and reverse incorrect claims. Half XP is awarded when students report a workshop; approval does not award it twice.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Review self-reported experiences, approve genuine attendance, and reverse incorrect claims. Half XP is awarded when students report an experience; approval does not award it twice.</p>
         </div>
         <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50" disabled={busy || loading} onClick={() => {setSelectedIds([]);setLoading(true);setRefresh(n=>n+1);}}>
           <RefreshCw size={17}/> Refresh
@@ -153,7 +153,7 @@ export default function CompletionReviewsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
           <div className="flex min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3">
             <Search size={17} className="text-slate-400"/>
-            <input className="w-full min-h-11 border-0 bg-transparent py-2 text-sm outline-none" placeholder="Search student, Youth ID, workshop…" aria-label="Search completion claims" disabled={bulkApproving} value={search} onChange={event => { setSearch(event.target.value); setSelectedIds([]); }}/>
+            <input className="w-full min-h-11 border-0 bg-transparent py-2 text-sm outline-none" placeholder="Search student, Youth ID, experience…" aria-label="Search completion claims" disabled={bulkApproving} value={search} onChange={event => { setSearch(event.target.value); setSelectedIds([]); }}/>
           </div>
           <select className="min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700" aria-label="Review status" disabled={bulkApproving} value={filter} onChange={event => { setFilter(event.target.value); setSelectedIds([]); }}>
             <option value="pending_review">Pending review</option>

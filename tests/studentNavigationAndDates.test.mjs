@@ -67,7 +67,7 @@ test("Home shows only Workshops, Badges and Total XP tiles without journal stamp
   assert.doesNotMatch(dashboard, /<SkillQuestHub section="journal"/);
   assert.doesNotMatch(dashboard, /<SkillQuestHub section="mission"/);
   assert.doesNotMatch(journey, /<JournalStamps/);
-  assert.match(hub, /<span>Workshops<\/span>/);
+  assert.match(hub, /<span>Experiences<\/span>/);
   assert.match(hub, /<span>Badges<\/span>/);
   assert.match(hub, /<span>Total XP<\/span>/);
   assert.equal((hub.match(/className=\{styles\.overviewStat\}/g) || []).length, 3);

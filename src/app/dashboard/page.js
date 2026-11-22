@@ -169,7 +169,7 @@ export default function DashboardPage() {
         ) {
           throw new Error(
             workshopResult.message ||
-              "Could not load workshops."
+              "Could not load experiences."
           );
         }
 
@@ -291,7 +291,7 @@ export default function DashboardPage() {
         </h2>
 
         <p>
-          Loading your workshops,
+          Loading your experiences,
           XP and badges.
         </p>
       </main>
@@ -382,7 +382,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link href="/workshops">
-              Workshops
+              Experiences
             </Link>
 
             <Link href="/journey">
@@ -442,7 +442,7 @@ export default function DashboardPage() {
             </h1>
 
             <p>
-              Discover workshops. Earn XP. Unlock badges.
+              Discover experiences. Earn XP. Unlock badges.
             </p>
           </div>
 
@@ -552,12 +552,12 @@ export default function DashboardPage() {
         <section className="dashboard-section dashboard-next-adventure">
           <div className="dashboard-section-heading">
             <div>
-              <span>YOUR NEXT WORKSHOP</span>
+              <span>YOUR NEXT EXPERIENCE</span>
               <h2>Next Stop on Your Journey</h2>
             </div>
             {!nextWorkshop && (
               <Link href="/registered-workshops">
-                View My Workshops <ChevronRight size={16} aria-hidden="true" />
+                View My Experiences <ChevronRight size={16} aria-hidden="true" />
               </Link>
             )}
           </div>
@@ -568,10 +568,10 @@ export default function DashboardPage() {
               <div><Rocket size={31} aria-hidden="true" /></div>
               <section>
                 <span>A NEW ADVENTURE AWAITS</span>
-                <h3>Find a workshop you like!</h3>
+                <h3>Find an experience you like!</h3>
                 <p>Try something new. Earn XP. Build your learning journey.</p>
                 <Link href="/workshops">
-                  Explore Workshops <ChevronRight size={16} aria-hidden="true"/>
+                  Explore Experiences <ChevronRight size={16} aria-hidden="true"/>
                 </Link>
               </section>
             </div>
@@ -703,7 +703,7 @@ export default function DashboardPage() {
           />
 
           <span>
-            Workshops
+            Experiences
           </span>
         </Link>
 
@@ -783,7 +783,7 @@ function NextWorkshopCard({
 
         <div className="dashboard-next-actions flex-wrap">
           <Link href="/registered-workshops">
-            My Workshops
+            My Experiences
           </Link>
 
           <Link
@@ -845,7 +845,7 @@ function RecommendedWorkshop({
 
         <div>
           <span>
-            Explore Workshop
+            Explore Experience
           </span>
 
           <ChevronRight

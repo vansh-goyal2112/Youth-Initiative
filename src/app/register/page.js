@@ -475,7 +475,7 @@ export default function RegisterPage() {
                         </Field>
 
                         <p className="auth-helper-text">
-                          Required so we only show workshops available for your grade.
+                          Required so we only show experiences available for your grade.
                         </p>
                         <ErrorMessage name="schoolGrade" component="p" className="auth-error-message" />
                       </div>

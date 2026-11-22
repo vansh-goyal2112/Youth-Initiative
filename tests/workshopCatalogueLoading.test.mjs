@@ -57,7 +57,7 @@ test("Workshops page defers request until verified auth, prevents stale writes, 
   assert.match(page, /if \(!Array\.isArray\(data\?\.workshops\)\)/);
   assert.match(page, /if \(viewState !== "ready"\)/);
   assert.ok(page.indexOf('if (viewState !== "ready")') < page.indexOf("<strong>{filteredWorkshops.length}</strong>"));
-  assert.match(page, /Log in to view workshops/);
+  assert.match(page, /Log in to view experiences/);
   assert.match(page, /href="\/login"/);
   assert.match(page, /Add your school grade/);
   assert.match(page, /href="\/edit-profile"/);

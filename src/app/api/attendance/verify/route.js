@@ -228,7 +228,7 @@ export async function POST(request) {
           success: false,
 
           message:
-            "You are not registered for this workshop.",
+            "You are not registered for this experience.",
         },
         {
           status: 403,
@@ -269,7 +269,7 @@ export async function POST(request) {
           success: false,
 
           message:
-            "Workshop could not be found.",
+            "Experience could not be found.",
         },
         {
           status: 404,

@@ -23,7 +23,7 @@ export async function POST(request) {
 
     if (!isValidQuestId(questId)) {
       return Response.json(
-        { success: false, message: "Choose a valid workshop interest." },
+        { success: false, message: "Choose a valid experience interest." },
         { status: 400 }
       );
     }
@@ -58,7 +58,7 @@ export async function POST(request) {
     return Response.json({
       success: true,
       activeQuestId: questId,
-      message: "Saved! Your workshop interests are updated.",
+      message: "Saved! Your experience interests are updated.",
     });
   } catch (error) {
     const accessResponse = studentAccessResponse(error);

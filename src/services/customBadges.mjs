@@ -6,11 +6,11 @@ const MATCH_RULES = new Set(["sessions_topic", "sessions_program_area", "session
 const TYPES = new Set(["sessions_any", "distinct_categories", ...MATCH_RULES]);
 
 export const BUILT_IN_BADGES = [
-  ["first-step", "First Step", "Complete your first workshop.", "sessions_any", 1],
-  ["tech-explorer", "Tech Explorer", "Complete a Technology workshop.", "sessions_category", 1, "Technology"],
-  ["skill-builder", "Skill Builder", "Complete 3 workshops.", "sessions_any", 3],
+  ["first-step", "First Step", "Complete your first experience.", "sessions_any", 1],
+  ["tech-explorer", "Tech Explorer", "Complete a Technology experience.", "sessions_category", 1, "Technology"],
+  ["skill-builder", "Skill Builder", "Complete 3 experiences.", "sessions_any", 3],
   ["curious-learner", "Curious Learner", "Explore 3 different skill areas.", "distinct_categories", 3],
-  ["workshop-champion", "Workshop Champion", "Complete 5 workshops.", "sessions_any", 5],
+  ["workshop-champion", "Workshop Champion", "Complete 5 experiences.", "sessions_any", 5],
 ].map(([badgeId, name, description, type, minCount, matchValue = ""]) => ({
   id: "badge-def:" + badgeId, badgeId, name, description,
   status: "active", artworkUrl: "", rule: { type, minCount, matchValue },
@@ -48,7 +48,7 @@ export function validateBadgeDefinition(input) {
     throw new Error("Badge rule must specify a valid condition and a target of 1–50 completed sessions.");
   }
   if (MATCH_RULES.has(type) && (matchValue.length < 2 || matchValue.length > 80)) {
-    throw new Error("Enter a category, program area or workshop topic for the badge rule.");
+    throw new Error("Enter a category, program area or experience topic for the badge rule.");
   }
   const status = input.status || "active";
   if (!["active", "archived"].includes(status)) throw new Error("Badge status is invalid.");

@@ -99,7 +99,7 @@ export async function GET(request) {
     }
 
     console.error(
-      "Load workshops error:",
+      "Load experiences error:",
       error?.message
     );
 
@@ -108,7 +108,7 @@ export async function GET(request) {
         success: false,
 
         message:
-          "Workshops could not be loaded.",
+          "Experiences could not be loaded.",
       },
       {
         status: 500,

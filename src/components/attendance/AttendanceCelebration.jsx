@@ -10,7 +10,7 @@ export default function AttendanceCelebration({ result, onClose }) {
   const titleRef = useRef(null);
   const reward = result?.reward;
   const { xpEarned: earnedXp, confirmedReward, newBadges: badges } = attendanceCelebrationDetails(result);
-  const title = result?.workshop?.title || "your workshop";
+  const title = result?.workshop?.title || "your experience";
 
   useEffect(() => {
     titleRef.current?.focus();
@@ -84,7 +84,7 @@ export default function AttendanceCelebration({ result, onClose }) {
                 ))}
               </div>
             ) : (
-              <p className={styles.encouragement}>Every workshop moves your learning journey forward!</p>
+              <p className={styles.encouragement}>Every experience moves your learning journey forward!</p>
             )}
             <div className={styles.stats}>
               <span>Total XP <strong>{reward.totalXp}</strong></span>
@@ -99,7 +99,7 @@ export default function AttendanceCelebration({ result, onClose }) {
         )}
 
         <div className={styles.actions}>
-          <Link href="/completed-workshops" className={styles.primary}>My Completed Workshops</Link>
+          <Link href="/completed-workshops" className={styles.primary}>My Completed Experiences</Link>
           <Link href="/journey" className={styles.secondary}>View My Journey</Link>
         </div>
         <button className={styles.done} type="button" onClick={onClose}>Done</button>

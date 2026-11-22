@@ -10,11 +10,11 @@ const empty = {
   rule: { type: "sessions_any", minCount: 3, matchValue: "" },
 };
 const RULES = [
-  { value: "sessions_any", label: "Any completed workshops or sessions" },
-  { value: "sessions_topic", label: "Workshop topic contains keyword" },
+  { value: "sessions_any", label: "Any completed experiences or sessions" },
+  { value: "sessions_topic", label: "Experience topic contains keyword" },
   { value: "sessions_program_area", label: "Program area matches" },
-  { value: "sessions_category", label: "Workshop category matches" },
-  { value: "distinct_categories", label: "Complete workshops in different categories" },
+  { value: "sessions_category", label: "Experience category matches" },
+  { value: "distinct_categories", label: "Complete experiences in different categories" },
 ];
 
 export default function AdminBadgesPage() {
@@ -89,9 +89,9 @@ export default function AdminBadgesPage() {
   }
 
   const matchLabel = {
-    sessions_topic: "Workshop topic keyword",
+    sessions_topic: "Experience topic keyword",
     sessions_program_area: "Exact program area",
-    sessions_category: "Exact workshop category",
+    sessions_category: "Exact experience category",
   }[draft.rule.type];
   const currentBadge = badges.find(b=>b.id===selected);
   return (

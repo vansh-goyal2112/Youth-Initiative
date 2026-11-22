@@ -10,7 +10,7 @@ const listingFields = [
 export function checkWorkshopDuplicate(keep, duplicate) {
   if (!keep || !duplicate || !keep.id || keep.id === duplicate.id ||
       keep.duplicateOf || duplicate.duplicateOf || keep.status !== "active" || duplicate.status !== "active") {
-    return "Choose two different active workshop records.";
+    return "Choose two different active experience records.";
   }
   if (workshopTitleGroup(keep) !== workshopTitleGroup(duplicate) ||
       !getWorkshopGradeBounds(keep) || !getWorkshopGradeBounds(duplicate)) {
@@ -20,7 +20,7 @@ export function checkWorkshopDuplicate(keep, duplicate) {
   if (listingFields.some(key => (keep[key] ?? "") !== (duplicate[key] ?? "")) ||
       JSON.stringify(normalizeWorkshopTags(keep.interestTags).sort()) !==
       JSON.stringify(normalizeWorkshopTags(duplicate.interestTags).sort())) {
-    return "The workshop details differ. Review both records before consolidating.";
+    return "The experience details differ. Review both records before consolidating.";
   }
   if (!Number.isSafeInteger(keep.xpReward) || keep.xpReward !== duplicate.xpReward) {
     return "The XP rewards must match before these records can be consolidated.";

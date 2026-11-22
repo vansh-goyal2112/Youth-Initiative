@@ -60,12 +60,12 @@ export async function GET(request) {
       return accessResponse;
     }
 
-    console.error("Workshop recommendations error:", error?.message);
+    console.error("Experience recommendations error:", error?.message);
 
     return Response.json(
       {
         success: false,
-        message: "Workshop recommendations could not be loaded.",
+        message: "Experience recommendations could not be loaded.",
       },
       {
         status: 500,

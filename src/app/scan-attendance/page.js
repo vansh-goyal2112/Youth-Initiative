@@ -79,7 +79,7 @@ export default function ScanAttendancePage() {
     try {
       const payload = JSON.parse(qrText);
       if (!payload?.attendanceSessionId || !payload?.code) {
-        throw new Error("This QR code is not a valid workshop attendance code.");
+        throw new Error("This QR code is not a valid experience attendance code.");
       }
       await verifyAttendance({
         attendanceSessionId: payload.attendanceSessionId,
@@ -130,7 +130,7 @@ export default function ScanAttendancePage() {
     return (
       <main className="attendance-login-required">
         <h1>Login Required</h1>
-        <p>Log in to mark attendance at your workshop.</p>
+        <p>Log in to mark attendance at your experience.</p>
         <Link href="/login">Login</Link>
       </main>
     );
@@ -141,10 +141,10 @@ export default function ScanAttendancePage() {
       <section className="scan-attendance-card">
         <div className="scan-heading">
           <QrCode size={38} />
-          <span>WORKSHOP ATTENDANCE</span>
+          <span>EXPERIENCE ATTENDANCE</span>
           <h1>Scan Attendance</h1>
           <p>{mode === "qr"
-            ? "Scan the QR code shown by your workshop instructor."
+            ? "Scan the QR code shown by your experience instructor."
             : "Enter the four-digit code displayed beneath the instructor's QR code."}</p>
         </div>
 

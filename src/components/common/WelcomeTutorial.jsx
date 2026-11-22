@@ -12,15 +12,15 @@ const CARDS = [
     id: "welcome",
     eyebrow: "WELCOME, EXPLORER",
     heading: "Welcome to My Learning Journey.",
-    text: "Explore SAIT workshops. Earn XP. See what you can learn next.",
+    text: "Explore SAIT experiences. Earn XP. See what you can learn next.",
     Icon: Sparkles,
     color: "rose",
   },
   {
     id: "discover",
     eyebrow: "STEP 1 · EXPLORE",
-    heading: "Find your next workshop.",
-    text: "Browse workshops by program area. Choose one for your grade. Register on the SAIT website.",
+    heading: "Find your next experience.",
+    text: "Browse experiences by program area. Choose one for your grade. Register on the SAIT website.",
     Icon: BookOpen,
     color: "purple",
   },
@@ -36,7 +36,7 @@ const CARDS = [
     id: "xp",
     eyebrow: "STEP 3 · EARN AND GROW",
     heading: "Earn XP, level up, and unlock badges.",
-    text: "Earn XP by completing workshops. Your Lifetime XP sets your level. See your XP and badges in Badges & Rewards.",
+    text: "Earn XP by completing experiences. Your Lifetime XP sets your level. See your XP and badges in Badges & Rewards.",
     Icon: Trophy,
     color: "gold",
   },
@@ -141,7 +141,7 @@ export default function WelcomeTutorial({ user, student }) {
           <div className={styles.controls}>
             {index > 0 && <button type="button" className={styles.back} disabled={saving} onClick={() => setIndex(index - 1)}><ChevronLeft size={17} aria-hidden="true"/> Back</button>}
             {last
-              ? <button type="button" className={styles.next} disabled={saving} onClick={() => finish(true)}><CheckCircle2 size={17} aria-hidden="true"/>{saving ? "Saving…" : "Explore & claim workshops"}</button>
+              ? <button type="button" className={styles.next} disabled={saving} onClick={() => finish(true)}><CheckCircle2 size={17} aria-hidden="true"/>{saving ? "Saving…" : "Explore & claim experiences"}</button>
               : <button type="button" className={styles.next} onClick={() => setIndex(index + 1)}>Next <ChevronRight size={17} aria-hidden="true"/></button>}
           </div>
         </div>

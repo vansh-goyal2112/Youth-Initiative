@@ -63,13 +63,13 @@ export default function WorkshopDuplicates({ workshops, onConsolidated }) {
   );
 
   return <details className="mb-5 rounded-xl border border-slate-200 bg-white p-4">
-    <summary className="cursor-pointer text-sm font-semibold">Review duplicate workshop titles</summary>
+    <summary className="cursor-pointer text-sm font-semibold">Review duplicate experience titles</summary>
     {groups.length === 0 ? <p className="mt-3 text-sm">No matching active titles found.</p> :
       <form onSubmit={review} className="mt-4 grid gap-3">
-        <label className="grid gap-1 text-sm">Workshop to keep
+        <label className="grid gap-1 text-sm">Experience to keep
           <select className="rounded border border-slate-300 p-2" value={keepId} required disabled={busy}
             onChange={event => { setKeepId(event.target.value); setDuplicateId(""); setPreview(null); setError(""); }}>
-            <option value="">Select a workshop</option>
+            <option value="">Select an experience</option>
             {groups.flat().map(option)}
           </select>
         </label>
@@ -80,7 +80,7 @@ export default function WorkshopDuplicates({ workshops, onConsolidated }) {
             {matches.filter(workshop => workshop.id !== keepId).map(option)}
           </select>
         </label>
-        {preview && <p role="status" className="text-sm">Keep <strong>{preview.keepTitle}</strong> active and mark <strong>{preview.duplicateTitle}</strong> inactive. You can restore the duplicate from the workshop editor.</p>}
+        {preview && <p role="status" className="text-sm">Keep <strong>{preview.keepTitle}</strong> active and mark <strong>{preview.duplicateTitle}</strong> inactive. You can restore the duplicate from the experience editor.</p>}
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
         <button className="admin-team-refresh justify-self-start" disabled={busy || !duplicateId} type="submit">
           {busy ? "Checking…" : preview ? "Confirm consolidation" : "Check selected records"}

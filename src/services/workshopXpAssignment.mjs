@@ -4,7 +4,7 @@ export const WORKSHOP_XP_OPTIONS = Object.freeze([50, 75, 100, 125, 150, 175, 20
 
 export function automaticWorkshopXp(workshopId) {
   const input = String(workshopId || "");
-  if (!input) throw new Error("Workshop ID is required to assign XP.");
+  if (!input) throw new Error("Experience ID is required to assign XP.");
   let hash = 2166136261;
   for (let i = 0; i < input.length; i += 1) {
     hash ^= input.charCodeAt(i);

@@ -77,7 +77,7 @@ export default function WorkshopCard({ workshop }) {
         <div className="workshop-card-footer">
           <span className="workshop-card-reward">
             {xpReward === null ? <strong>XP not set</strong> : registrationClosed
-              ? <>Workshop reward: <strong>{xpReward} XP</strong></>
+              ? <>Experience reward: <strong>{xpReward} XP</strong></>
               : <>Earn <strong>{xpReward} XP</strong></>}
             <small className="workshop-program-area"><BookOpen size={13} aria-hidden="true" /> {workshop.programArea || "Program area not listed"}</small>
           </span>

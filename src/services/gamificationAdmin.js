@@ -515,6 +515,6 @@ export async function processWorkshopCompletion({
   }
 
   throw new Error(
-    "Workshop reward could not be processed because the student profile was updated concurrently."
+    "Experience reward could not be processed because the student profile was updated concurrently."
   );
 }

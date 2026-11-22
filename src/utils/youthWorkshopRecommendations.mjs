@@ -25,7 +25,7 @@ export function recommendYouthWorkshops({workshops=[],registrations=[],student={
     const upcoming=days!==null&&days>=0&&days<=14;
     const score=matched.length*35+(categoryMatch?25:0)+(modeMatch?15:0)+(upcoming?10:0);
     const reasons=[...matched.slice(0,2).map(i=>"Matches your interest: "+i)];
-    if(categoryMatch)reasons.push("Builds on workshops you've completed");
+    if(categoryMatch)reasons.push("Builds on experiences you've completed");
     if(modeMatch&&mode)reasons.push("Fits your learning preference");
     if(upcoming)reasons.push("Starting soon");
     return {...w,recommendationScore:score,recommendationReasons:reasons};

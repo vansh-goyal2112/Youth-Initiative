@@ -91,7 +91,7 @@ export default function RegisteredWorkshopsPage() {
         if (!cancelled) {
           setErrorMessage(
             error.message ||
-              "Registered workshops could not be loaded."
+              "Registered experiences could not be loaded."
           );
         }
       } finally {
@@ -151,7 +151,7 @@ export default function RegisteredWorkshopsPage() {
 
         <p>
           Log in to view your registered
-          workshops.
+          experiences.
         </p>
 
         <Link href="/login">
@@ -184,7 +184,7 @@ export default function RegisteredWorkshopsPage() {
               href="/workshops"
               className="active"
             >
-              Workshops
+              Experiences
             </Link>
 
             <Link href="/journey">
@@ -209,11 +209,11 @@ export default function RegisteredWorkshopsPage() {
           </span>
 
           <h1>
-            Upcoming Workshops
+            Upcoming Experiences
           </h1>
 
           <p>
-            See your workshops here. Scan the QR code when you attend.
+            See your experiences here. Scan the QR code when you attend.
           </p>
         </div>
       </section>
@@ -237,7 +237,7 @@ export default function RegisteredWorkshopsPage() {
 
           <input
             type="search"
-            placeholder="Search registered workshops..."
+            placeholder="Search registered experiences..."
             value={searchText}
             onChange={(event) =>
               setSearchText(
@@ -255,7 +255,7 @@ export default function RegisteredWorkshopsPage() {
             />
 
             <p>
-              Loading upcoming workshops...
+              Loading upcoming experiences...
             </p>
           </div>
         ) : errorMessage ? (
@@ -268,15 +268,15 @@ export default function RegisteredWorkshopsPage() {
             <BookOpen size={50} />
 
             <h2>
-              No Upcoming Workshops
+              No Upcoming Experiences
             </h2>
 
             <p>
-              Explore workshops. Find one you like.
+              Explore experiences. Find one you like.
             </p>
 
             <Link href="/workshops">
-              Explore Workshops
+              Explore Experiences
             </Link>
           </div>
         ) : (
@@ -306,7 +306,7 @@ export default function RegisteredWorkshopsPage() {
           className="active"
         >
           <BookOpen size={20} />
-          <span>Workshops</span>
+          <span>Experiences</span>
         </Link>
 
         <Link href="/journey">

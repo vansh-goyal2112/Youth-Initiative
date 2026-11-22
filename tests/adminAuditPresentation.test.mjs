@@ -39,7 +39,7 @@ test("confirmed mutations expose safe change details and partial results stay re
     { id: "xp", action: "xp.grant", outcome: "review" },
     { id: "repeat", action: "xp.redeem", outcome: "unchanged" },
   ], [], 10);
-  assert.equal(output[0].actionLabel, "Updated workshop: Intro to Robotics");
+  assert.equal(output[0].actionLabel, "Updated experience: Intro to Robotics");
   assert.deepEqual(output[0].details, ["XP reward changed from 100 to 175"]);
   assert.deepEqual(output.slice(1).map(({ outcome }) => outcome), ["review", "unchanged"]);
 });

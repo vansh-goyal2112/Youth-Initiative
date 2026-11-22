@@ -50,7 +50,7 @@ test("Closed cards show full configured reward as reference, half-XP past claim,
   const card = source("../src/components/workshops/WorkshopCard.js");
   assert.match(card, /registrationClosed && xpReward !== null/);
   assert.match(card, /awardForCompletion\(\{ xpReward \}, "self_reported"\)/);
-  assert.match(card, /Workshop reward: <strong>\{xpReward\} XP/);
+  assert.match(card, /Experience reward: <strong>\{xpReward\} XP/);
   assert.match(card, /Earn <strong>\{xpReward\} XP/);
   assert.match(card, /Claim \$\{pastAttendanceXp\} XP \(half reward\)/);
   assert.match(card, /completed-workshops\?workshop=/);

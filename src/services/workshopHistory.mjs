@@ -1,7 +1,7 @@
 // Immutable learning-history data detached from the catalogue document.
 export function workshopCompletionSnapshot(workshop, registration, transaction) {
   if (!workshop?.id || !registration?.id || registration.status !== "completed") {
-    throw new Error("A completed registration and matching workshop are required.");
+    throw new Error("A completed registration and matching experience are required.");
   }
   if (registration.workshopId !== workshop.id) {
     throw new Error("Workshop/registration mismatch.");

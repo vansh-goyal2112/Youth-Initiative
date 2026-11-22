@@ -11,10 +11,10 @@ import { adminWorkspaces } from "@/components/admin/adminWorkspaces";
 
 const shortcuts = [
   { ...adminWorkspaces.redeem, detail: "Find a student and record an event reward.", tint: "amber" },
-  { ...adminWorkspaces.attendance, detail: "Launch workshop check-ins and manage QR sessions.", tint: "violet" },
-  { ...adminWorkspaces.claims, detail: "Review student-reported workshop completions.", tint: "emerald" },
+  { ...adminWorkspaces.attendance, detail: "Launch experience check-ins and manage QR sessions.", tint: "violet" },
+  { ...adminWorkspaces.claims, detail: "Review student-reported experience completions.", tint: "emerald" },
   { ...adminWorkspaces.students, detail: "Find profiles and manage student access.", tint: "blue" },
-  { ...adminWorkspaces.workshops, detail: "Manage workshops, publish sessions and import programs.", tint: "rose" },
+  { ...adminWorkspaces.workshops, detail: "Manage experiences, publish sessions and import programs.", tint: "rose" },
   { ...adminWorkspaces.badges, detail: "Manage the badges students can earn.", tint: "violet" },
 ];
 
@@ -149,8 +149,8 @@ export default function AdminDashboardPage() {
     <section className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4" aria-label="Program metrics">
       <Metric label="Student profiles" value={metrics.students} icon={Users} theme="blue" loading={loading} description="Total profiles in the directory"/>
       <Metric label="Active students" value={metrics.active} icon={UserRoundCheck} theme="emerald" loading={loading} description="Student accounts currently enabled"/>
-      <Metric label="Workshops" value={metrics.workshops} icon={GraduationCap} theme="violet" loading={loading} description="Experiences in the program catalog"/>
-      <Metric label="Active workshops" value={metrics.activeWorkshops} icon={ClipboardList} theme="amber" loading={loading} description="Currently published workshop records"/>
+      <Metric label="Experiences" value={metrics.workshops} icon={GraduationCap} theme="violet" loading={loading} description="Experiences in the program catalog"/>
+      <Metric label="Active experiences" value={metrics.activeWorkshops} icon={ClipboardList} theme="amber" loading={loading} description="Currently published experience records"/>
     </section>
     <p className="mt-3 text-xs text-slate-500">A dash means information is unavailable or your role does not have access.</p>
 

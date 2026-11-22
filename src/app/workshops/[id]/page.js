@@ -51,7 +51,7 @@ export default function WorkshopDetailsPage() {
       } catch (error) {
         setErrorMessage(
           error.message ||
-            "Workshop details could not be loaded."
+            "Experience details could not be loaded."
         );
       } finally {
         setLoading(false);
@@ -70,7 +70,7 @@ export default function WorkshopDetailsPage() {
           size={38}
           className="button-spinner"
         />
-        <p>Loading workshop...</p>
+        <p>Loading experience...</p>
       </main>
     );
   }
@@ -80,7 +80,7 @@ export default function WorkshopDetailsPage() {
       <main className="workshop-details-status">
         <BookOpen size={48} />
 
-        <h1>Workshop unavailable</h1>
+        <h1>Experience unavailable</h1>
         <p>{errorMessage}</p>
 
 
@@ -153,7 +153,7 @@ export default function WorkshopDetailsPage() {
                 <strong>Eligibility not confirmed</strong>
                 <p>
                   {workshop.eligibilityMessage} Add your current grade to
-                  your profile if this workshop lists a grade requirement,
+                  your profile if this experience lists a grade requirement,
                   and check the official SAIT page before registering.
                 </p>
               </div>
@@ -192,7 +192,7 @@ export default function WorkshopDetailsPage() {
                 rel="noreferrer"
                 className="official-workshop-link"
               >
-                View Official Workshop Information
+                View Official Experience Information
                 <ExternalLink size={17} />
               </a>
             )}
@@ -204,7 +204,7 @@ export default function WorkshopDetailsPage() {
             <Star size={25} />
 
             <div>
-              <span>Workshop Reward</span>
+              <span>Experience Reward</span>
               <strong>
                 {xpReward === null ? "XP not set" : `+${xpReward} XP`}
               </strong>
@@ -215,7 +215,7 @@ export default function WorkshopDetailsPage() {
             <>
               <h2>Registration closed</h2>
               <p>
-                New registrations are unavailable. If you attended this workshop
+                New registrations are unavailable. If you attended this experience
                 previously, use Previously Completed below to claim half XP.
                 SAIT staff may review your claim.
               </p>
@@ -282,7 +282,7 @@ export default function WorkshopDetailsPage() {
             </>
           )}
           <div className="mt-6 border-t border-slate-200 pt-5">
-            <h2 className="mb-2 text-base font-extrabold text-slate-900">Already attended this workshop?</h2>
+            <h2 className="mb-2 text-base font-extrabold text-slate-900">Already attended this experience?</h2>
             <p className="mb-3 text-sm leading-relaxed text-slate-600">
               Attended before? Claim half XP. SAIT staff may review your claim.
             </p>

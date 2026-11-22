@@ -226,7 +226,7 @@ export default function ProfilePage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href="/registered-workshops" className={styles.editButton}>
-              <BookOpen size={17} aria-hidden="true"/> My Workshops
+              <BookOpen size={17} aria-hidden="true"/> My Experiences
             </Link>
             <Link href="/edit-profile" className={styles.editButton}>
               <Edit3 size={17} aria-hidden="true"/> Edit My Identity
@@ -271,7 +271,7 @@ export default function ProfilePage() {
           <StatTile Icon={Zap} count={progress.totalXp} label="Total XP" className={styles.tileGold}/>
           <StatTile Icon={Star} count={progress.level} label="Explorer Level" className={styles.tilePurple}/>
           <StatTile Icon={Award} count={progress.badges} label="Badges Earned" className={styles.tilePink}/>
-          <StatTile Icon={BookOpen} count={progress.completed} label="Workshops Completed" className={styles.tileMint}/>
+          <StatTile Icon={BookOpen} count={progress.completed} label="Experiences Completed" className={styles.tileMint}/>
         </div>
 
         <section className={styles.progressCard} aria-labelledby="level-heading">
@@ -284,7 +284,7 @@ export default function ProfilePage() {
             <div className={styles.progressTrack} role="progressbar" aria-label="Progress to next explorer level" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.progressPercentage}>
               <span style={{width: `${progress.progressPercentage}%`}}/>
             </div>
-            <p>{xpToGo == null ? "You reached the highest level. Great work!" : "Attend workshops. Earn XP. Reach your next level."}</p>
+            <p>{xpToGo == null ? "You reached the highest level. Great work!" : "Attend experiences. Earn XP. Reach your next level."}</p>
           </div>
           <Link href="/journey" className={styles.progressLink}>View Map <ArrowRight size={16} aria-hidden="true"/></Link>
         </section>
@@ -317,7 +317,7 @@ export default function ProfilePage() {
               <div><span>MY SKILL UNIVERSE</span><h2 id="interests-heading">Things I Love Exploring</h2></div>
               <Link href="/edit-profile" className={styles.miniEdit} aria-label="Edit interests"><Edit3 size={16} aria-hidden="true"/> Edit</Link>
             </div>
-            <p className={styles.panelLead}>Choose the worlds you want to explore. Your interests help you discover workshops and future pathways.</p>
+            <p className={styles.panelLead}>Choose the worlds you want to explore. Your interests help you discover experiences and future pathways.</p>
             {interests.length ? (
               <div className={styles.interestGrid}>
                 {interests.map((interest) => (
@@ -331,7 +331,7 @@ export default function ProfilePage() {
               <div className={styles.emptyInterests}>
                 <span aria-hidden="true">🪐</span>
                 <strong>Your Skill Universe is waiting!</strong>
-                <p>Pick up to five interests. We&apos;ll find workshops for you.</p>
+                <p>Pick up to five interests. We&apos;ll find experiences for you.</p>
                 <Link href="/edit-profile">Choose Interests <ArrowRight size={16} aria-hidden="true"/></Link>
               </div>
             )}
@@ -345,7 +345,7 @@ export default function ProfilePage() {
         <section className={styles.adventureSection} aria-labelledby="continue-heading">
           <div className={styles.adventureHeading}>
             <div><span><Sparkles size={16} aria-hidden="true"/> KEEP EXPLORING</span><h2 id="continue-heading">Where will your next adventure take you?</h2></div>
-            <p>Try a workshop. Earn a badge. Discover something new.</p>
+            <p>Try an experience. Earn a badge. Discover something new.</p>
           </div>
           <div className={styles.actionGrid}>
             <Link href="/journey" className={styles.actionCard}>
@@ -374,7 +374,7 @@ export default function ProfilePage() {
         </section>
 
         <div className={styles.bottomActions}>
-          <Link href="/workshops" className={styles.exploreLink}><Sparkles size={18} aria-hidden="true"/> Explore New Workshops <ArrowRight size={17} aria-hidden="true"/></Link>
+          <Link href="/workshops" className={styles.exploreLink}><Sparkles size={18} aria-hidden="true"/> Explore New Experiences <ArrowRight size={17} aria-hidden="true"/></Link>
           <button type="button" className={styles.editButton} onClick={() => window.dispatchEvent(new Event("student-tutorial-replay"))}>
             <Sparkles size={17} aria-hidden="true"/> Replay Welcome Tutorial
           </button>

@@ -158,7 +158,7 @@ export async function POST(request) {
             false,
 
           message:
-            "Workshop ID is required.",
+            "Experience ID is required.",
         },
         {
           status:
@@ -184,7 +184,7 @@ export async function POST(request) {
             false,
 
           message:
-            "This workshop is unavailable.",
+            "This experience is unavailable.",
         },
         {
           status:
@@ -197,7 +197,7 @@ export async function POST(request) {
       return Response.json(
         {
           success: false,
-          message: "SAIT currently lists registration for this workshop as closed.",
+          message: "SAIT currently lists registration for this experience as closed.",
         },
         {
           status: 409,
@@ -207,7 +207,7 @@ export async function POST(request) {
 
     if (!matchesStudentGrade(workshop, student.schoolGrade)) {
       return Response.json({ success: false,
-        message: "This workshop is not available for your current school grade.",
+        message: "This experience is not available for your current school grade.",
       }, { status: 403 });
     }
 
@@ -232,10 +232,10 @@ export async function POST(request) {
     let selectedSession = null;
     if (Array.isArray(workshop.sessions) && workshop.sessions.length > 0) {
       selectedSession = workshop.sessions.find(item => item.id === requestedSessionId && item.status === "active");
-      if (!selectedSession) return Response.json({ success: false, message: "Choose an active workshop session date before confirming registration." }, { status: 400 });
+      if (!selectedSession) return Response.json({ success: false, message: "Choose an active experience session date before confirming registration." }, { status: 400 });
       sessionId = selectedSession.id;
     } else if (requestedSessionId && requestedSessionId !== "legacy") {
-      return Response.json({ success: false, message: "This workshop has no matching session date." }, { status: 400 });
+      return Response.json({ success: false, message: "This experience has no matching session date." }, { status: 400 });
     }
 
     const existingRegistrations =
@@ -280,7 +280,7 @@ export async function POST(request) {
             existingRegistration.id,
 
           message:
-            "This workshop is already in your registered workshops.",
+            "This experience is already in your registered experiences.",
         },
         {
           status:
@@ -353,7 +353,7 @@ export async function POST(request) {
         registrationId,
 
         message:
-          "Workshop added to your upcoming workshops.",
+          "Experience added to your upcoming experiences.",
       },
       {
         status:

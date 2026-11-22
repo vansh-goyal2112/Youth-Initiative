@@ -95,7 +95,7 @@ export async function POST(request) {
             results.push({
               workshopId,
               status: "pending",
-              message: "Workshop record not found.",
+              message: "Experience record not found.",
             });
             continue;
           }
@@ -154,7 +154,7 @@ export async function POST(request) {
         results.push({ workshopId, status: "complete" });
       } catch (error) {
         console.error(
-          "Reward recovery failed for a verified workshop:",
+          "Reward recovery failed for a verified experience:",
           workshopId,
           error
         );

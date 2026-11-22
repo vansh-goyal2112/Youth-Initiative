@@ -70,7 +70,7 @@ export default function JourneyPage() {
           const result = await response.json();
           if (cancelled) return;
           setRewardStatus(result.pendingCount > 0
-            ? "Some workshop rewards are still processing. Your verified attendance is safe."
+            ? "Some experience rewards are still processing. Your verified attendance is safe."
             : "");
           await initialProgressSettled;
           if (cancelled) return;
@@ -222,9 +222,9 @@ export default function JourneyPage() {
           <div className="dashboard-section-heading">
             <div>
               <span>RECOMMENDED FOR YOU</span>
-              <h2 id="journey-recommended-heading">Recommended workshops</h2>
+              <h2 id="journey-recommended-heading">Recommended experiences</h2>
             </div>
-            <Link href="/workshops">Browse all workshops <ChevronRight size={16} aria-hidden="true" /></Link>
+            <Link href="/workshops">Browse all experiences <ChevronRight size={16} aria-hidden="true" /></Link>
           </div>
           {recommendedWorkshops.length > 0 ? (
             <div className="dashboard-recommendation-grid">
@@ -238,7 +238,7 @@ export default function JourneyPage() {
                   <div className="dashboard-recommendation-content">
                     <small>{workshop.category || workshop.programArea || "SAIT Youth"}</small>
                     <h3>{workshop.title}</h3>
-                    <div><span>Explore workshop</span><ChevronRight size={17} /></div>
+                    <div><span>Explore experience</span><ChevronRight size={17} /></div>
                   </div>
                 </Link>
               ))}
@@ -246,9 +246,9 @@ export default function JourneyPage() {
           ) : (
             <div className="game-empty-card">
               <Compass size={36} />
-              <h3>Discover your next workshop</h3>
+              <h3>Discover your next experience</h3>
               <p>Explore the catalogue for opportunities that match your school grade.</p>
-              <Link href="/workshops">Explore workshops</Link>
+              <Link href="/workshops">Explore experiences</Link>
             </div>
           )}
         </section>
@@ -294,7 +294,7 @@ export default function JourneyPage() {
             <div className="game-empty-card">
               <GraduationCap size={36} />
               <h3>Your future pathways are growing</h3>
-              <p>Complete workshops to help discover SAIT programs aligned with your interests.</p>
+              <p>Complete experiences to help discover SAIT programs aligned with your interests.</p>
             </div>
           )}
         </section>
@@ -307,7 +307,7 @@ export default function JourneyPage() {
                 <span>COMING UP</span>
                 <h2 id="journey-upcoming-heading">Upcoming at SAIT</h2>
               </div>
-              <p>Active workshop sessions, starting with the soonest.</p>
+              <p>Active experience sessions, starting with the soonest.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">
               {upcomingSessions.map(workshop => (
@@ -328,7 +328,7 @@ export default function JourneyPage() {
                   </div>
                   <Link className="inline-flex min-h-11 items-center justify-center rounded-xl bg-rose-700 px-4 py-2 font-bold text-sm text-white hover:bg-rose-800"
                     href={`/workshops/${encodeURIComponent(workshop.id)}`}>
-                    {registeredWorkshopIds.has(workshop.id) ? "View registered workshop" : "View workshop & sessions"}
+                    {registeredWorkshopIds.has(workshop.id) ? "View registered experience" : "View experience & sessions"}
                     <ChevronRight size={16} aria-hidden="true" />
                   </Link>
                 </article>
@@ -354,7 +354,7 @@ export default function JourneyPage() {
 
       <nav className="student-bottom-navigation">
         <Link href="/dashboard"><Home size={20} /><span>Home</span></Link>
-        <Link href="/workshops"><BookOpen size={20} /><span>Workshops</span></Link>
+        <Link href="/workshops"><BookOpen size={20} /><span>Experiences</span></Link>
         <Link href="/journey" className="active"><Map size={20} /><span>Journey</span></Link>
         <Link href="/badges"><Trophy size={20} /><span>Badges</span></Link>
         <Link href="/profile"><UserRound size={20} /><span>Profile</span></Link>

@@ -5,7 +5,7 @@ const guides = {
     steps: [
       { text: "Check Needs attention for items waiting on staff. Select a count to open the right page." },
       { text: "Use Everyday shortcuts to open the tools available to your role." },
-      { text: "Look at At a glance for the current student and workshop totals." },
+      { text: "Look at At a glance for the current student and experience totals." },
     ],
     tip: "A dash means the count is unavailable or you do not have access to it.",
   },
@@ -23,10 +23,10 @@ const guides = {
   "/admin/reports": {
     title: "Student reports",
     permission: "reports.generate",
-    intro: "See one student's workshop history, badges and progress.",
+    intro: "See one student's experience history, badges and progress.",
     steps: [
       { text: "Search by student name, email or Youth ID. Check the birth date and choose Generate report on the matching student." },
-      { text: "Check the name and review the workshop history before sharing the report." },
+      { text: "Check the name and review the experience history before sharing the report." },
       { permission: "reports.export", text: "Choose Export CSV if you need a spreadsheet copy." },
     ],
     tip: "Keep student reports in approved staff channels.",
@@ -34,29 +34,29 @@ const guides = {
   "/admin/completions": {
     title: "Review claims",
     permission: "completion.review",
-    intro: "Review workshop attendance that students reported themselves.",
+    intro: "Review experience attendance that students reported themselves.",
     steps: [
-      { text: "Open Pending review and search by the student or workshop name." },
-      { text: "Check the workshop and date. Approve the claim if it is correct." },
+      { text: "Open Pending review and search by the student or experience name." },
+      { text: "Check the experience and date. Approve the claim if it is correct." },
       { permission: "completion.reverse", text: "If a claim is wrong, select Reverse, explain why, and confirm." },
     ],
     tip: "Students receive half XP when they report attendance. Approval does not award it again.",
   },
   "/admin/workshops": {
-    title: "Workshop studio",
+    title: "Experience studio",
     permission: "workshops.view",
-    intro: "Find workshops and check which sessions are available to students.",
+    intro: "Find experiences and check which sessions are available to students.",
     steps: [
-      { text: "Search the workshop list and open the record you want to review." },
-      { permission: "workshops.create", text: "To add a workshop, choose Create workshop and fill in the program details." },
-      { permission: "workshops.edit", text: "Open the workshop editor to update the description, image or grade range. Use the session controls to add or update workshop dates." },
+      { text: "Search the experience list and open the record you want to review." },
+      { permission: "workshops.create", text: "To add an experience, choose Create experience and fill in the program details." },
+      { permission: "workshops.edit", text: "Open the experience editor to update the description, image or grade range. Use the session controls to add or update experience dates." },
     ],
-    tip: "Active, open workshops can appear in student recommendations the next time students load Home or Journey. Check the grade range, date and registration link, and add accurate interest tags. Future SAIT pathways use a separate catalogue refreshed by the Ingest SAIT programs and workshops workflow in GitHub Actions.",
+    tip: "Active, open experiences can appear in student recommendations the next time students load Home or Journey. Check the grade range, date and registration link, and add accurate interest tags. Future SAIT pathways use a separate catalogue refreshed by the Ingest SAIT programs and experiences workflow in GitHub Actions.",
   },
   "/admin/badges": {
     title: "Badges",
     permission: "badges.manage",
-    intro: "Set up badges students can earn by completing workshops.",
+    intro: "Set up badges students can earn by completing experiences.",
     steps: [
       { text: "Choose a badge in the catalogue to edit it, or start a new badge." },
       { text: "Add a name, description and artwork, then set the earning rules." },
@@ -67,19 +67,19 @@ const guides = {
   "/admin/engagement": {
     title: "Engagement insights",
     permission: "attendance.view",
-    intro: "See which workshops students attended and compare participation over time.",
+    intro: "See which experiences students attended and compare participation over time.",
     steps: [
       { text: "Choose the time period you want to review." },
-      { text: "Look at Most attended workshops and use the details below for individual workshop totals." },
+      { text: "Look at Most attended experiences and use the details below for individual experience totals." },
     ],
     tip: "The totals count verified check-ins. A registration alone does not count as attendance.",
   },
   "/admin/attendance": {
     title: "Attendance",
     permission: "attendance.manage",
-    intro: "Check students in when they arrive for a workshop.",
+    intro: "Check students in when they arrive for an experience.",
     steps: [
-      { text: "Select the workshop and its session, then choose Generate check-in QR." },
+      { text: "Select the experience and its session, then choose Generate check-in QR." },
       { text: "Show the QR code. Students can scan it or enter the four-digit code in their app." },
     ],
     tip: "The code expires. Generate a new one if students still need to check in.",
@@ -155,7 +155,7 @@ export function getAdminGuide(path, role, permissions) {
     return {
       ...guide,
       steps: [
-        { text: "Ask the workshop coordinator to start the check-in and show you the QR code." },
+        { text: "Ask the experience coordinator to start the check-in and show you the QR code." },
         { text: "Help students scan the QR code or enter the four-digit code in their app." },
       ],
       tip: "Ask the coordinator for a new code if the current one expires.",

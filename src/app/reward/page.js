@@ -74,7 +74,7 @@ export default function RewardPage() {
           </h1>
 
           <Link href="/workshops">
-            Explore Workshops
+            Explore Experiences
           </Link>
         </section>
       </main>
@@ -100,7 +100,7 @@ export default function RewardPage() {
         </div>
 
         <span className="reward-label">
-          WORKSHOP COMPLETED
+          EXPERIENCE COMPLETED
         </span>
 
         <h1>
@@ -208,7 +208,7 @@ export default function RewardPage() {
 
         <div className="reward-actions">
           <Link href="/completed-workshops">
-            View Completed Workshops
+            View Completed Experiences
           </Link>
 
           <Link href="/journey">

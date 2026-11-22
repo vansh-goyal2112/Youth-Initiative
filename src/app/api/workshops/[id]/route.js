@@ -33,7 +33,7 @@ export async function GET(
       await context.params;
 
     if (!student.schoolGrade) {
-      return Response.json({ success: false, message: "Add your school grade in My Identity to explore workshops." }, { status: 409 });
+      return Response.json({ success: false, message: "Add your school grade in My Identity to explore experiences." }, { status: 409 });
     }
 
     if (
@@ -45,7 +45,7 @@ export async function GET(
           success: false,
 
           message:
-            "Workshop ID is required.",
+            "Experience ID is required.",
         },
         {
           status: 400,
@@ -66,7 +66,7 @@ export async function GET(
           success: false,
 
           message:
-            "Workshop not found.",
+            "Experience not found.",
         },
         {
           status: 404,
@@ -83,7 +83,7 @@ export async function GET(
           success: false,
 
           message:
-            "This workshop is currently unavailable.",
+            "This experience is currently unavailable.",
         },
         {
           status: 404,
@@ -94,7 +94,7 @@ export async function GET(
     const normalizedWorkshop = normalizeWorkshopGrades(workshop);
     if (!matchesStudentGrade(normalizedWorkshop, student.schoolGrade)) {
       return Response.json({ success: false,
-        message: "This workshop is not available for your current school grade.",
+        message: "This experience is not available for your current school grade.",
       }, { status: 403 });
     }
     const eligibility = getWorkshopEligibility(
@@ -137,7 +137,7 @@ export async function GET(
     }
 
     console.error(
-      "Load workshop details error:",
+      "Load experience details error:",
       error?.message
     );
 
@@ -146,7 +146,7 @@ export async function GET(
         success: false,
 
         message:
-          "Workshop details could not be loaded.",
+          "Experience details could not be loaded.",
       },
       {
         status: 500,

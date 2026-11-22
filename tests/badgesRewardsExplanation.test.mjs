@@ -21,7 +21,7 @@ test("spendable XP uses the current balance, while Lifetime XP sets the level", 
   assert.match(page, /XP available to spend at SAIT events/);
   assert.match(page, /XP available to spend decreases when staff redeem rewards/);
   assert.match(page, /Lifetime XP tracks the XP you have earned and determines your level; redeeming rewards never reduces it/);
-  assert.match(page, /If an incorrect workshop completion is reversed, staff may correct your earned XP/);
+  assert.match(page, /If an incorrect experience completion is reversed, staff may correct your earned XP/);
   const gamification = source("../src/app/api/gamification/route.js");
   assert.match(gamification, /getLevelInformation\(\s*totalXp\s*\)/);
   const student = { totalXp: 450, currentXp: 230 };

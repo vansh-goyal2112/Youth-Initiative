@@ -9,7 +9,7 @@ export async function getCompletedStudentWorkshops(
     typeof studentId !== "string" ||
     !studentId.trim()
   ) {
-    throw new Error("A student ID is required to load completed workshops.");
+    throw new Error("A student ID is required to load completed experiences.");
   }
 
   if (

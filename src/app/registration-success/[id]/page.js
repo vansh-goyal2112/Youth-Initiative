@@ -116,7 +116,7 @@ function RegistrationSuccessContent() {
         if (!response.ok) {
           throw new Error(
             responseData.message ||
-              "Workshop could not be loaded."
+              "Experience could not be loaded."
           );
         }
 
@@ -133,7 +133,7 @@ function RegistrationSuccessContent() {
         ) {
           setErrorMessage(
             error.message ||
-              "Workshop could not be loaded."
+              "Experience could not be loaded."
           );
         }
       } finally {
@@ -181,7 +181,7 @@ function RegistrationSuccessContent() {
       }
 
       if (registrationUnavailable) {
-        setErrorMessage("This session is no longer available. Choose an active session on the workshop page.");
+        setErrorMessage("This session is no longer available. Choose an active session on the experience page.");
         return;
       }
       setSaving(true);
@@ -285,7 +285,7 @@ function RegistrationSuccessContent() {
           />
 
           <h1>
-            Workshop unavailable
+            Experience unavailable
           </h1>
 
           <p>
@@ -401,7 +401,7 @@ function RegistrationSuccessContent() {
 
         {registrationUnavailable && (
           <p className="registration-confirm-error" role="alert">
-            This workshop session is not available. Go back to workshop details and choose an active session.
+            This experience session is not available. Go back to experience details and choose an active session.
           </p>
         )}
         <button

@@ -27,16 +27,16 @@ export default function AdminAttendancePage() {
     adminFetch("/api/admin/workshops")
       .then(async response => {
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Could not load workshops.");
+        if (!response.ok) throw new Error(data.message || "Could not load experiences.");
         if (alive) setWorkshops(Array.isArray(data.workshops) ? data.workshops.filter(workshop => !workshop.duplicateOf) : []);
       })
-      .catch(error => { if (alive) setErrorMessage(error.message || "Could not load workshops."); })
+      .catch(error => { if (alive) setErrorMessage(error.message || "Could not load experiences."); })
       .finally(() => { if (alive) setLoadingWorkshops(false); });
     return () => { alive = false; };
   }, []);
 
   async function generateQr() {
-    if (!workshopId) { setErrorMessage("Choose a workshop to create an attendance session."); return; }
+    if (!workshopId) { setErrorMessage("Choose an experience to create an attendance session."); return; }
     try {
       setLoading(true);
       setErrorMessage("");
@@ -77,8 +77,8 @@ export default function AdminAttendancePage() {
     <div className="admin-attendance-intro">
       <span className="admin-section-eyebrow"><ScanLine size={15}/> ENGAGEMENT OPERATIONS</span>
       <h1>Attendance <span>studio.</span></h1>
-      <p>Create a secure, time-limited check-in for your next workshop. One scan connects the experience to a student’s learning journey.</p>
-      <Link href="/admin/engagement" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:border-rose-300 hover:text-rose-700"><BarChart3 size={17}/> View workshop engagement <ArrowUpRight size={16}/></Link>
+      <p>Create a secure, time-limited check-in for your next experience. One scan connects the experience to a student’s learning journey.</p>
+      <Link href="/admin/engagement" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm hover:border-rose-300 hover:text-rose-700"><BarChart3 size={17}/> View experience engagement <ArrowUpRight size={16}/></Link>
     </div>
     <div className="admin-attendance-grid">
       <section className="admin-attendance-settings" aria-label="Attendance session settings">
@@ -89,7 +89,7 @@ export default function AdminAttendancePage() {
         <p className="admin-panel-subtext">Choose the experience and how long students can scan the code.</p>
         <div className="admin-attendance-fields">
           <label>
-            <span><Search size={16} aria-hidden="true" /> Search workshops</span>
+            <span><Search size={16} aria-hidden="true" /> Search experiences</span>
             <input type="search" value={workshopSearch}
               disabled={loadingWorkshops || loading}
               placeholder="Search by title or program area"
@@ -100,13 +100,13 @@ export default function AdminAttendancePage() {
           {search && !loadingWorkshops && (
             <p className="text-xs text-slate-600" role="status">
               {matchingWorkshops.length === 0
-                ? "No workshops match your search."
+                ? "No experiences match your search."
                 : `${matchingWorkshops.length} matching ${matchingWorkshops.length === 1 ? "workshop" : "workshops"}`}
             </p>
           )}
-          <label><span><BookOpen size={16}/> Workshop</span>
+          <label><span><BookOpen size={16}/> Experience</span>
             <select id="attendance-workshop" disabled={loadingWorkshops || loading} value={workshopId} onChange={event => {setWorkshopId(event.target.value);setCatalogSessionId("");setSuccessMessage("");setQrImage("");setManualCode("");}}>
-              <option value="">{loadingWorkshops ? "Loading workshops…" : "Choose a workshop"}</option>
+              <option value="">{loadingWorkshops ? "Loading experiences…" : "Choose an experience"}</option>
               {pickerWorkshops.map(item => <option key={item.id} value={item.id}>{item.title}{item.programArea ? " · " + item.programArea : ""}</option>)}
             </select>
           </label>
@@ -136,7 +136,7 @@ export default function AdminAttendancePage() {
         </div>
         <div className={`admin-attendance-preview-body ${qrImage ? "has-qr" : ""}`}>
           {qrImage ? <>
-            <div className="admin-attendance-qr-frame"><Image src={qrImage} width={440} height={440} alt="QR code for current workshop attendance session" unoptimized/></div>
+            <div className="admin-attendance-qr-frame"><Image src={qrImage} width={440} height={440} alt="QR code for current experience attendance session" unoptimized/></div>
             {manualCode && (
               <div className="mt-4 w-full max-w-sm rounded-2xl border border-slate-200 bg-white px-5 py-4 text-center shadow-sm">
                 <p className="text-sm font-semibold text-slate-600">Camera not working? Enter this attendance code</p>
@@ -151,7 +151,7 @@ export default function AdminAttendancePage() {
           </> : <>
             <div className="admin-attendance-placeholder"><ScanLine size={64}/></div>
             <h3>Your QR will appear here</h3>
-            <p>Select a workshop and generate a code to begin attendance. Show the code on a screen so students can scan it.</p>
+            <p>Select an experience and generate a code to begin attendance. Show the code on a screen so students can scan it.</p>
             <span><RefreshCw size={15}/> Dynamic, temporary check-in</span>
           </>}
         </div>

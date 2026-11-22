@@ -7,11 +7,11 @@ const ROLES = ["viewer", "event_staff", "workshop_coordinator", "program_admin"]
 const RIGHTS = [
   ["students.view", "View students"], ["students.edit", "Edit students"],
   ["students.deactivate", "Deactivate students"], ["reports.generate", "Generate student reports"],
-  ["reports.export", "Export reports"], ["workshops.view", "View workshops"],
-  ["workshops.create", "Create workshops"], ["workshops.edit", "Edit workshops"],
-  ["workshops.delete", "Delete workshops"], ["workshops.import", "Import workshop Excel"],
+  ["reports.export", "Export reports"], ["workshops.view", "View experiences"],
+  ["workshops.create", "Create experiences"], ["workshops.edit", "Edit experiences"],
+  ["workshops.delete", "Delete experiences"], ["workshops.import", "Import experience Excel"],
   ["attendance.view", "View attendance"], ["attendance.manage", "Manage attendance"],
-  ["completion.review", "Review self-reported completions"], ["completion.reverse", "Reverse workshop completions"],
+  ["completion.review", "Review self-reported completions"], ["completion.reverse", "Reverse experience completions"],
   ["badges.manage", "Manage student badges"], ["xp.adjust", "Adjust erroneous XP"],
   ["xp.redeem", "Redeem XP for event swag"],
 ];

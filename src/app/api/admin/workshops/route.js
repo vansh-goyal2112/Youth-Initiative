@@ -69,7 +69,7 @@ function validateWorkshop(
       workshop.status
     )
   ) {
-    return "Workshop status is invalid.";
+    return "Experience status is invalid.";
   }
 
   if (workshop.xpReward !== undefined && workshop.xpReward !== null && workshop.xpReward !== "") {
@@ -196,7 +196,7 @@ export async function GET(
     }
 
     console.error(
-      "Get workshops error:",
+      "Get experiences error:",
       error
     );
 
@@ -205,7 +205,7 @@ export async function GET(
         success: false,
 
         message:
-          "Workshops could not be loaded.",
+          "Experiences could not be loaded.",
       },
       {
         status: 500,
@@ -276,7 +276,7 @@ async function createWorkshop(
         success: true,
 
         message:
-          "Workshop created successfully.",
+          "Experience created successfully.",
 
         workshopId,
       },
@@ -295,7 +295,7 @@ async function createWorkshop(
     }
 
     console.error(
-      "Create workshop error:",
+      "Create experience error:",
       error
     );
 
@@ -304,7 +304,7 @@ async function createWorkshop(
         success: false,
 
         message:
-          "Workshop could not be created.",
+          "Experience could not be created.",
       },
       {
         status: 500,
@@ -332,7 +332,7 @@ async function updateWorkshop(
           success: false,
 
           message:
-            "Workshop ID is required.",
+            "Experience ID is required.",
         },
         {
           status: 400,
@@ -371,7 +371,7 @@ async function updateWorkshop(
           success: false,
 
           message:
-            "Workshop not found.",
+            "Experience not found.",
         },
         {
           status: 404,
@@ -402,7 +402,7 @@ async function updateWorkshop(
       success: true,
 
       message:
-        "Workshop updated successfully.",
+        "Experience updated successfully.",
     });
   } catch (error) {
     const accessResponse =
@@ -415,7 +415,7 @@ async function updateWorkshop(
     }
 
     console.error(
-      "Update workshop error:",
+      "Update experience error:",
       error
     );
 
@@ -424,7 +424,7 @@ async function updateWorkshop(
         success: false,
 
         message:
-          "Workshop could not be updated.",
+          "Experience could not be updated.",
       },
       {
         status: 500,
@@ -450,7 +450,7 @@ async function retireWorkshop(
           success: false,
 
           message:
-            "Workshop ID is required.",
+            "Experience ID is required.",
         },
         {
           status: 400,
@@ -470,7 +470,7 @@ async function retireWorkshop(
           success: false,
 
           message:
-            "Workshop not found.",
+            "Experience not found.",
         },
         {
           status: 404,
@@ -485,7 +485,7 @@ async function retireWorkshop(
       success: true,
 
       message:
-        "Workshop permanently removed from the catalogue database. Historical student achievements are preserved.",
+        "Experience permanently removed from the catalogue database. Historical student achievements are preserved.",
     });
   } catch (error) {
     const accessResponse =
@@ -498,7 +498,7 @@ async function retireWorkshop(
     }
 
     console.error(
-      "Delete workshop error:",
+      "Delete experience error:",
       error
     );
 
@@ -507,7 +507,7 @@ async function retireWorkshop(
         success: false,
 
         message:
-          "Workshop could not be deleted.",
+          "Experience could not be deleted.",
       },
       {
         status: 500,

@@ -43,7 +43,7 @@ export default function WorkshopArtwork({
     return (
       <Image
         src={source.src}
-        alt={workshop?.title || "Youth workshop"}
+        alt={workshop?.title || "Youth experience"}
         fill
         sizes={sizes}
         priority={priority}
@@ -58,14 +58,14 @@ export default function WorkshopArtwork({
     <div
       className={styles.placeholder}
       role="img"
-      aria-label={`Photo coming soon for ${workshop?.title || "this workshop"}`}
+      aria-label={`Photo coming soon for ${workshop?.title || "this experience"}`}
     >
       <div className={styles.decoration} aria-hidden="true" />
       <div className={styles.icon} aria-hidden="true">
         <BookOpen size={32} strokeWidth={1.7} />
       </div>
       <span className={styles.eyebrow}>SAIT YOUTH INITIATIVES</span>
-      <span className={styles.caption}>Workshop photo coming soon</span>
+      <span className={styles.caption}>Experience photo coming soon</span>
     </div>
   );
 }

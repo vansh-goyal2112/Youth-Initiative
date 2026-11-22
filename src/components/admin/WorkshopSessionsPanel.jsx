@@ -23,7 +23,7 @@ export default function WorkshopSessionsPanel({ workshop, onClose, onUpdated }) 
   async function load() {
     const response = await adminFetch("/api/admin/workshops/sessions?workshopId=" + encodeURIComponent(workshop.id));
     const result = await response.json();
-    if (!response.ok) throw new Error(result.message || "Unable to load workshop sessions.");
+    if (!response.ok) throw new Error(result.message || "Unable to load experience sessions.");
     setSessions(result.sessions || []);
   }
 
@@ -82,16 +82,16 @@ export default function WorkshopSessionsPanel({ workshop, onClose, onUpdated }) 
       <section role="dialog" aria-modal="true" aria-labelledby="workshop-sessions-title" className="my-auto w-full max-w-3xl overflow-hidden rounded-3xl bg-white text-slate-900 shadow-2xl">
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-r from-rose-50 to-white px-5 py-5 md:px-7">
           <div className="min-w-0">
-            <p className="mb-1 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wide text-rose-700"><CalendarDays size={15}/> Workshop schedule</p>
+            <p className="mb-1 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wide text-rose-700"><CalendarDays size={15}/> Experience schedule</p>
             <h2 id="workshop-sessions-title" className="truncate text-xl font-black">{workshop.title}</h2>
             <p className="text-xs text-slate-600">Each date can have its own capacity, location, status and registration link.</p>
           </div>
-          <button className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-100" type="button" onClick={onClose} aria-label="Close workshop sessions"><X size={21}/></button>
+          <button className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-100" type="button" onClick={onClose} aria-label="Close experience sessions"><X size={21}/></button>
         </div>
         <div className="max-h-[75vh] space-y-5 overflow-y-auto p-5 md:p-7">
           {message && <p className="rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-800" role="status">{message}</p>}
           {error && <p className="rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-800" role="alert">{error}</p>}
-          {loading ? <p className="flex items-center gap-2 text-slate-600"><LoaderCircle size={18} className="animate-spin"/> Loading workshop sessions…</p> :
+          {loading ? <p className="flex items-center gap-2 text-slate-600"><LoaderCircle size={18} className="animate-spin"/> Loading experience sessions…</p> :
             sessions.length === 0 ? <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-600">No session dates have been added. Add the first date to advertise a specific registration link.</p> :
             <div className="space-y-3">{sessions.map(session => (
               <div key={session.id} className="rounded-2xl border border-slate-200 p-4">

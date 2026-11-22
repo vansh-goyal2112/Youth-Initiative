@@ -50,7 +50,7 @@ export function summarizeStudentWorkshopHistory(studentId, registrations, transa
     const xp = transaction?.points ?? transaction?.amount ?? transaction?.xpAmount;
     return {
       id: registration.id,
-      title: registration.workshopSnapshot?.title || titles.get(registration.workshopId) || "Workshop unavailable",
+      title: registration.workshopSnapshot?.title || titles.get(registration.workshopId) || "Experience unavailable",
       date: registration.completedAt || registration.attendedAt || registration.sessionSnapshot?.startDate || registration.createdAt || null,
       status: registration.status || null,
       attendanceStatus: registration.attendanceStatus || null,

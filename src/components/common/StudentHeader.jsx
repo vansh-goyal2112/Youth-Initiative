@@ -14,7 +14,7 @@ import { studentDisplayName, studentInitials } from "@/utils/studentProfileDispl
 
 const navigation = [
   { href: "/dashboard", label: "Home", Icon: Home },
-  { href: "/workshops", label: "Workshops", Icon: BookOpen },
+  { href: "/workshops", label: "Experiences", Icon: BookOpen },
   { href: "/journey", label: "Journey", Icon: Compass },
   { href: "/badges", label: "Badges & Rewards", Icon: Trophy },
   { href: "/profile", label: "Profile", Icon: UserRound },

@@ -63,7 +63,7 @@ export async function GET(request) {
     }, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return studentAccessResponse(error) ||
-      Response.json({ message: "Past workshops could not be loaded." }, { status: 500 });
+      Response.json({ message: "Past experiences could not be loaded." }, { status: 500 });
   }
 }
 
@@ -88,13 +88,13 @@ export async function POST(request) {
 
     const workshop = await ensureWorkshopXpAssigned(await readCosmosDocument("workshops", workshopId));
     if (!workshop || !["active", "inactive"].includes(workshop.status || "active")) {
-      return Response.json({ message: "This workshop is no longer available for a new completion claim." }, { status: 404 });
+      return Response.json({ message: "This experience is no longer available for a new completion claim." }, { status: 404 });
     }
     if (schoolGradeNumber(student?.schoolGrade) === null) {
-      return Response.json({ message: "Add your current school grade in My Identity before claiming a past workshop." }, { status: 409 });
+      return Response.json({ message: "Add your current school grade in My Identity before claiming a past experience." }, { status: 409 });
     }
     if (!getSelfClaimCategory(workshop, student.schoolGrade)) {
-      return Response.json({ message: "This workshop is not eligible for a past-attendance claim for your grade." }, { status: 403 });
+      return Response.json({ message: "This experience is not eligible for a past-attendance claim for your grade." }, { status: 403 });
     }
 
     const knownSessions = resolveWorkshopSessions(workshop);
@@ -103,10 +103,10 @@ export async function POST(request) {
       return Response.json({ message: "Select the session date you attended." }, { status: 400 });
     }
     if (knownSessions.length === 0 && requestedSessionId && requestedSessionId !== "legacy") {
-      return Response.json({ message: "This workshop has no matching session." }, { status: 400 });
+      return Response.json({ message: "This experience has no matching session." }, { status: 400 });
     }
     if (scheduled && (completedOn < scheduled.startDate || completedOn > (scheduled.endDate || scheduled.startDate))) {
-      return Response.json({ message: "Enter a completion date within the selected workshop session." }, { status: 400 });
+      return Response.json({ message: "Enter a completion date within the selected experience session." }, { status: 400 });
     }
     const sessionId = scheduled?.id === "legacy" ? null : scheduled?.id || null;
 
@@ -117,13 +117,13 @@ export async function POST(request) {
     // student bypasses the dropdown or selects another session.
     if (getClaimedWorkshopIds(registrations).has(workshopId)) {
       return Response.json({
-        message: "This workshop has already been claimed or completed. Ask the program team if it needs correction.",
+        message: "This experience has already been claimed or completed. Ask the program team if it needs correction.",
         alreadyClaimed: true,
       }, { status: 409 });
     }
     const transactionId = completionTransactionId(uid, workshopId, sessionId);
     if (await readCosmosDocument("xpTransactions", transactionId)) {
-      return Response.json({ message: "An XP award already exists for this workshop and requires review." }, { status: 409 });
+      return Response.json({ message: "An XP award already exists for this experience and requires review." }, { status: 409 });
     }
 
     const existing = registrations.find(item => item.status === "upcoming" && (item.sessionId || null) === sessionId);
@@ -158,7 +158,7 @@ export async function POST(request) {
         });
     } catch (error) {
       if (isCosmosConflict(error) || isCosmosPreconditionFailed(error)) {
-        return Response.json({ message: "This workshop claim was already submitted. Refresh to see its status." }, { status: 409 });
+        return Response.json({ message: "This experience claim was already submitted. Refresh to see its status." }, { status: 409 });
       }
       throw error;
     }
@@ -190,12 +190,12 @@ export async function POST(request) {
       reviewStatus: "pending_review",
       message: rewardPending
         ? "Your completion was saved for review. Your half-XP award needs reconciliation."
-        : "Workshop recorded! Half XP earned. Your completion is available for admin review.",
+        : "Experience recorded! Half XP earned. Your completion is available for admin review.",
     }, { status: rewardPending ? 202 : 201 });
   } catch (error) {
     const denied = studentAccessResponse(error);
     if (denied) return denied;
-    console.error("Self-reported workshop completion failed:", error?.message);
+    console.error("Self-reported experience completion failed:", error?.message);
     return Response.json({ message: "Completion could not be saved. Check existing claims before trying again." }, { status: 500 });
   }
 }

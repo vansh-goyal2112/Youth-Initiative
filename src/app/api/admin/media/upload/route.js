@@ -50,7 +50,7 @@ async function uploadArtwork(request) {
     let record = null;
     if (kind === "workshop") {
       record = await readCosmosDocument("workshops", recordId);
-      if (!record || record.status === "deleted") return Response.json({ message: "Workshop not found." }, { status: 404 });
+      if (!record || record.status === "deleted") return Response.json({ message: "Experience not found." }, { status: 404 });
     } else if (kind === "badge") {
       record = await readCosmosDocument("admins", recordId);
       if (!record || record.role !== "badge_definition") return Response.json({ message: "Badge definition not found." }, { status: 404 });

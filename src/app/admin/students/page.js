@@ -733,7 +733,7 @@ function StudentViewModal({
           />
 
           <ProfileItem
-            label="Completed Workshops"
+            label="Completed Experiences"
             value={
               student.completedWorkshopCount ||
               0
@@ -742,13 +742,13 @@ function StudentViewModal({
         </div>
 
         <section className="mt-5 rounded-xl border border-slate-200 bg-white p-4" aria-labelledby="student-workshop-history">
-          <h3 id="student-workshop-history" className="text-base font-extrabold">Workshop history</h3>
+          <h3 id="student-workshop-history" className="text-base font-extrabold">Experience history</h3>
           {profileError ? <p role="alert" className="mt-2 text-sm text-red-700">{profileError}</p> :
-            !profile ? <p role="status" className="mt-2 text-sm text-slate-600">Loading consent details and workshop history…</p> :
-            profile.history.length === 0 ? <p className="mt-2 text-sm text-slate-600">No workshop records yet.</p> :
+            !profile ? <p role="status" className="mt-2 text-sm text-slate-600">Loading consent details and experience history…</p> :
+            profile.history.length === 0 ? <p className="mt-2 text-sm text-slate-600">No experience records yet.</p> :
             <div className="admin-table-scroll">
               <table className="admin-student-table">
-                <thead><tr><th>Workshop</th><th>Date</th><th>Status</th><th>XP award</th></tr></thead>
+                <thead><tr><th>Experience</th><th>Date</th><th>Status</th><th>XP award</th></tr></thead>
                 <tbody>{profile.history.map(item => (
                   <tr key={item.id}>
                     <td>{item.title}</td>
@@ -938,7 +938,7 @@ function XpAdjustmentPanel({ student, onAdjusted }) {
           <input required type="number" disabled={saving} min="1" max={grant ? 1000000 : Math.min(student.totalXp || 0, 1000000)} step="1" value={amount} onChange={event=>{setAmount(event.target.value);operationRef.current=null;}} className="min-h-10 rounded-xl border border-slate-300 bg-white p-2 text-sm"/>
         </label>
         <label className="grid gap-1 text-xs font-bold text-slate-700">Reason (required)
-          <input required disabled={saving} minLength={5} maxLength={250} value={reason} onChange={event=>{setReason(event.target.value);operationRef.current=null;}} className="min-h-10 rounded-xl border border-slate-300 bg-white p-2 text-sm" placeholder={grant ? "Verified attendance at Robotics Workshop" : "Incorrect attendance XP award"}/>
+          <input required disabled={saving} minLength={5} maxLength={250} value={reason} onChange={event=>{setReason(event.target.value);operationRef.current=null;}} className="min-h-10 rounded-xl border border-slate-300 bg-white p-2 text-sm" placeholder={grant ? "Verified attendance at Robotics Experience" : "Incorrect attendance XP award"}/>
         </label>
         <button disabled={saving||!amount||reason.trim().length<5} type="submit" className="min-h-10 rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-extrabold text-rose-800 hover:bg-rose-50 disabled:opacity-50">{saving ? "Saving XP adjustment…" : grant ? "Grant XP" : "Remove erroneous XP"}</button>
       </form>

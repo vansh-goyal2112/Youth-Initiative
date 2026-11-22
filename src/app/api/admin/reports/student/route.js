@@ -109,7 +109,7 @@ export async function GET(request) {
       },
       registrations: registrations.map((item) => ({
         workshopId: item.workshopId,
-        workshopTitle: item.workshopSnapshot?.title || workshopMap.get(item.workshopId)?.title || "Workshop unavailable",
+        workshopTitle: item.workshopSnapshot?.title || workshopMap.get(item.workshopId)?.title || "Experience unavailable",
         programArea: item.workshopSnapshot?.programArea || workshopMap.get(item.workshopId)?.programArea || null,
         status: item.status || null,
         completionSource: item.completionSource || null,

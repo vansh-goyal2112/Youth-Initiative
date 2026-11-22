@@ -16,7 +16,7 @@ export async function retireWorkshopPermanently(existingWorkshop) {
         "xpTransactions", completionTransactionId(registration.studentId, id, registration.sessionId || null)
       );
       if (!transaction || transaction.status !== "completed") {
-        throw new Error("Finalize pending student XP awards before workshop removal.");
+        throw new Error("Finalize pending student XP awards before experience removal.");
       }
       const snapshot = registration.workshopSnapshot ||
         workshopCompletionSnapshot(existingWorkshop, registration, transaction);

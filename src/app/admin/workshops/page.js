@@ -144,10 +144,10 @@ export default function AdminWorkshopsPage() {
       const preview = await previewResponse.json();
       if (!previewResponse.ok) throw new Error(preview.message || "Could not preview XP updates.");
       if (!preview.eligibleCount) {
-        setMessage("All workshops already have XP assigned or were edited by staff.");
+        setMessage("All experiences already have XP assigned or were edited by staff.");
         return;
       }
-      if (!window.confirm(`Assign varied XP to ${preview.eligibleCount} older workshops with default 100 XP? This changes FUTURE attendance awards only; previously earned XP is not modified.`)) return;
+      if (!window.confirm(`Assign varied XP to ${preview.eligibleCount} older experiences with default 100 XP? This changes FUTURE attendance awards only; previously earned XP is not modified.`)) return;
       const response = await adminFetch("/api/admin/workshops/auto-xp", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ preview: false }),
@@ -157,7 +157,7 @@ export default function AdminWorkshopsPage() {
       setMessage(`Automatically assigned XP to ${result.updatedCount} workshops. ${result.skippedCount} were skipped.`);
       await loadWorkshops();
     } catch (error) {
-      setErrorMessage(error.message || "Could not assign workshop XP.");
+      setErrorMessage(error.message || "Could not assign experience XP.");
     } finally {
       setSaving(false);
     }
@@ -182,7 +182,7 @@ export default function AdminWorkshopsPage() {
     } catch (error) {
       setErrorMessage(
         error.message ||
-          "Workshops could not be loaded."
+          "Experiences could not be loaded."
       );
     } finally {
       setLoading(false);
@@ -303,7 +303,7 @@ export default function AdminWorkshopsPage() {
     setDuplicatingWorkshop(true);
     setFormData({
       ...emptyWorkshop,
-      title: (workshop.title || "Workshop") + " (Copy)",
+      title: (workshop.title || "Experience") + " (Copy)",
       ...workshopFormFields(workshop),
       description: workshop.description || "",
       informationUrl: workshop.informationUrl || "",
@@ -370,7 +370,7 @@ export default function AdminWorkshopsPage() {
     } catch (error) {
       setErrorMessage(
         error.message ||
-          "Workshop could not be saved."
+          "Experience could not be saved."
       );
     } finally {
       setSaving(false);
@@ -423,7 +423,7 @@ export default function AdminWorkshopsPage() {
     } catch (error) {
       setErrorMessage(
         error.message ||
-          "Workshop could not be deleted."
+          "Experience could not be deleted."
       );
     }
   }
@@ -538,7 +538,7 @@ export default function AdminWorkshopsPage() {
       if (importMode === "replace" && responseData.preview) {
         const removing = responseData.discontinue || [];
         const proceed = window.confirm(
-          `Replace current catalogue with ${responseData.incoming} spreadsheet workshops? ${removing.length} existing workshops will be permanently removed from the catalogue. Completed student achievements remain. This action cannot be undone.`
+          `Replace current catalogue with ${responseData.incoming} spreadsheet experiences? ${removing.length} existing experiences will be permanently removed from the catalogue. Completed student achievements remain. This action cannot be undone.`
         );
         if (!proceed) {
           setMessage("Catalogue replacement cancelled; no changes made.");
@@ -565,7 +565,7 @@ export default function AdminWorkshopsPage() {
       }
       setMessage(
         responseData.preview
-          ? `Replacement preview: ${responseData.incoming} incoming; ${responseData.discontinue?.length || 0} current workshops would be discontinued. No changes applied. Full replacement is blocked until history-safe execution is verified.`
+          ? `Replacement preview: ${responseData.incoming} incoming; ${responseData.discontinue?.length || 0} current experiences would be discontinued. No changes applied. Full replacement is blocked until history-safe execution is verified.`
           : responseData.message
       );
 
@@ -584,13 +584,13 @@ export default function AdminWorkshopsPage() {
   return (
     <main className="admin-workshops-page">
       <div className="admin-workshops-intro">
-        <div><p className="admin-section-eyebrow"><BookOpen size={16}/> PROGRAM OPERATIONS</p><h1>Workshop studio<span>.</span></h1>
-          <p>Build inspiring learning experiences. Plan, publish and manage every workshop from one workspace.</p></div>
+        <div><p className="admin-section-eyebrow"><BookOpen size={16}/> PROGRAM OPERATIONS</p><h1>Experience studio<span>.</span></h1>
+          <p>Build inspiring learning experiences. Plan, publish and manage every experience from one workspace.</p></div>
         <div className="admin-workshop-actions">
           <button type="button" className="admin-team-refresh" onClick={handleAssignXp} disabled={saving || importing || loading}>Auto-assign existing XP</button>
           <button type="button" className="admin-team-refresh" onClick={handleAssignImages} disabled={saving || importing}><Layers3 size={17}/> Assign artwork</button>
           <button type="button" className="admin-team-refresh" onClick={loadWorkshops} disabled={loading}><RefreshCw size={17} className={loading?"animate-spin":""}/> Refresh</button>
-          <input aria-label="Workshop offering year" type="number" min="2000" max="2100" value={offeringYear} onChange={event => setOfferingYear(event.target.value)} style={{width: 100}} title="Year associated with imported workshop offerings" />
+          <input aria-label="Experience offering year" type="number" min="2000" max="2100" value={offeringYear} onChange={event => setOfferingYear(event.target.value)} style={{width: 100}} title="Year associated with imported experience offerings" />
           <select aria-label="Excel import mode" value={importMode} onChange={event => setImportMode(event.target.value)} disabled={importing}>
             <option value="add">Add/update spreadsheet</option>
             <option value="replace">Preview catalogue replacement</option>
@@ -599,12 +599,12 @@ export default function AdminWorkshopsPage() {
             {importing ? "Importing…" : "Import Excel"}
             <input type="file" accept=".xlsx,.xls" disabled={importing} onChange={handleExcelImport}/>
           </label>
-          <button type="button" className="admin-create-button" onClick={openCreateForm}><Plus size={19}/> Create workshop</button>
+          <button type="button" className="admin-create-button" onClick={openCreateForm}><Plus size={19}/> Create experience</button>
         </div>
       </div>
       <div className="admin-workshops-stats">
-        <div><span className="blue"><Layers3 size={22}/></span><div><strong>{workshops.length}</strong><small>Total workshops</small></div></div>
-        <div><span className="green"><CheckCircle2 size={22}/></span><div><strong>{workshops.filter(w=>w.status==="active").length}</strong><small>Active workshops</small></div></div>
+        <div><span className="blue"><Layers3 size={22}/></span><div><strong>{workshops.length}</strong><small>Total experiences</small></div></div>
+        <div><span className="green"><CheckCircle2 size={22}/></span><div><strong>{workshops.filter(w=>w.status==="active").length}</strong><small>Active experiences</small></div></div>
         <div><span className="rose"><BookOpen size={22}/></span><div><strong>{programAreas.length}</strong><small>Program areas</small></div></div>
       </div>
       {message && (
@@ -620,18 +620,18 @@ export default function AdminWorkshopsPage() {
       )}
 
       <WorkshopDuplicates workshops={workshops} onConsolidated={() => {
-        setMessage("Duplicate marked inactive. The workshop you kept remains active.");
+        setMessage("Duplicate marked inactive. The experience you kept remains active.");
         loadWorkshops();
       }} />
 
-      <section className="admin-workshop-filters" aria-label="Workshop filters">
+      <section className="admin-workshop-filters" aria-label="Experience filters">
         <div className="admin-search-field">
           <Search size={19} />
 
           <input
             type="search"
-            aria-label="Search workshops"
-            placeholder="Search workshops by title, grade or area…"
+            aria-label="Search experiences"
+            placeholder="Search experiences by title, grade or area…"
             value={searchText}
             onChange={(event) =>
               setSearchText(
@@ -642,7 +642,7 @@ export default function AdminWorkshopsPage() {
         </div>
 
         <select
-          aria-label="Filter workshops by program area"
+          aria-label="Filter experiences by program area"
           value={programFilter}
           onChange={(event) =>
             setProgramFilter(
@@ -667,7 +667,7 @@ export default function AdminWorkshopsPage() {
         </select>
 
         <select
-          aria-label="Filter workshops by status"
+          aria-label="Filter experiences by status"
           value={statusFilter}
           onChange={(event) =>
             setStatusFilter(
@@ -697,7 +697,7 @@ export default function AdminWorkshopsPage() {
               className="button-spinner"
             />
 
-            Loading workshops...
+            Loading experiences...
           </div>
         ) : filteredWorkshops.length ===
           0 ? (
@@ -706,11 +706,11 @@ export default function AdminWorkshopsPage() {
               size={46}
             />
 
-            <h2>No workshops found</h2>
+            <h2>No experiences found</h2>
 
             <p>
               Import the client Excel file or create
-              a workshop manually.
+              an experience manually.
             </p>
           </div>
         ) : (
@@ -718,7 +718,7 @@ export default function AdminWorkshopsPage() {
             <table className="admin-workshop-table">
               <thead>
                 <tr>
-                  <th>Workshop</th>
+                  <th>Experience</th>
                   <th>Program Area</th>
                   <th>Artwork</th>
                   <th>Grade</th>
@@ -773,13 +773,13 @@ export default function AdminWorkshopsPage() {
                           <button type="button" title="Manage sessions" aria-label={"Manage sessions for " + workshop.title} onClick={() => setSessionWorkshop(workshop)}>
                             <CalendarDays size={18} />
                           </button>
-                          <button type="button" title="Duplicate workshop" aria-label={"Duplicate workshop " + workshop.title}
+                          <button type="button" title="Duplicate experience" aria-label={"Duplicate experience " + workshop.title}
                             onClick={() => openDuplicateForm(workshop)}>
                             <Copy size={18} />
                           </button>
                           <button
                             type="button"
-                            aria-label="Edit workshop"
+                            aria-label="Edit experience"
                             onClick={() =>
                               openEditForm(
                                 workshop
@@ -794,7 +794,7 @@ export default function AdminWorkshopsPage() {
                           <button
                             type="button"
                             className="delete"
-                            aria-label="Delete workshop"
+                            aria-label="Delete experience"
                             onClick={() =>
                               handleDeleteWorkshop(
                                 workshop
@@ -825,18 +825,18 @@ export default function AdminWorkshopsPage() {
               <div>
                 <span>
                   {editingWorkshop
-                    ? "EDIT WORKSHOP"
-                    : duplicatingWorkshop ? "DUPLICATE WORKSHOP" : "NEW WORKSHOP"}
+                    ? "EDIT EXPERIENCE"
+                    : duplicatingWorkshop ? "DUPLICATE EXPERIENCE" : "NEW EXPERIENCE"}
                 </span>
 
                 <h2>
                   {editingWorkshop
-                    ? "Update Workshop"
-                    : duplicatingWorkshop ? "Create Independent Workshop Copy" : "Create Workshop"}
+                    ? "Update Experience"
+                    : duplicatingWorkshop ? "Create Independent Experience Copy" : "Create Experience"}
                 </h2>
                 {duplicatingWorkshop && (
                   <p className="mt-2 max-w-lg text-xs text-slate-600">
-                    Workshop details are copied into a new inactive record. Review the dates and registration URL before publishing; sessions, attendance and student history are never copied.
+                    Experience details are copied into a new inactive record. Review the dates and registration URL before publishing; sessions, attendance and student history are never copied.
                   </p>
                 )}
               </div>
@@ -858,7 +858,7 @@ export default function AdminWorkshopsPage() {
               }
             >
               <FormField
-                label="Workshop Title"
+                label="Experience Title"
                 name="title"
                 value={
                   formData.title
@@ -1038,7 +1038,7 @@ export default function AdminWorkshopsPage() {
                 />
 
                 <FormField
-                  label="XP Reward (for this workshop)"
+                  label="XP Reward (for this experience)"
                   name="xpReward"
                   type="number"
                   value={
@@ -1074,7 +1074,7 @@ export default function AdminWorkshopsPage() {
                 }
               />
 
-              {editingWorkshop && <MediaUploader key={editingWorkshop.id} kind="workshop" recordId={editingWorkshop.id} initialUrl={editingWorkshop.image || ""} onUploaded={() => {loadWorkshops();setMessage("Workshop image uploaded and saved.");}} />}
+              {editingWorkshop && <MediaUploader key={editingWorkshop.id} kind="workshop" recordId={editingWorkshop.id} initialUrl={editingWorkshop.image || ""} onUploaded={() => {loadWorkshops();setMessage("Experience image uploaded and saved.");}} />}
 
               <div className="admin-form-buttons">
                 <button
@@ -1102,9 +1102,9 @@ export default function AdminWorkshopsPage() {
                       Saving...
                     </>
                   ) : editingWorkshop ? (
-                    "Update Workshop"
+                    "Update Experience"
                   ) : (
-                    "Create Workshop"
+                    "Create Experience"
                   )}
                 </button>
               </div>

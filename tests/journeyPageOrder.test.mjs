@@ -16,7 +16,7 @@ test("Journey section order matches requested priority exactly", () => {
   const indices = anchors.map(anchor => page.indexOf(anchor));
   assert.ok(indices.every(x => x >= 0), "every required section must exist");
   assert.deepEqual(indices, [...indices].sort((a, b) => a - b));
-  assert.match(page, /<h2 id="journey-recommended-heading">Recommended workshops<\/h2>/);
+  assert.match(page, /<h2 id="journey-recommended-heading">Recommended experiences<\/h2>/);
   assert.match(page, /<h2 id="journey-pathways-heading">Future pathways \(SAIT programs\)<\/h2>/);
   assert.match(page, /<h2 id="journey-upcoming-heading">Upcoming at SAIT<\/h2>/);
   assert.match(page, /<h2 id="journey-badges-heading">See my badges<\/h2>/);

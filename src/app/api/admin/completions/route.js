@@ -44,7 +44,7 @@ export async function GET(request) {
       completions: records.map(record => ({
         id: record.id, studentId: record.studentId, ...names.get(record.studentId),
         workshopId: record.workshopId,
-        workshopTitle: record.workshopSnapshot?.title || "Workshop",
+        workshopTitle: record.workshopSnapshot?.title || "Experience",
         programArea: record.workshopSnapshot?.programArea || "",
         completedOn: record.completedOn || null,
         reportedAt: record.reportedAt || null,

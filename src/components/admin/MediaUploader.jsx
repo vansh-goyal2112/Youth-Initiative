@@ -46,7 +46,7 @@ export default function MediaUploader({ kind, recordId, initialUrl = "", onUploa
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-extrabold text-slate-900">Upload or replace image</h3>
-          <p className="mt-1 text-xs leading-5 text-slate-500">PNG, JPG or WebP. Maximum 5 MB. Recommended: workshops 1600 × 900; badges 512 × 512; banners 1920 × 640.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">PNG, JPG or WebP. Maximum 5 MB. Recommended: experiences 1600 × 900; badges 512 × 512; banners 1920 × 640.</p>
           <label htmlFor={id} className={"mt-3 inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-xl bg-rose-700 px-4 py-2 text-xs font-extrabold text-white hover:bg-rose-800 " + (busy?"pointer-events-none opacity-50":"")}>
             {busy ? <><LoaderCircle size={16} className="animate-spin"/> Uploading…</> : <><ImagePlus size={17}/> Select image</>}
           </label>

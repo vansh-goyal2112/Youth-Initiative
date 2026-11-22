@@ -568,7 +568,7 @@ export default function LoginPage() {
             </h2>
 
             <p>
-              Explore workshops, build
+              Explore experiences, build
               meaningful skills, earn
               achievements and discover future
               SAIT pathways.
@@ -579,7 +579,7 @@ export default function LoginPage() {
                 <span>
                   01
                 </span>
-                Personalized workshop
+                Personalized experience
                 recommendations
               </div>
 

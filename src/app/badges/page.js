@@ -257,7 +257,7 @@ export default function BadgesPage() {
             </h1>
 
             <p>
-              Complete workshops, earn XP, and unlock badges. Spend your available XP on rewards at SAIT events.
+              Complete experiences, earn XP, and unlock badges. Spend your available XP on rewards at SAIT events.
             </p>
           </div>
 
@@ -342,7 +342,7 @@ export default function BadgesPage() {
                 <span className="text-sm font-semibold text-slate-600">XP available to spend at SAIT events</span>
               </div>
               <p className="mt-3 text-xs leading-relaxed text-slate-600">
-                XP available to spend decreases when staff redeem rewards. Lifetime XP tracks the XP you have earned and determines your level; redeeming rewards never reduces it. If an incorrect workshop completion is reversed, staff may correct your earned XP.
+                XP available to spend decreases when staff redeem rewards. Lifetime XP tracks the XP you have earned and determines your level; redeeming rewards never reduces it. If an incorrect experience completion is reversed, staff may correct your earned XP.
                 Rewards vary by event, and online redemption is not available.
               </p>
             </div>
@@ -570,12 +570,12 @@ export default function BadgesPage() {
             </h2>
 
             <p>
-              Try another workshop. Keep earning XP.
+              Try another experience. Keep earning XP.
             </p>
           </div>
 
           <Link href="/workshops">
-            Explore Workshops
+            Explore Experiences
           </Link>
         </section>
       </section>
@@ -597,7 +597,7 @@ export default function BadgesPage() {
           />
 
           <span>
-            Workshops
+            Experiences
           </span>
         </Link>
 

@@ -38,7 +38,7 @@ export default function DiscoverySpinner({ workshops = [], registrations = [], s
       <div className={styles.heading}>
         <span className={styles.label}><Gift size={18} aria-hidden="true"/> DISCOVERY CORNER</span>
         <h2 id="surprise-workshop-heading">Can&apos;t decide what to explore?</h2>
-        <p>Try a little surprise! Spin the compass to discover a real workshop you haven&apos;t added to your journey yet.</p>
+        <p>Try a little surprise! Spin the compass to discover a real experience you haven&apos;t added to your journey yet.</p>
 
         <button type="button" className={styles.spinButton} onClick={spin}>
           <Sparkles size={19} aria-hidden="true"/>
@@ -61,7 +61,7 @@ export default function DiscoverySpinner({ workshops = [], registrations = [], s
             <h3>{revealed.title}</h3>
             <p>{revealed.category || revealed.programArea || "Explore something new at SAIT"}</p>
             <Link href={`/workshops/${encodeURIComponent(revealed.id)}`}>
-              Explore This Workshop <ArrowRight size={17} aria-hidden="true"/>
+              Explore This Experience <ArrowRight size={17} aria-hidden="true"/>
             </Link>
           </div>
         ) : (

@@ -79,7 +79,7 @@ export default function CompletedWorkshopsPage() {
         if (!response.ok) {
           throw new Error(
             data.message ||
-              "Completed workshops could not be loaded."
+              "Completed experiences could not be loaded."
           );
         }
 
@@ -98,14 +98,14 @@ export default function CompletedWorkshopsPage() {
         }
       } catch (error) {
         console.error(
-          "Load completed workshops error:",
+          "Load completed experiences error:",
           error
         );
 
         if (!cancelled) {
           setErrorMessage(
             error.message ||
-              "Completed workshops could not be loaded."
+              "Completed experiences could not be loaded."
           );
         }
       } finally {
@@ -175,7 +175,7 @@ export default function CompletedWorkshopsPage() {
 
         <p>
           Log in to view your
-          completed workshops.
+          completed experiences.
         </p>
 
         <Link href="/login">
@@ -208,7 +208,7 @@ export default function CompletedWorkshopsPage() {
               href="/workshops"
               className="active"
             >
-              Workshops
+              Experiences
             </Link>
 
             <Link href="/journey">
@@ -234,7 +234,7 @@ export default function CompletedWorkshopsPage() {
             </span>
 
             <h1>
-              Completed Workshops
+              Completed Experiences
             </h1>
 
             <p>
@@ -286,7 +286,7 @@ export default function CompletedWorkshopsPage() {
 
           <input
             type="search"
-            placeholder="Search completed workshops..."
+            placeholder="Search completed experiences..."
             value={
               searchText
             }
@@ -310,7 +310,7 @@ export default function CompletedWorkshopsPage() {
 
             <p>
               Loading completed
-              workshops...
+              experiences...
             </p>
           </div>
         ) : errorMessage ? (
@@ -330,11 +330,11 @@ export default function CompletedWorkshopsPage() {
             </h2>
 
             <p>
-              Attend a workshop. Scan the QR code. Earn XP and badges.
+              Attend an experience. Scan the QR code. Earn XP and badges.
             </p>
 
             <Link href="/workshops">
-              Explore Workshops
+              Explore Experiences
             </Link>
           </div>
         ) : (
@@ -377,7 +377,7 @@ export default function CompletedWorkshopsPage() {
           />
 
           <span>
-            Workshops
+            Experiences
           </span>
         </Link>
 
@@ -509,7 +509,7 @@ function CompletedWorkshopCard({
           <Link
             href={`/workshops/${workshop.id}`}
           >
-            View Workshop
+            View Experience
           </Link>
         </div>
       </div>

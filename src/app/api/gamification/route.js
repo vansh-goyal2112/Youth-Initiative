@@ -24,7 +24,7 @@ function createQuestData({
       id: "first-steps",
       title: "First Steps",
       description:
-        "Complete your first workshop",
+        "Complete your first experience",
       current: completedCount,
       target: 1,
       completed:
@@ -37,7 +37,7 @@ function createQuestData({
       id: "skill-builder",
       title: "Skill Builder",
       description:
-        "Complete 3 workshops",
+        "Complete 3 experiences",
       current: Math.min(
         completedCount,
         3
@@ -69,7 +69,7 @@ function createQuestData({
       id: "tech-journey",
       title: "Tech Journey",
       description:
-        "Complete 3 Technology workshops",
+        "Complete 3 Technology experiences",
       current: Math.min(
         technologyCount,
         3
@@ -85,7 +85,7 @@ function createQuestData({
       id: "workshop-champion",
       title: "Workshop Champion",
       description:
-        "Complete 5 workshops",
+        "Complete 5 experiences",
       current: Math.min(
         completedCount,
         5

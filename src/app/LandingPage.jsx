@@ -38,14 +38,14 @@ const heroSlides = [
     category: "Skilled Trades",
     title: "Turn curiosity into practical skills",
     description:
-      "Experience hands-on learning in real workshop and lab environments.",
+      "Experience hands-on learning in real experience and lab environments.",
   },
   {
     image: "/images/landing/youth-campus.png",
     category: "Future Pathways",
     title: "Discover where your skills can take you",
     description:
-      "Connect workshop experiences with future education and career pathways.",
+      "Connect experience experiences with future education and career pathways.",
   },
 ];
 
@@ -54,7 +54,7 @@ const opportunities = [
     icon: Code2,
     title: "Coding and Technology",
     description:
-      "Develop digital skills through coding, robotics and technology workshops.",
+      "Develop digital skills through coding, robotics and technology experiences.",
     className: "opportunity-blue",
   },
   {
@@ -68,7 +68,7 @@ const opportunities = [
     icon: Sparkles,
     title: "Design and Creativity",
     description:
-      "Turn ideas into projects through design, media and creative workshops.",
+      "Turn ideas into projects through design, media and creative experiences.",
     className: "opportunity-purple",
   },
   {
@@ -169,7 +169,7 @@ export default function HomePage() {
             </h1>
 
             <p className="hero-reveal-three">
-              Explore hands-on workshops, build real-world skills, track your
+              Explore hands-on experiences, build real-world skills, track your
               learning journey and discover future SAIT pathways connected to
               your interests.
             </p>
@@ -270,7 +270,7 @@ export default function HomePage() {
               </div>
 
               <div>
-                <span>Upcoming Workshop</span>
+                <span>Upcoming Experience</span>
                 <strong>Introduction to 3D Printing</strong>
                 <small>Tuesday · 4:00 PM</small>
               </div>
@@ -301,7 +301,7 @@ export default function HomePage() {
             <Monitor size={22} />
             <span>
               <strong>Flexible learning</strong>
-              Online and in-person workshops
+              Online and in-person experiences
             </span>
           </div>
 
@@ -340,7 +340,7 @@ export default function HomePage() {
             <span>Explore your interests</span>
             <h2>There is more than one way to build your future</h2>
             <p>
-              Discover workshops across technology, trades, creativity,
+              Discover experiences across technology, trades, creativity,
               leadership and other skill areas.
             </p>
           </div>
@@ -406,7 +406,7 @@ export default function HomePage() {
 
             <p className="journey-introduction">
               The platform guides students from account registration to
-              workshop discovery, attendance and career exploration.
+              experience discovery, attendance and career exploration.
             </p>
 
             <div className="journey-step-list">
@@ -438,9 +438,9 @@ export default function HomePage() {
                 <span>03</span>
 
                 <div>
-                  <h3>Attend workshops</h3>
+                  <h3>Attend experiences</h3>
                   <p>
-                    Find a workshop, register at sait.ca, attend, and scan the QR code
+                    Find an experience, register at sait.ca, attend, and scan the QR code
                     to check in. Been to one before? Add it yourself.
                   </p>
                 </div>
@@ -484,7 +484,7 @@ export default function HomePage() {
             <h2>Your learning journey should feel exciting.</h2>
 
             <p>
-              Every verified workshop builds your Learning Journey. Earn XP,
+              Every verified experience builds your Learning Journey. Earn XP,
               unlock badges, reach new levels and see which skill
               areas are becoming your strongest.
             </p>
@@ -502,7 +502,7 @@ export default function HomePage() {
 
               <div>
                 <BookOpen size={20} />
-                Unlock recommended workshops and pathways
+                Unlock recommended experiences and pathways
               </div>
             </div>
           </div>
@@ -558,7 +558,7 @@ export default function HomePage() {
               <div>
                 <span>Recommended for you</span>
                 <strong>Introduction to Robotics</strong>
-                <p>Build and program a robot in a hands-on workshop.</p>
+                <p>Build and program a robot in a hands-on experience.</p>
               </div>
             </div>
 

@@ -178,7 +178,7 @@ function getRecommendationReasons(
     if (workshop.title) {
       reasons.push(`Keep exploring ${topic.toLowerCase()} after ${workshop.title}.`);
     } else {
-      reasons.push(`Keep exploring ${topic.toLowerCase()} from a workshop you completed.`);
+      reasons.push(`Keep exploring ${topic.toLowerCase()} from an experience you completed.`);
     }
   }
 
@@ -257,7 +257,7 @@ export function recommendSaitPrograms(
     !Array.isArray(programs)
   ) {
     throw new Error(
-      "Completed workshops and SAIT programs must be provided as arrays."
+      "Completed experiences and SAIT programs must be provided as arrays."
     );
   }
 

@@ -413,7 +413,7 @@ async function importWorkshops(
             false,
 
           message:
-            "Workshop data is invalid.",
+            "Experience data is invalid.",
         },
         {
           status:
@@ -427,7 +427,7 @@ async function importWorkshops(
       typeof w.programArea !== "string" || !w.programArea.trim() ||
       typeof w.grade !== "string" || !w.grade.trim()
     )) {
-      return Response.json({ success: false, message: "Replacement stopped: spreadsheet includes incomplete workshop rows. Correct the data before trying again." }, { status: 400 });
+      return Response.json({ success: false, message: "Replacement stopped: spreadsheet includes incomplete experience rows. Correct the data before trying again." }, { status: 400 });
     }
 
     const invalidXp = workshops.find(w => w && w.xpReward !== null &&
@@ -472,7 +472,7 @@ async function importWorkshops(
             false,
 
           message:
-            "No valid workshops were found in the Excel file.",
+            "No valid experiences were found in the Excel file.",
         },
         {
           status:
@@ -482,11 +482,11 @@ async function importWorkshops(
     }
 
     if (mode === "replace" && validWorkshops.some(w => !/^20\d{2}$/.test(String(w.offeringYear || "")))) {
-      return Response.json({ success: false, message: "Catalogue replacement requires a four-digit offering year for every workshop." }, { status: 400 });
+      return Response.json({ success: false, message: "Catalogue replacement requires a four-digit offering year for every experience." }, { status: 400 });
     }
     const incomingIds = new Set(validWorkshops.map(w => createWorkshopId(w.title, w.programArea, w.offeringYear || "", w.grade || "")));
     if (incomingIds.size !== validWorkshops.length) {
-      return Response.json({ message: "Duplicate workshop titles and program areas in spreadsheet." }, { status: 400 });
+      return Response.json({ message: "Duplicate experience titles and program areas in spreadsheet." }, { status: 400 });
     }
     const oldCatalog = await queryCosmosDocuments("workshops", "SELECT c.id, c.title, c.status, c.updatedAt, c.duplicateOf FROM c");
     const discontinue = mode === "replace"
@@ -594,13 +594,13 @@ async function importWorkshops(
       }
     }
 
-    describeAdminAudit(request, { details: [importedCount + " workshops imported", removedCount + " workshops discontinued"] });
+    describeAdminAudit(request, { details: [importedCount + " experiences imported", removedCount + " experiences discontinued"] });
     return Response.json({
       success:
         true,
 
       message:
-        mode === "replace" ? `Catalogue updated: ${importedCount} imported, ${removedCount} discontinued.` : `${importedCount} workshops imported successfully.`,
+        mode === "replace" ? `Catalogue updated: ${importedCount} imported, ${removedCount} discontinued.` : `${importedCount} experiences imported successfully.`,
       removedCount,
 
       importedCount,

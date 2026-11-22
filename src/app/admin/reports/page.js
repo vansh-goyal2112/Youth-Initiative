@@ -137,7 +137,7 @@ export default function AdminReportsPage() {
     {!report && !loading && !searching && !results && <section className="admin-reports-empty">
       <div className="admin-reports-empty-icon"><FileText size={35}/></div>
       <h2>Student insights start here.</h2>
-      <p>Find a student to explore workshop registrations, XP activity, achievements and profile details. Reports are accessible only to authorized team members.</p>
+      <p>Find a student to explore experience registrations, XP activity, achievements and profile details. Reports are accessible only to authorized team members.</p>
       <div><ShieldCheck size={17}/> Privacy-first, access-controlled reports</div>
     </section>}
 
@@ -153,7 +153,7 @@ export default function AdminReportsPage() {
       </div>
 
       <div className="admin-reports-stats">
-        <div><span><BookOpen size={18}/></span><strong>{registrations.length}</strong><small>Workshop registrations</small></div>
+        <div><span><BookOpen size={18}/></span><strong>{registrations.length}</strong><small>Experience registrations</small></div>
         <div><span><Award size={18}/></span><strong>{badges.length}</strong><small>Badges awarded</small></div>
         <div><span><Activity size={18}/></span><strong>{xpHistory.length}</strong><small>XP transactions</small></div>
         <div><span><GraduationCap size={18}/></span><strong>{formatValue(report.student.level || 1)}</strong><small>Student level</small></div>
@@ -168,16 +168,16 @@ export default function AdminReportsPage() {
         {!Object.keys(report.journey || {}).length && <p className="admin-report-none">No learning journey information recorded yet.</p>}
       </section>
 
-      <section className="admin-report-section"><div className="admin-report-section-heading"><span><BookOpen size={19}/></span><div><h3>Workshop participation <small>({registrations.length})</small></h3><p>Registrations and check-in status</p></div></div>
+      <section className="admin-report-section"><div className="admin-report-section-heading"><span><BookOpen size={19}/></span><div><h3>Experience participation <small>({registrations.length})</small></h3><p>Registrations and check-in status</p></div></div>
         <div className="admin-report-list">{registrations.length ? registrations.map((r,i) => <div className="admin-report-list-item" key={i}><span className="admin-report-list-icon"><BookOpen size={18}/></span><div>
-          <strong>{r.workshopTitle || "Workshop"}</strong>
+          <strong>{r.workshopTitle || "Experience"}</strong>
           {isSelfReportedCompletion(r) && (
             <span className="ml-2 inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-bold text-sky-800">
               Self-reported
             </span>
           )}
           <p>{r.status || "Unknown"} · Attendance: {r.attendanceStatus || "Not recorded"}</p>
-        </div><CheckCircle2 size={18} className="text-slate-300"/></div>) : <p className="admin-report-none">No workshop registrations recorded yet.</p>}</div>
+        </div><CheckCircle2 size={18} className="text-slate-300"/></div>) : <p className="admin-report-none">No experience registrations recorded yet.</p>}</div>
       </section>
 
       <div className="admin-reports-two-columns">

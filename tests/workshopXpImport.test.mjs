@@ -8,7 +8,7 @@ test("Excel XP Reward and XP columns are read for individual workshops", () => {
   const admin = src("../src/app/admin/workshops/page.js");
   assert.match(admin, /row\["XP Reward"\]/);
   assert.match(admin, /row\["XP"\]/);
-  assert.match(admin, /XP Reward \(for this workshop\)/);
+  assert.match(admin, /XP Reward \(for this experience\)/);
 });
 
 test("import validates staff-set XP and preserves custom awards on re-import", () => {

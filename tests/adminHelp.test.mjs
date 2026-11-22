@@ -17,7 +17,7 @@ test("the program admin tour covers the dashboard and all six shortcuts", () => 
   const permissions = ADMIN_ROLES.program_admin;
   const titles = getAdminTour(dashboardPaths, "program_admin", permissions).map(step => step.title);
   assert.deepEqual(titles, [
-    "Dashboard", "Redeem XP", "Attendance", "Review claims", "Student directory", "Workshop studio", "Badges",
+    "Dashboard", "Redeem XP", "Attendance", "Review claims", "Student directory", "Experience studio", "Badges",
   ]);
   assert.match(getAdminGuide("/admin/students", "program_admin", permissions).steps.at(-1).text, /Correct erroneous XP/);
 });
@@ -26,7 +26,7 @@ test("event staff only receive the attendance and redemption guides", () => {
   const permissions = ADMIN_ROLES.event_staff;
   const tour = getAdminTour(dashboardPaths, "event_staff", permissions);
   assert.deepEqual(tour.map(step => step.title), ["Attendance", "Redeem XP"]);
-  assert.match(tour[0].steps[0].text, /Ask the workshop coordinator/);
+  assert.match(tour[0].steps[0].text, /Ask the experience coordinator/);
   assert.equal(getAdminGuide("/admin/students", "event_staff", permissions), null);
   assert.equal(getAdminGuide("/admin/security", "event_staff", permissions), null);
   assert.match(getAdminGuide("/admin/attendance", "event_staff", [...permissions, "attendance.manage"]).steps[0].text, /Generate check-in QR/);

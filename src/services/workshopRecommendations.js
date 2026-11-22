@@ -164,7 +164,7 @@ export function recommendWorkshops(
 
   if (!Array.isArray(completedWorkshops) || !Array.isArray(workshops)) {
     throw new Error(
-      "Completed workshops and workshops must be provided as arrays."
+      "Completed experiences and experiences must be provided as arrays."
     );
   }
 

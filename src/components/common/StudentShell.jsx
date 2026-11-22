@@ -99,7 +99,7 @@ export default function StudentShell({ children }) {
         {user && <StudentAnnouncements userId={user.uid} />}
         {user && student && !student.schoolGrade && (
           <div className={styles.gradeNotice} role="status">
-            <span><strong>One small step before exploring:</strong> Add your current school grade so we can match workshops to you.</span>
+            <span><strong>One small step before exploring:</strong> Add your current school grade so we can match experiences to you.</span>
             <Link href="/edit-profile">Add my grade</Link>
           </div>
         )}

@@ -41,13 +41,13 @@ async function assignXp(request) {
       if (updated) updatedCount++;
       else skippedCount++;
     }
-    describeAdminAudit(request, { details: [updatedCount + " workshop XP rewards updated", skippedCount + " skipped"], ...(!updatedCount ? { outcome: "unchanged" } : {}) });
+    describeAdminAudit(request, { details: [updatedCount + " experience XP rewards updated", skippedCount + " skipped"], ...(!updatedCount ? { outcome: "unchanged" } : {}) });
     return Response.json({ success: true, updatedCount, skippedCount });
   } catch (error) {
     const denied = adminAccessResponse(error);
     if (denied) return denied;
-    console.error("Automatic workshop XP assignment failed:", error);
-    return Response.json({ success: false, message: "Could not assign workshop XP." }, { status: 500 });
+    console.error("Automatic experience XP assignment failed:", error);
+    return Response.json({ success: false, message: "Could not assign experience XP." }, { status: 500 });
   }
 }
 
