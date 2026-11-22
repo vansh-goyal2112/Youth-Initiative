@@ -92,11 +92,13 @@ test("production server: public onboarding and recovery pages load; APIs require
       });
       assert.equal(response.status, 404, "Retired journal endpoint must not accept submissions.");
     });
-    await t.test("retired My Tasks page and feedback API are unavailable", async () => {
+    await t.test("retired My Tasks and workshop feedback routes are unavailable", async () => {
       for (const [pathname, method] of [
         ["/tasks", "GET"],
         ["/api/feedback", "GET"],
         ["/api/feedback", "POST"],
+        ["/admin/feedback", "GET"],
+        ["/api/admin/feedback", "GET"],
       ]) {
         const response = await fetch(baseUrl + pathname, { method, signal: AbortSignal.timeout(10_000) });
         assert.equal(response.status, 404, `${method} ${pathname}`);

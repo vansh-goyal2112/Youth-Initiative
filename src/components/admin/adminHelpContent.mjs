@@ -135,16 +135,6 @@ const guides = {
     ],
     tip: "Use the Reward artwork uploader on this page to change the reward celebration image.",
   },
-  "/admin/feedback": {
-    title: "Workshop feedback",
-    permission: "reports.generate",
-    intro: "Read feedback collected before workshop surveys were retired.",
-    steps: [
-      { text: "Open a workshop's results and read the summary." },
-      { text: "Use the CSV export if you need a copy of the historical results." },
-    ],
-    tip: "This page contains historical responses.",
-  },
 };
 
 const eventStaffPaths = ["/admin/attendance", "/admin/redeem-xp"];
