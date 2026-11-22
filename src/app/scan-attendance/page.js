@@ -144,7 +144,7 @@ export default function ScanAttendancePage() {
           <span>EXPERIENCE ATTENDANCE</span>
           <h1>Scan Attendance</h1>
           <p>{mode === "qr"
-            ? "Scan the QR code shown by your experience instructor."
+            ? "Scan the QR code shown by your experience instructor. You can check in without registering first."
             : "Enter the four-digit code displayed beneath the instructor's QR code."}</p>
         </div>
 

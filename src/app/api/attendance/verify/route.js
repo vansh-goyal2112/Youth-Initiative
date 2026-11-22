@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+import { getWorkshopEligibility } from "@/services/workshopEligibility";
 import { workshopCompletionSnapshot } from "@/services/workshopHistory.mjs";
 import { completionTransactionId } from "@/services/completionRules.mjs";
 import { ensureWorkshopXpAssigned } from "@/services/workshopXpMigration";
@@ -55,7 +57,7 @@ async function reserveManualCodeAttempt(studentId) {
 export async function POST(request) {
   try {
     const {
-      uid: studentId,
+      uid: studentId, student,
     } =
       await requireActiveStudent(
         request,
@@ -219,123 +221,82 @@ export async function POST(request) {
         ]
       );
 
+    // Existing completions include earlier QR sessions and past-attendance claims.
+    if (registrations.some(item => ["completed", "reversed"].includes(item.status) ||
+        item.attendanceStatus === "verified" || item.completionXpAwarded === true)) {
+      return Response.json({ success: false, message: "Attendance has already been recorded for this experience." }, { status: 409 });
+    }
+
+    const sessionId = session.catalogSessionId || null;
     const matching = registrations.find(item =>
-      (item.sessionId || null) === (session.catalogSessionId || null) && item.status === "upcoming"
+      (item.sessionId || null) === sessionId && item.status === "upcoming"
     );
-    if (!matching) {
-      return Response.json(
-        {
-          success: false,
-
-          message:
-            "You are not registered for this experience.",
-        },
-        {
-          status: 403,
-        }
-      );
-    }
-
-    const registration = matching;
-
-    if (
-      registration.status ===
-      "completed"
-    ) {
-      return Response.json(
-        {
-          success: false,
-
-          message:
-            "Attendance has already been recorded.",
-        },
-        {
-          status: 409,
-        }
-      );
-    }
-
-    /*
-      Load workshop information.
-    */
-
     const workshop = await ensureWorkshopXpAssigned(
       await readCosmosDocument("workshops", session.workshopId)
     );
-
-    if (!workshop) {
-      return Response.json(
-        {
-          success: false,
-
-          message:
-            "Experience could not be found.",
-        },
-        {
-          status: 404,
-        }
-      );
+    if (!workshop || workshop.status === "deleted" || workshop.duplicateOf) {
+      return Response.json({ success: false, message: "Experience could not be found." }, { status: 404 });
     }
 
-    /*
-      Mark registration completed.
+    const scheduled = sessionId && workshop.sessions?.find(item => item.id === sessionId);
+    if (!matching && (workshop.status !== "active" ||
+        (workshop.sessions?.length && scheduled?.status !== "active") ||
+        (sessionId && scheduled?.status !== "active") ||
+        getWorkshopEligibility(workshop, student).status === "ineligible")) {
+      return Response.json({ success: false, message: "This experience is not available for walk-in check-in." }, { status: 403 });
+    }
 
-      The Cosmos ETag prevents two
-      simultaneous attendance scans
-      from updating the same
-      registration version.
-    */
+    // Reserve one QR completion per student and experience, across QR codes
+    // and scheduled sessions. A retry can resume the same registration.
+    const claimKey = createHash("sha256").update(JSON.stringify([studentId, session.workshopId])).digest("hex");
+    const claimId = "attendance-claim:" + claimKey;
+    const registrationId = matching?.id || "walk-in:" + claimKey;
+    const completedAt = cosmosNow();
+    try {
+      await createCosmosDocument("attendanceSessions", {
+        id: claimId, registrationId, catalogSessionId: sessionId, createdAt: completedAt,
+      });
+    } catch (error) {
+      if (!isCosmosConflict(error)) throw error;
+      const claim = await readCosmosDocument("attendanceSessions", claimId);
+      if (claim?.registrationId !== registrationId || claim.catalogSessionId !== sessionId) {
+        return Response.json({ success: false, message: "A check-in already exists for this experience." }, { status: 409 });
+      }
+    }
 
-    const completedAt =
-      cosmosNow();
+    let registration = {
+      ...(matching || {
+        id: registrationId,
+        studentId,
+        workshopId: session.workshopId,
+        sessionId,
+        sessionSnapshot: scheduled || null,
+        externalRegistrationConfirmed: false,
+        registrationXpAwarded: false,
+        registeredAt: completedAt,
+        createdAt: completedAt,
+      }),
+      status: "completed",
+      attendanceStatus: "verified",
+      attendanceSessionId: session.id,
+      completionSource: "qr",
+      attendedAt: completedAt,
+      completedAt,
+      completionXpAwarded: false,
+      updatedAt: completedAt,
+    };
+    registration.workshopSnapshot = workshopCompletionSnapshot(workshop, registration, null);
 
     try {
-      await replaceCosmosDocument(
-        "registrations",
-        registration,
-        {
-          status:
-            "completed",
-
-          attendanceStatus:
-            "verified",
-
-          attendanceSessionId,
-          completionSource: "qr",
-          sessionId: registration.sessionId || null,
-
-          attendedAt:
-            completedAt,
-
-          completedAt,
-          workshopSnapshot: workshopCompletionSnapshot(workshop, { ...registration, status: "completed", completedAt }, null),
-
-          completionXpAwarded:
-            false,
-
-          updatedAt:
-            completedAt,
-        }
-      );
-    } catch (error) {
-      if (
-        isCosmosPreconditionFailed(
-          error
-        )
-      ) {
-        return Response.json(
-          {
-            success: false,
-
-            message:
-              "Attendance has already been recorded.",
-          },
-          {
-            status: 409,
-          }
-        );
+      if (matching) {
+        registration = await replaceCosmosDocument("registrations", matching, registration);
+      } else {
+        registration = await createCosmosDocument("registrations", registration);
       }
-
+    } catch (error) {
+      if (isCosmosConflict(error) || isCosmosPreconditionFailed(error)) {
+        return Response.json({ success: false, message: "Attendance has already been recorded." }, { status: 409 });
+      }
       throw error;
     }
 

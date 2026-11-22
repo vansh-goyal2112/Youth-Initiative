@@ -13,6 +13,7 @@ import {
   LoaderCircle,
   Map,
   Search,
+  QrCode,
   Trophy,
   UserRound,
   X,
@@ -208,11 +209,19 @@ export default function WorkshopsPage() {
     errorMessage,
   });
 
+  const scanLink = (
+    <Link href="/scan-attendance" className={ctaStyles.button}>
+      <QrCode size={18} aria-hidden="true" />
+      Scan QR code
+    </Link>
+  );
+
   // No count, filters, or empty-result messaging until the student's
   // authenticated catalogue request has actually completed successfully.
   if (viewState !== "ready") {
     return (
       <main className="student-workshops-page min-h-screen">
+        {user && <div className="student-content-container pt-4">{scanLink}</div>}
         <section className="student-content-container flex min-h-[65vh] items-center justify-center py-14">
           {viewState === "loading" ? (
             <div className="student-workshop-status" role="status">
@@ -306,17 +315,25 @@ export default function WorkshopsPage() {
       </section>
 
       <section className="student-content-container workshops-main-content">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 border-l-4 border-l-red-600 bg-white p-5 shadow-sm">
-          <div>
-            <h2 className="text-lg font-extrabold text-slate-900">Already attended a SAIT experience?</h2>
-            <p className="mt-1 text-sm text-slate-600">Find an experience you attended. Choose Previously Completed to claim half XP. SAIT staff may review your claim.</p>
+        {scanLink}
+        <div className="my-6 grid gap-4 md:grid-cols-2">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 border-l-4 border-l-red-600 bg-white p-5 shadow-sm">
+            <div>
+              <h2 className="text-lg font-extrabold text-slate-900">Already attended a SAIT experience?</h2>
+              <p className="mt-1 text-sm text-slate-600">Find an experience you attended. Choose Previously Completed to claim half XP. SAIT staff may review your claim.</p>
+            </div>
+            <Link
+              href="/completed-workshops?claim=1#previously-completed"
+              className={ctaStyles.button}
+            >
+              Previously Completed
+            </Link>
           </div>
-          <Link
-            href="/completed-workshops?claim=1#previously-completed"
-            className={ctaStyles.button}
-          >
-            Previously Completed
-          </Link>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 border-l-4 border-l-red-600 bg-white p-5 shadow-sm">
+            <h2 className="text-lg font-extrabold text-slate-900">At a SAIT experience now? Scan the QR code.</h2>
+            <Link href="/scan-attendance" className={ctaStyles.button}>Scan QR code</Link>
+          </div>
         </div>
 
         <div className="workshop-search-row">
