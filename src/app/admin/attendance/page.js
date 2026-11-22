@@ -4,12 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { LoaderCircle, QrCode, CalendarCheck2, Timer, ShieldCheck, CheckCircle2, ArrowRight, BookOpen, ScanLine, RefreshCw, Clock3, BarChart3, ArrowUpRight } from "lucide-react";
+import { LoaderCircle, QrCode, CalendarCheck2, Timer, ShieldCheck, CheckCircle2, ArrowRight, BookOpen, ScanLine, RefreshCw, Clock3, BarChart3, ArrowUpRight, Search } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
 import { formatWorkshopDate } from "@/utils/workshopDate.mjs";
 
 export default function AdminAttendancePage() {
   const [workshops, setWorkshops] = useState([]);
+  const [workshopSearch, setWorkshopSearch] = useState("");
   const [workshopId, setWorkshopId] = useState("");
   const [catalogSessionId, setCatalogSessionId] = useState("");
   const [duration, setDuration] = useState(15);
@@ -64,6 +65,13 @@ export default function AdminAttendancePage() {
   }
 
   const workshop = workshops.find(item => item.id === workshopId);
+  const search = workshopSearch.trim().toLowerCase();
+  const matchingWorkshops = workshops.filter(item =>
+    [item.title, item.programArea].some(value => String(value || "").toLowerCase().includes(search))
+  );
+  const pickerWorkshops = workshop && !matchingWorkshops.some(item => item.id === workshopId)
+    ? [workshop, ...matchingWorkshops]
+    : matchingWorkshops;
   const scheduled = Array.isArray(workshop?.sessions) && workshop.sessions.length > 0 ? workshop.sessions.filter(item => item.status === "active") : [];
   return <main className="admin-attendance-page admin-attendance-redesign">
     <div className="admin-attendance-intro">
@@ -80,10 +88,26 @@ export default function AdminAttendancePage() {
         </div>
         <p className="admin-panel-subtext">Choose the experience and how long students can scan the code.</p>
         <div className="admin-attendance-fields">
+          <label>
+            <span><Search size={16} aria-hidden="true" /> Search workshops</span>
+            <input type="search" value={workshopSearch}
+              disabled={loadingWorkshops || loading}
+              placeholder="Search by title or program area"
+              aria-controls="attendance-workshop"
+              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+              onChange={event => setWorkshopSearch(event.target.value)} />
+          </label>
+          {search && !loadingWorkshops && (
+            <p className="text-xs text-slate-600" role="status">
+              {matchingWorkshops.length === 0
+                ? "No workshops match your search."
+                : `${matchingWorkshops.length} matching ${matchingWorkshops.length === 1 ? "workshop" : "workshops"}`}
+            </p>
+          )}
           <label><span><BookOpen size={16}/> Workshop</span>
-            <select disabled={loadingWorkshops || loading} value={workshopId} onChange={event => {setWorkshopId(event.target.value);setCatalogSessionId("");setSuccessMessage("");setQrImage("");setManualCode("");}}>
+            <select id="attendance-workshop" disabled={loadingWorkshops || loading} value={workshopId} onChange={event => {setWorkshopId(event.target.value);setCatalogSessionId("");setSuccessMessage("");setQrImage("");setManualCode("");}}>
               <option value="">{loadingWorkshops ? "Loading workshops…" : "Choose a workshop"}</option>
-              {workshops.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+              {pickerWorkshops.map(item => <option key={item.id} value={item.id}>{item.title}{item.programArea ? " · " + item.programArea : ""}</option>)}
             </select>
           </label>
           {scheduled.length > 0 && <label><span><CalendarCheck2 size={16}/> Scheduled date</span>
