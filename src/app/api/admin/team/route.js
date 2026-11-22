@@ -1,4 +1,6 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
+import { auditFieldChanges } from "@/services/adminAuditChanges.mjs";
 import { ADMIN_ROLES, validatePermissionOverrides } from "@/services/adminPermissions";
 import { queryCosmosDocuments, readCosmosDocument, replaceCosmosDocument, cosmosNow } from "@/services/cosmosData";
 import { adminAuth } from "@/services/firebaseAdmin";
@@ -17,7 +19,7 @@ export async function GET(request) {
 
 // Approval, rejection, role assignment, and one-person overrides.
 // The requestor's identity, role, and permissions are never accepted from a client payload.
-export async function PATCH(request) {
+async function updateStaff(request) {
   try {
     const acting = await requireAdminPermission(request, "admins.manage");
     if (acting.adminData.adminRole !== "super_admin") {
@@ -48,6 +50,21 @@ export async function PATCH(request) {
         user.email?.trim().toLowerCase() !== target.email?.trim().toLowerCase()) {
       return Response.json({ message: "Target must have a verified active Firebase account." }, { status: 409 });
     }
+    const roleLabel = role => role?.replaceAll("_", " ");
+    const details = auditFieldChanges(
+      { ...target, adminRole: roleLabel(target.adminRole) },
+      { status, adminRole: roleLabel(adminRole) },
+      [["status", "Staff access status", true], ["adminRole", "Staff role", true]],
+    );
+    const oldOverrides = target.permissionOverrides || {};
+    if ([...new Set([...Object.keys(oldOverrides), ...Object.keys(overrides)])]
+      .some(permission => oldOverrides[permission] !== overrides[permission])) {
+      details.push("Individual permissions changed");
+    }
+    describeAdminAudit(request, {
+      subject: [target.firstName, target.lastName].filter(Boolean).join(" ") || user.displayName || target.email,
+      details, ...(!details.length ? { outcome: "unchanged" } : {}),
+    });
     const updated = await replaceCosmosDocument("admins", target, {
       status, adminRole, permissionOverrides: overrides,
       updatedAt: cosmosNow(), updatedBy: acting.uid,
@@ -63,3 +80,5 @@ export async function PATCH(request) {
     return Response.json({ message: "Unable to update administrator access." }, { status: 500 });
   }
 }
+
+export const PATCH = withAdminAudit(updateStaff);

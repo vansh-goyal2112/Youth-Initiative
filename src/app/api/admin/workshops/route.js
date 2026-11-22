@@ -1,3 +1,5 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
+import { auditFieldChanges, WORKSHOP_AUDIT_FIELDS } from "@/services/adminAuditChanges.mjs";
 import { retireWorkshopPermanently } from "@/services/workshopRetirement";
 import { WORKSHOP_IMAGE_PLACEHOLDER } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
@@ -212,7 +214,7 @@ export async function GET(
   }
 }
 
-export async function POST(
+async function createWorkshop(
   request
 ) {
   try {
@@ -246,6 +248,7 @@ export async function POST(
 
     const createdAt =
       cosmosNow();
+    describeAdminAudit(request, { subject: workshopData.title.trim() });
 
     await createCosmosDocument(
       "workshops",
@@ -310,7 +313,7 @@ export async function POST(
   }
 }
 
-export async function PUT(
+async function updateWorkshop(
   request
 ) {
   try {
@@ -376,13 +379,16 @@ export async function PUT(
       );
     }
 
+    const updates = buildWorkshopData(workshopData, id);
+    const details = auditFieldChanges(existingWorkshop, { ...existingWorkshop, ...updates }, WORKSHOP_AUDIT_FIELDS);
+    describeAdminAudit(request, {
+      subject: existingWorkshop.title, details, ...(!details.length ? { outcome: "unchanged" } : {}),
+    });
     await replaceCosmosDocument(
       "workshops",
       existingWorkshop,
       {
-        ...buildWorkshopData(
-          workshopData, id
-        ),
+        ...updates,
         updatedBy:
           admin.uid,
 
@@ -426,7 +432,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
+async function retireWorkshop(
   request
 ) {
   try {
@@ -471,6 +477,7 @@ export async function DELETE(
       );
     }
 
+    describeAdminAudit(request, { subject: existingWorkshop.title });
     await retireWorkshopPermanently(existingWorkshop);
 
     return Response.json({
@@ -507,3 +514,7 @@ export async function DELETE(
     );
   }
 }
+
+export const POST = withAdminAudit(createWorkshop);
+export const PUT = withAdminAudit(updateWorkshop);
+export const DELETE = withAdminAudit(retireWorkshop);

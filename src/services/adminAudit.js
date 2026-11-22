@@ -6,8 +6,8 @@ import { presentAdminAudit } from "./adminAuditPresentation.mjs";
 // Append-only audit entries use the existing administrators container, with a
 // dedicated ID namespace. This avoids a Cosmos infrastructure migration.
 // Admin account queries MUST filter role='admin', not SELECT * unfiltered.
-// Never record passwords, access tokens, request bodies, or student PII here.
-export async function recordAdminAudit({ actorUid, action, resource, outcome = "attempted", attemptId, subject }) {
+// Never record passwords, access tokens, request bodies, or private student profile values here.
+export async function recordAdminAudit({ actorUid, action, resource, outcome = "attempted", attemptId, subject, details }) {
   if (!actorUid || !action || !resource) {
     throw new Error("Audit actor, action and resource are required.");
   }
@@ -21,17 +21,55 @@ export async function recordAdminAudit({ actorUid, action, resource, outcome = "
     resource,
     outcome,
     ...(attemptId ? { attemptId } : {}),
-    ...(subject ? { subject } : {}),
+    ...(subject ? { subject: subject.slice(0, 200) } : {}),
+    ...(details?.length ? { details: details.slice(0, 24).map(detail => detail.slice(0, 300)) } : {}),
     createdAt: now,
   });
   return id;
+}
+
+const requests = new WeakMap();
+
+export function trackAdminAuditAttempt(request, entry) {
+  const audit = requests.get(request);
+  if (audit && !audit.attemptId) Object.assign(audit, entry);
+}
+
+export function describeAdminAudit(request, description) {
+  const audit = requests.get(request);
+  if (audit) Object.assign(audit, description);
+}
+
+export function withAdminAudit(handler) {
+  return async function auditedHandler(request, ...args) {
+    const audit = {};
+    requests.set(request, audit);
+    let response;
+    try {
+      response = await handler(request, ...args);
+      return response;
+    } finally {
+      requests.delete(request);
+      if (audit.attemptId) {
+        const status = response?.status ?? 500;
+        const outcome = status >= 500 || status === 202 ? "review" :
+          status >= 400 ? "failed" : audit.outcome || "success";
+        try {
+          await recordAdminAudit({ ...audit, outcome });
+        } catch (error) {
+          // Keep the initial attempt and the actual mutation response.
+          console.error("Admin audit outcome could not be recorded:", error?.code);
+        }
+      }
+    }
+  };
 }
 
 export async function getAdminAudit(limit = 100) {
   const boundedLimit = Math.min(200, Math.max(1, Math.trunc(limit) || 100));
   const events = await queryCosmosDocuments("admins", `
     SELECT TOP ${boundedLimit * 2} c.id, c.actorUid, c.action,
-      c.resource, c.outcome, c.createdAt, c.attemptId, c.subject
+      c.resource, c.outcome, c.createdAt, c.attemptId, c.subject, c.details
     FROM c WHERE c.role = @role
     ORDER BY c.createdAt DESC
   `, [{ name: "@role", value: "audit" }]);

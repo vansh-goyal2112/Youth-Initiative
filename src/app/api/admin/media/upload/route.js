@@ -1,3 +1,4 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import crypto from "crypto";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
 import {
@@ -31,7 +32,7 @@ export async function GET(request) {
   }
 }
 
-export async function POST(request) {
+async function uploadArtwork(request) {
   try {
     const form = await request.formData().catch(() => null);
     if (!form) return Response.json({ message: "Select an image to upload." }, { status: 400 });
@@ -57,6 +58,7 @@ export async function POST(request) {
       record = await readCosmosDocument("admins", "ui-media:" + kind);
     }
 
+    describeAdminAudit(request, { action: "artwork." + kind, subject: record?.title || record?.name });
     let bytes;
     try {
       bytes = await prepareArtwork(Buffer.from(await upload.arrayBuffer()), upload.type);
@@ -108,3 +110,5 @@ export async function POST(request) {
     }, { status: 500 });
   }
 }
+
+export const POST = withAdminAudit(uploadArtwork);

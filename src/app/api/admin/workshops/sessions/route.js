@@ -1,3 +1,5 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
+import { auditFieldChanges } from "@/services/adminAuditChanges.mjs";
 import crypto from "crypto";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
 import { readCosmosDocument, replaceCosmosDocument, cosmosNow, isCosmosPreconditionFailed } from "@/services/cosmosData";
@@ -18,7 +20,7 @@ export async function GET(request) {
   }
 }
 
-export async function POST(request) {
+async function changeSession(request) {
   try {
     const actor = await requireAdminPermission(request, "workshops.edit");
     const body = await request.json().catch(() => null);
@@ -30,12 +32,14 @@ export async function POST(request) {
     }
     const workshop = await readCosmosDocument("workshops", workshopId);
     if (!workshop || workshop.status === "deleted") return Response.json({ message: "Workshop not found." }, { status: 404 });
+    describeAdminAudit(request, { action: "session." + action, subject: workshop.title });
     const sessions = resolveWorkshopSessions(workshop).map(item => ({ ...item }));
     let next;
     const index = sessions.findIndex(item => item.id === sessionId);
     if (["edit", "archive", "duplicate"].includes(action) && index < 0) {
       return Response.json({ message: "Session not found. Refresh the workshop." }, { status: 404 });
     }
+    const previous = sessions[index];
     try {
       if (action === "add") {
         next = { ...validateSessionInput(body.session), id: crypto.randomUUID(), createdAt: cosmosNow(), createdBy: actor.uid };
@@ -62,9 +66,19 @@ export async function POST(request) {
       if (isCosmosPreconditionFailed(error)) return Response.json({ message: "Workshop was updated by someone else. Refresh before saving." }, { status: 409 });
       throw error;
     }
+    const details = ["edit", "archive"].includes(action)
+      ? auditFieldChanges(previous, next, [
+          ["startDate", "Start date", true], ["endDate", "End date", true], ["time", "Time", true],
+          ["location", "Location", true], ["status", "Status", true], ["capacity", "Capacity", true],
+          ["registrationUrl", "Registration link"],
+        ])
+      : [next.startDate ? "Session starts " + next.startDate : "Start date not set"];
+    describeAdminAudit(request, { details, ...(!details.length ? { outcome: "unchanged" } : {}) });
     return Response.json({ success: true, sessions, session: next,
       message: action === "archive" ? "Session archived. Historical attendance remains intact." : "Session saved successfully." });
   } catch (error) {
     return adminAccessResponse(error) || Response.json({ message: "Unable to save the workshop session." }, { status: 500 });
   }
 }
+
+export const POST = withAdminAudit(changeSession);

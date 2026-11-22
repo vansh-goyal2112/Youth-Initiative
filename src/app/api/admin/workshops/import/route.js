@@ -1,3 +1,4 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import { normalizeWorkshopOption, workshopProgramAreas } from "@/utils/workshopCatalogueFields.mjs";
 import { WORKSHOP_IMAGE_PLACEHOLDER } from "@/utils/workshopImageAssignment.mjs";
 import crypto from "crypto";
@@ -391,7 +392,7 @@ async function saveImportedWorkshop(
   );
 }
 
-export async function POST(
+async function importWorkshops(
   request
 ) {
   try {
@@ -496,6 +497,7 @@ export async function POST(
       incoming: validWorkshops.map(w => [createWorkshopId(w.title,w.programArea,w.offeringYear || "",w.grade || ""),w.grade,w.description,w.startDate,w.endDate,w.time,w.xpReward ?? null]).sort((a,b)=>a[0].localeCompare(b[0])),
     })).digest("hex");
     if (preview) {
+      describeAdminAudit(request, { outcome: "unchanged", details: ["Previewed catalogue replacement"] });
       return Response.json({ success: true, preview: true, mode,
         incoming: validWorkshops.length, existing: oldCatalog.length, planToken,
         discontinue: discontinue.map(w => ({ id: w.id, title: w.title })),
@@ -592,6 +594,7 @@ export async function POST(
       }
     }
 
+    describeAdminAudit(request, { details: [importedCount + " workshops imported", removedCount + " workshops discontinued"] });
     return Response.json({
       success:
         true,
@@ -636,3 +639,5 @@ export async function POST(
     );
   }
 }
+
+export const POST = withAdminAudit(importWorkshops);

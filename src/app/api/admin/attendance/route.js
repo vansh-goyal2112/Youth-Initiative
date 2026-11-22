@@ -1,3 +1,4 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import crypto from "crypto";
 
 import {
@@ -23,7 +24,7 @@ const ALLOWED_DURATIONS = [
   30,
 ];
 
-export async function POST(
+async function createAttendanceCode(
   request
 ) {
   try {
@@ -171,6 +172,7 @@ export async function POST(
       }
     );
 
+    describeAdminAudit(request, { subject: workshop.title });
     return Response.json({
       success: true,
 
@@ -212,3 +214,5 @@ export async function POST(
     );
   }
 }
+
+export const POST = withAdminAudit(createAttendanceCode);

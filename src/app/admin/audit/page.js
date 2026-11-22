@@ -3,6 +3,11 @@ import { useEffect, useMemo, useState } from "react";
 import { ShieldCheck, RefreshCw, Clock3, FileSearch, Search, Activity } from "lucide-react";
 import { adminFetch } from "@/services/adminApi";
 
+const OUTCOMES = {
+  attempted: "Attempted", success: "Success", failed: "Failed",
+  review: "Needs review", unchanged: "No change",
+};
+
 export default function AdminAuditPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +25,7 @@ export default function AdminAuditPage() {
     return () => { active = false; };
   }, [revision]);
   const filtered = useMemo(() => events.filter(item =>
-    [item.staffName,item.actionLabel,item.outcome].some(value => String(value || "").toLowerCase().includes(query.trim().toLowerCase()))), [events,query]);
+    [item.staffName,item.actionLabel,OUTCOMES[item.outcome],...(item.details || [])].some(value => String(value || "").toLowerCase().includes(query.trim().toLowerCase()))), [events,query]);
 
   return <main className="admin-audit-redesign mx-auto max-w-7xl px-4 py-8 md:px-8">
     <header className="admin-team-intro">
@@ -43,8 +48,12 @@ export default function AdminAuditPage() {
        <div className="overflow-x-auto"><table className="admin-audit-table"><thead><tr><th>When</th><th>Staff member</th><th>Action</th><th>Outcome</th></tr></thead><tbody>
         {filtered.map(event => <tr key={event.id}><td><span className="admin-audit-time"><Clock3 size={14}/>{event.createdAt ? new Date(event.createdAt).toLocaleString() : "Unknown"}</span></td>
           <td><span className="admin-audit-staff">{event.staffName}</span></td>
-          <td><span className="admin-audit-action">{event.actionLabel}</span></td>
-          <td><span className="admin-audit-outcome" data-outcome={event.outcome}>{event.outcome}</span></td></tr>)}
+          <td><span className="admin-audit-action">{event.actionLabel}</span>
+            {event.details?.length > 0 && <ul className="mt-2 space-y-1">
+              {event.details.map(detail => <li key={detail}>{detail}</li>)}
+            </ul>}
+          </td>
+          <td><span className="admin-audit-outcome" data-outcome={event.outcome}>{OUTCOMES[event.outcome]}</span></td></tr>)}
        </tbody></table></div>}
     </section>
   </main>;

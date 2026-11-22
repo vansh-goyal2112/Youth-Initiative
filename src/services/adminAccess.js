@@ -1,6 +1,6 @@
 import { isMfaCookieValid } from "@/services/adminMfa";
 import { hasAdminPermission, isSaitEmail, resolveAdminPermissions } from "@/services/adminPermissions";
-import { recordAdminAudit } from "@/services/adminAudit";
+import { recordAdminAudit, trackAdminAuditAttempt } from "@/services/adminAudit";
 import {
   adminAuth,
 } from "@/services/firebaseAdmin";
@@ -219,11 +219,11 @@ export async function requireAdminPermission(request, permission, { auditAction 
   }
   // Fail closed if a privileged state-changing request cannot be audited.
   if (!["GET", "HEAD", "OPTIONS"].includes(request.method)) {
-    admin.auditAttemptId = await recordAdminAudit({
-      actorUid: admin.uid,
-      action: auditAction,
-      resource: new URL(request.url).pathname,
-    });
+    const event = {
+      actorUid: admin.uid, action: auditAction, resource: new URL(request.url).pathname,
+    };
+    admin.auditAttemptId = await recordAdminAudit(event);
+    trackAdminAuditAttempt(request, { ...event, attemptId: admin.auditAttemptId });
   }
   return admin;
 }

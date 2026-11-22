@@ -1,3 +1,5 @@
+import { auditFieldChanges } from "@/services/adminAuditChanges.mjs";
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import {
   adminAuth,
 } from "@/services/firebaseAdmin";
@@ -539,7 +541,7 @@ export async function GET(
   ========================================
 */
 
-export async function PUT(
+async function updateStudent(
   request
 ) {
   let authStateChanged =
@@ -585,6 +587,16 @@ export async function PUT(
       await getStudentAndAuthUser(
         targetStudentId
       );
+
+    const changes = auditFieldChanges(student, { ...student, ...validatedData, schoolGrade: validatedData.schoolGrade ?? student.schoolGrade }, [
+      ["firstName", "First name"], ["lastName", "Last name"], ["contactEmail", "Contact email"],
+      ["schoolGrade", "Grade"], ["learningMode", "Learning preference"], ["interests", "Interests"],
+      ["accountStatus", "Account status", true],
+    ]);
+    describeAdminAudit(request, {
+      subject: student.youthId ? "Youth ID " + student.youthId : "Student account",
+      details: changes, ...(!changes.length ? { outcome: "unchanged" } : {}),
+    });
 
     /*
       Keep Firebase Authentication's
@@ -815,7 +827,7 @@ export async function PUT(
   or Firebase Authentication account.
 */
 
-export async function DELETE(
+async function deactivateStudent(
   request
 ) {
   let previousDisabledState =
@@ -857,6 +869,10 @@ export async function DELETE(
         targetStudentId
       );
 
+    describeAdminAudit(request, {
+      subject: student.youthId ? "Youth ID " + student.youthId : "Student account",
+      ...(student.accountStatus === "inactive" && authUser.disabled ? { outcome: "unchanged" } : {}),
+    });
     if (student.accountStatus === "deleting") {
       throw apiError("Permanent account deletion is in progress. Only a Super Admin can retry deletion.", 409);
     }
@@ -1017,3 +1033,6 @@ export async function DELETE(
     );
   }
 }
+
+export const PUT = withAdminAudit(updateStudent);
+export const DELETE = withAdminAudit(deactivateStudent);

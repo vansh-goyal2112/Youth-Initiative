@@ -1,3 +1,4 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
 import {
   createCosmosDocument, queryCosmosDocuments, readCosmosDocument,
@@ -95,7 +96,7 @@ export async function GET(request) {
   }
 }
 
-export async function POST(request) {
+async function redeem(request) {
   try {
     const acting = await requireAdminPermission(request, "xp.redeem");
     const body = await request.json().catch(() => null);
@@ -112,6 +113,7 @@ export async function POST(request) {
     const id = "xp-redemption:" + studentId + ":" + operationId;
     const prior = await readCosmosDocument("xpTransactions", id);
     if (prior) {
+      describeAdminAudit(request, { outcome: "unchanged", details: ["This redemption was already submitted"] });
       return Response.json({
         success: prior.status === "completed", alreadyProcessed: true,
         message: prior.status === "completed"
@@ -124,6 +126,10 @@ export async function POST(request) {
     if (!student || (student.role && student.role !== "student")) {
       return Response.json({ message: "Student not found." }, { status: 404 });
     }
+    describeAdminAudit(request, {
+      subject: student.youthId ? "Youth ID " + student.youthId : "Student account",
+      details: ["XP spent: " + amount],
+    });
     try { redeemXp(student, amount); }
     catch (error) { return Response.json({ message: error.message }, { status: 409 }); }
 
@@ -195,3 +201,5 @@ export async function POST(request) {
     }, { status: 500 });
   }
 }
+
+export const POST = withAdminAudit(redeem);

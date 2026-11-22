@@ -1,3 +1,4 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import { POST as registerStudent } from "@/app/api/register/route";
 import {
   requireAdminPermission,
@@ -9,7 +10,7 @@ export const runtime = "nodejs";
 // Admin-assisted enrollment uses exactly the same validated student
 // registration, guardian consent, email verification and activation flow.
 // It MUST NOT create a Firebase user or bypass consent.
-export async function POST(request) {
+async function inviteStudent(request) {
   try {
     await requireAdminPermission(request, "students.edit");
     const registrationResponse = await registerStudent(request);
@@ -25,6 +26,9 @@ export async function POST(request) {
       }, { status: registrationResponse.status });
     }
 
+    describeAdminAudit(request, { details: [result.emailSent === false
+      ? "Registration started. Verification or consent email needs to be resent"
+      : "Registration started. Account activation is pending"] });
     return Response.json({
       success: true,
       registrationId: result.registrationId,
@@ -47,3 +51,5 @@ export async function POST(request) {
     }, { status: 500 });
   }
 }
+
+export const POST = withAdminAudit(inviteStudent);

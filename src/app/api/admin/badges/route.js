@@ -6,6 +6,7 @@ import {
 } from "@/services/cosmosData";
 import { BUILT_IN_BADGES, validateBadgeDefinition } from "@/services/customBadges.mjs";
 import { loadBadgeDefinitions } from "@/services/badgeCatalogue";
+import { auditFieldChanges } from "@/services/adminAuditChanges.mjs";
 import { recordAdminAudit } from "@/services/adminAudit";
 
 export const runtime = "nodejs";
@@ -34,12 +35,14 @@ async function changeBadge(request, initialAction, failureMessage, change) {
   let actor;
   let action = initialAction;
   let subject;
+  let details;
   let response;
   try {
     actor = await requireAdminPermission(request, "badges.manage", { auditAction: initialAction });
-    response = await change(actor, (nextAction, badgeName) => {
+    response = await change(actor, (nextAction, badgeName, badgeChanges) => {
       action = nextAction;
       subject = badgeName;
+      details = badgeChanges;
     });
   } catch (error) {
     response = adminAccessResponse(error) || Response.json({ message: failureMessage }, { status: 500 });
@@ -48,7 +51,7 @@ async function changeBadge(request, initialAction, failureMessage, change) {
     try {
       await recordAdminAudit({
         actorUid: actor.uid, action, resource: "/api/admin/badges",
-        outcome: response.ok ? "success" : "failed", attemptId: actor.auditAttemptId, subject,
+        outcome: response.ok ? "success" : "failed", attemptId: actor.auditAttemptId, subject, details,
       });
     } catch (error) {
       // The original attempt remains in the append-only log. Preserve the
@@ -106,7 +109,10 @@ export async function PUT(request) {
             id, badgeId: builtIn.badgeId, role: "badge_definition",
             createdAt: now, createdBy: actor.uid, ...updates,
           });
-      describe(action, saved.name);
+      describe(action, saved.name, auditFieldChanges(existing || builtIn, saved, [
+        ["name", "Badge name", true], ["status", "Badge status", true],
+        ["description", "Badge description"], ["artworkUrl", "Badge artwork"], ["rule", "Earning rule"],
+      ]));
       return Response.json({ success: true, badge: saved,
         message: "Badge updated. Archived badges stop new automatic awards; earned badges remain preserved." });
     } catch (error) {

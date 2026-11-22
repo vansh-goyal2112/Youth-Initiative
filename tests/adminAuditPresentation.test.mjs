@@ -31,3 +31,15 @@ test("an unpaired attempt does not imply success", () => {
   assert.equal(entry.actionLabel, "Update badge");
   assert.equal(entry.outcome, "attempted");
 });
+
+test("confirmed mutations expose safe change details and partial results stay reviewable", () => {
+  const output = presentAdminAudit([
+    { id: "updated", action: "workshops.edit", outcome: "success", subject: "Intro to Robotics",
+      details: ["XP reward changed from 100 to 175"] },
+    { id: "xp", action: "xp.grant", outcome: "review" },
+    { id: "repeat", action: "xp.redeem", outcome: "unchanged" },
+  ], [], 10);
+  assert.equal(output[0].actionLabel, "Updated workshop: Intro to Robotics");
+  assert.deepEqual(output[0].details, ["XP reward changed from 100 to 175"]);
+  assert.deepEqual(output.slice(1).map(({ outcome }) => outcome), ["review", "unchanged"]);
+});

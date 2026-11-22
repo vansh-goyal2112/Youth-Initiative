@@ -1,3 +1,4 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
 import {
   readCosmosDocument, createCosmosDocument, replaceCosmosDocument,
@@ -5,13 +6,12 @@ import {
 } from "@/services/cosmosData";
 import { creditXp, getXpBalances, reverseEarnedXp } from "@/services/xpBalance.mjs";
 import { calculateLevel, getLevelName } from "@/services/levelProgress.mjs";
-import { recordAdminAudit } from "@/services/adminAudit";
 
 export const runtime = "nodejs";
 
 // Manual grants and corrections update the balances used by student pages.
 // Event swag redemption uses /api/admin/rewards instead and never changes lifetime XP.
-export async function POST(request) {
+async function adjustXp(request) {
   try {
     const actor = await requireAdminPermission(request, "xp.adjust");
     const body = await request.json().catch(() => null);
@@ -33,6 +33,11 @@ export async function POST(request) {
     if (!student || (student.role && student.role !== "student")) {
       return Response.json({ message: "Student not found." }, { status: 404 });
     }
+    describeAdminAudit(request, {
+      action: grant ? "xp.grant" : "xp.adjust",
+      subject: student.youthId ? "Youth ID " + student.youthId : "Student account",
+      details: [grant ? "XP granted: " + amount : "Earned XP correction: " + amount],
+    });
     const points = grant ? amount : -amount;
     const prior = await readCosmosDocument("xpTransactions", id);
     if (prior) {
@@ -42,6 +47,7 @@ export async function POST(request) {
       if (prior.status !== "completed") {
         return Response.json({ message: `This XP ${adjustment} is already recorded. Check the ledger before retrying.` }, { status: 409 });
       }
+      describeAdminAudit(request, { outcome: "unchanged", details: ["This XP adjustment was already recorded"] });
       const latest = await readCosmosDocument("students", studentId);
       if (!latest) return Response.json({ message: "Student not found." }, { status: 404 });
       const balances = getXpBalances(latest);
@@ -97,9 +103,6 @@ export async function POST(request) {
       await replaceCosmosDocument("xpTransactions", transaction, {
         status: "completed", completedAt: cosmosNow(), updatedAt: cosmosNow(),
       });
-      await recordAdminAudit({
-        actorUid: actor.uid, action: grant ? "xp.grant" : "xp.adjust", resource: "student:" + studentId, outcome: "success",
-      });
     } catch (error) {
       console.error("XP adjusted but ledger/audit needs reconciliation:", id, error?.message);
       return Response.json({
@@ -118,3 +121,5 @@ export async function POST(request) {
       Response.json({ message: "XP adjustment could not be confirmed. Inspect the ledger before retrying." }, { status: 500 });
   }
 }
+
+export const POST = withAdminAudit(adjustXp);

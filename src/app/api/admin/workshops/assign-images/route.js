@@ -1,3 +1,4 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
 import { queryCosmosDocuments, replaceCosmosDocument, cosmosNow } from "@/services/cosmosData";
 import {
@@ -7,7 +8,7 @@ import {
 
 export const runtime = "nodejs";
 
-export async function POST(request) {
+async function assignArtwork(request) {
   try {
     await requireAdminPermission(request, "workshops.edit");
     const all = await queryCosmosDocuments("workshops", "SELECT * FROM c");
@@ -37,6 +38,7 @@ export async function POST(request) {
       }
     }
 
+    describeAdminAudit(request, { details: [assigned + " workshops received curated artwork", needsImage + " workshops still need artwork"] });
     return Response.json(
       { success: true, assigned, needsImage, unchanged },
       { headers: { "Cache-Control": "no-store" } }
@@ -51,3 +53,5 @@ export async function POST(request) {
     );
   }
 }
+
+export const POST = withAdminAudit(assignArtwork);

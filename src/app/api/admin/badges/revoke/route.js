@@ -1,5 +1,5 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
-import { recordAdminAudit } from "@/services/adminAudit";
 import {
   readCosmosDocument, replaceCosmosDocument, deleteCosmosDocument,
   cosmosNow, isCosmosPreconditionFailed,
@@ -7,7 +7,7 @@ import {
 
 export const runtime = "nodejs";
 
-export async function POST(request) {
+async function revokeBadge(request) {
   try {
     const actor = await requireAdminPermission(request, "badges.manage");
     const body = await request.json().catch(() => null);
@@ -19,6 +19,10 @@ export async function POST(request) {
     }
     const student = await readCosmosDocument("students", studentId);
     if (!student) return Response.json({ message: "Student not found." }, { status: 404 });
+    describeAdminAudit(request, {
+      action: "badge.revoke",
+      subject: student.youthId ? "Youth ID " + student.youthId : "Student account",
+    });
     const badges = Array.isArray(student.badges) ? student.badges : [];
     if (!badges.includes(badgeId)) return Response.json({ message: "This student does not currently hold that badge." }, { status: 409 });
     const suppressed = Array.isArray(student.suppressedBadgeIds) ? student.suppressedBadgeIds : [];
@@ -34,10 +38,10 @@ export async function POST(request) {
       throw error;
     }
     try {
-      await deleteCosmosDocument("studentBadges", studentId + "_" + badgeId);
-      await recordAdminAudit({
-        actorUid: actor.uid, action: "badge.revoke", resource: "student:" + studentId + ":badge:" + badgeId, outcome: "success",
-      });
+      const awardId = studentId + "_" + badgeId;
+      const award = await readCosmosDocument("studentBadges", awardId).catch(() => null);
+      if (award?.name) describeAdminAudit(request, { details: ["Badge removed: " + award.name] });
+      await deleteCosmosDocument("studentBadges", awardId);
     } catch (error) {
       console.error("Badge removed but auxiliary records require reconciliation:", studentId, badgeId, error?.message);
       return Response.json({ success: true, reviewPending: true,
@@ -49,3 +53,5 @@ export async function POST(request) {
       Response.json({ message: "Badge could not be removed." }, { status: 500 });
   }
 }
+
+export const POST = withAdminAudit(revokeBadge);

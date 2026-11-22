@@ -1,9 +1,9 @@
+import { describeAdminAudit, withAdminAudit } from "@/services/adminAudit";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
 import {
   queryCosmosDocuments, readCosmosDocument, replaceCosmosDocument,
   deleteCosmosDocument, cosmosNow, isCosmosPreconditionFailed,
 } from "@/services/cosmosData";
-import { recordAdminAudit } from "@/services/adminAudit";
 import { reverseEarnedXp } from "@/services/xpBalance.mjs";
 import { completionTransactionId } from "@/services/completionRules.mjs";
 import { calculateLevel, getLevelName } from "@/services/gamificationAdmin";
@@ -61,7 +61,7 @@ export async function GET(request) {
   }
 }
 
-export async function PATCH(request) {
+async function approveClaim(request) {
   try {
     const acting = await requireAdminPermission(request, "completion.review");
     const body = await request.json().catch(() => null);
@@ -73,7 +73,11 @@ export async function PATCH(request) {
     if (!record || record.completionSource !== "self_reported") {
       return Response.json({ message: "Self-reported completion not found." }, { status: 404 });
     }
-    if (record.reviewStatus === "approved") return Response.json({ success: true, alreadyApproved: true });
+    describeAdminAudit(request, { subject: record.workshopSnapshot?.title });
+    if (record.reviewStatus === "approved") {
+      describeAdminAudit(request, { outcome: "unchanged", details: ["This completion was already approved"] });
+      return Response.json({ success: true, alreadyApproved: true });
+    }
     if (record.status !== "completed" || record.reviewStatus === "reversed") {
       return Response.json({ message: "Only active self-reported completions can be approved." }, { status: 409 });
     }
@@ -85,9 +89,7 @@ export async function PATCH(request) {
       if (isCosmosPreconditionFailed(error)) return Response.json({ message: "Claim changed. Refresh and retry." }, { status: 409 });
       throw error;
     }
-    await recordAdminAudit({
-      actorUid: acting.uid, action: "completion.approve", resource: "registration:" + registrationId, outcome: "success",
-    });
+    describeAdminAudit(request, { action: "completion.approve" });
     return Response.json({ success: true, message: "Completion approved. No additional XP was awarded." });
   } catch (error) {
     return adminAccessResponse(error) ||
@@ -95,7 +97,7 @@ export async function PATCH(request) {
   }
 }
 
-export async function POST(request) {
+async function reverseClaim(request) {
   try {
     const acting = await requireAdminPermission(request, "completion.reverse");
     const body = await request.json().catch(() => null);
@@ -108,7 +110,11 @@ export async function POST(request) {
     if (!record || record.completionSource !== "self_reported") {
       return Response.json({ message: "Self-reported completion not found." }, { status: 404 });
     }
-    if (record.status === "reversed") return Response.json({ success: true, alreadyReversed: true });
+    describeAdminAudit(request, { subject: record.workshopSnapshot?.title });
+    if (record.status === "reversed") {
+      describeAdminAudit(request, { outcome: "unchanged", details: ["This completion was already reversed"] });
+      return Response.json({ success: true, alreadyReversed: true });
+    }
     if (record.status !== "completed") return Response.json({ message: "Only completed claims can be reversed." }, { status: 409 });
 
     const transactionId = completionTransactionId(record.studentId, record.workshopId, record.sessionId);
@@ -217,9 +223,7 @@ export async function POST(request) {
       for (const badgeId of removed) {
         await deleteCosmosDocument("studentBadges", record.studentId + "_" + badgeId);
       }
-      await recordAdminAudit({
-        actorUid: acting.uid, action: "completion.reverse", resource: "registration:" + registrationId, outcome: "success",
-      });
+      describeAdminAudit(request, { details: [tx.points + " XP reversed", removed.length + " badges removed"] });
       return Response.json({
         success: true, totalXp: updatedStudent.totalXp,
         currentXp: updatedStudent.currentXp, xpCorrectionDebt: updatedStudent.xpCorrectionDebt,
@@ -237,3 +241,6 @@ export async function POST(request) {
       Response.json({ message: "Completion reversal could not be completed." }, { status: 500 });
   }
 }
+
+export const PATCH = withAdminAudit(approveClaim);
+export const POST = withAdminAudit(reverseClaim);

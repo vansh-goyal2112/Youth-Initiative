@@ -1,5 +1,13 @@
 const ACTION_LABELS = {
   "badge.create": "Created badge",
+  "session.add": "Add workshop session",
+  "session.edit": "Edit workshop session",
+  "session.archive": "Archive workshop session",
+  "session.duplicate": "Duplicate workshop session",
+  "artwork.workshop": "Upload workshop image",
+  "artwork.badge": "Upload badge artwork",
+  "artwork.banner": "Upload homepage banner",
+  "artwork.reward": "Upload reward artwork",
   "badge.update": "Updated badge",
   "badge.archive": "Archived badge",
   "badge.reactivate": "Reactivated badge",
@@ -38,11 +46,39 @@ const ROUTE_LABELS = {
   "/api/admin/students/invite": "Invite student",
 };
 
-const PENDING_BADGE_LABELS = {
+const SUCCESS_LABELS = {
+  "workshops.create": "Created workshop",
+  "workshops.edit": "Updated workshop",
+  "workshops.delete": "Retired workshop",
+  "workshops.import": "Imported workshops",
+  "/api/admin/workshops/auto-xp": "Assigned workshop XP",
+  "/api/admin/workshops/assign-images": "Assigned workshop artwork",
+  "/api/admin/students/invite": "Invited student",
+  "session.add": "Added workshop session",
+  "session.edit": "Updated workshop session",
+  "session.archive": "Archived workshop session",
+  "session.duplicate": "Duplicated workshop session",
+  "artwork.workshop": "Uploaded workshop image",
+  "artwork.badge": "Uploaded badge artwork",
+  "artwork.banner": "Uploaded homepage banner",
+  "artwork.reward": "Uploaded reward artwork",
+  "students.edit": "Updated student account",
+  "students.deactivate": "Deactivated student account",
+  "admins.manage": "Updated staff access",
+  "completion.reverse": "Reversed workshop completion",
+  "xp.adjust": "Corrected XP",
+  "xp.redeem": "Redeemed XP",
+  "attendance.manage": "Created an attendance code",
+  "admins.promote_super_admin": "Granted Super Admin access",
+};
+
+const PENDING_ACTION_LABELS = {
   "badge.create": "Create badge",
   "badge.update": "Update badge",
   "badge.archive": "Archive badge",
   "badge.reactivate": "Reactivate badge",
+  "badge.revoke": "Remove a student badge",
+  "xp.grant": "Grant XP",
 };
 
 export function presentAdminAudit(events, staff, limit) {
@@ -56,16 +92,13 @@ export function presentAdminAudit(events, staff, limit) {
       ? "Remove a student badge"
       : ACTION_LABELS[event.action] || "Administrative action";
     const outcome = ["success", "completed"].includes(event.outcome) ? "success" :
-      ["failed", "failure"].includes(event.outcome) ? "failed" : "attempted";
-    const recordedResult = outcome === "success" && {
-      "completion.reverse": "Reversed workshop completion",
-      "xp.adjust": "Corrected XP",
-      "admins.promote_super_admin": "Granted Super Admin access",
-    }[event.action];
-    const label = recordedResult || (outcome !== "success" && PENDING_BADGE_LABELS[event.action]) ||
+      ["failed", "failure"].includes(event.outcome) ? "failed" :
+      ["review", "unchanged"].includes(event.outcome) ? event.outcome : "attempted";
+    const recordedResult = outcome === "success" && (SUCCESS_LABELS[event.resource] || SUCCESS_LABELS[event.action]);
+    const label = recordedResult || (outcome !== "success" && PENDING_ACTION_LABELS[event.action]) ||
       ROUTE_LABELS[event.resource] || action;
     const actionLabel = event.subject ? label + ": " + event.subject : label;
 
-    return { id: event.id, staffName, actionLabel, outcome, createdAt: event.createdAt };
+    return { id: event.id, staffName, actionLabel, outcome, details: event.details || [], createdAt: event.createdAt };
   });
 }
