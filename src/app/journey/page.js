@@ -14,6 +14,7 @@ import { studentFetch } from "@/services/studentApi";
 import { recommendYouthWorkshops } from "@/utils/youthWorkshopRecommendations.mjs";
 import { findJourneyUpcomingSessions } from "@/utils/journeyUpcomingSessions.mjs";
 import { formatWorkshopDate } from "@/utils/workshopDate.mjs";
+import { watchJourneyProgress } from "@/utils/journeyProgressEvents.mjs";
 import { adventureJourney } from "@/utils/adventureJourney.mjs";
 import { workshopDateLabel } from "@/utils/upcomingWorkshops.mjs";
 
@@ -31,6 +32,7 @@ export default function JourneyPage() {
   useEffect(() => {
     if (authLoading || !user) return;
     let cancelled = false;
+    let stopWatching;
 
     async function loadGameProgress() {
       setLoading(true);
@@ -45,7 +47,7 @@ export default function JourneyPage() {
         finishInitialProgress = resolve;
       });
 
-      void (async () => {
+      const discovery = (async () => {
         const requests = await Promise.allSettled([
           studentFetch("/api/pathways/recommendations"),
           studentFetch("/api/workshops", { cache: "no-store" }),
@@ -67,7 +69,7 @@ export default function JourneyPage() {
         if (Array.isArray(registrationData?.registrations)) setRegistrations(registrationData.registrations);
       })();
 
-      void (async () => {
+      const reconciliation = (async () => {
         try {
           // Keep the existing authenticated reward reconciliation safeguards.
           const response = await studentFetch("/api/gamification/reconcile", { method: "POST" });
@@ -99,9 +101,30 @@ export default function JourneyPage() {
         if (!cancelled) setLoading(false);
         finishInitialProgress();
       }
+
+      const initialReads = Promise.all([discovery, reconciliation]);
+      stopWatching = watchJourneyProgress(async () => {
+        await initialReads;
+        if (cancelled) return;
+        try {
+          const responses = await Promise.all([
+            studentFetch("/api/gamification", { cache: "no-store" }),
+            studentFetch("/api/registrations", { cache: "no-store" }),
+          ]);
+          if (!responses.every(response => response.ok)) return;
+          const [progress, history] = await Promise.all(responses.map(response => response.json()));
+          if (cancelled || !progress.gamification || !Array.isArray(history.registrations)) return;
+          setGameData(progress.gamification);
+          setRegistrations(history.registrations);
+          setErrorMessage("");
+        } catch (error) {
+          console.warn("Journey refresh unavailable:", error);
+        }
+      });
+      if (cancelled) stopWatching();
     }
     void loadGameProgress();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; stopWatching?.(); };
   }, [user, authLoading]);
 
   const recommendedWorkshops = useMemo(

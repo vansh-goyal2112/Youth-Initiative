@@ -1,5 +1,6 @@
 "use client";
 
+import { notifyJourneyProgress } from "@/utils/journeyProgressEvents.mjs";
 import { useEffect, useState } from "react";
 import { CalendarCheck2, CheckCircle2, LoaderCircle, ShieldCheck, Sparkles } from "lucide-react";
 import { studentFetch } from "@/services/studentApi";
@@ -69,6 +70,7 @@ export default function SelfReportWorkshop({ onClaimed }) {
         }
         throw new Error(result.message || "Could not save your completion.");
       }
+      notifyJourneyProgress();
       setMessage(result.message);
       // A workshop can contain multiple sessions; after a successful claim,
       // remove the whole program from the dropdown rather than just one date.

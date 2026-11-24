@@ -1,5 +1,6 @@
 "use client";
 
+import { notifyJourneyProgress } from "@/utils/journeyProgressEvents.mjs";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Camera, Keyboard, LoaderCircle, QrCode } from "lucide-react";
@@ -59,6 +60,7 @@ export default function ScanAttendancePage() {
       // Both QR and manual codes use the same verified completion and reward.
       // Celebrate only the actual server-confirmed XP and badge awards.
       // A pending reward is confirmed without guessing any XP or badges.
+      notifyJourneyProgress();
       setAttendanceResult(data);
       setVerifying(false);
     } catch (error) {
