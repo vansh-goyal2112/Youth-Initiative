@@ -83,7 +83,7 @@ function createQuestData({
 
     {
       id: "workshop-champion",
-      title: "Workshop Champion",
+      title: "Experience Champion",
       description:
         "Complete 5 experiences",
       current: Math.min(

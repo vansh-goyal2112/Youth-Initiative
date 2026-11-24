@@ -202,13 +202,11 @@ function getRecommendationReasons(
   // Delivery mode can boost an existing subject or history match.
   if (score > 0 && learningModeMatches) {
     score += weights.learningMode;
-    reasons.push(
-      studentLearningMode === "both"
-        ? "Fits your preference to consider both online and in-person options"
-        : programLearningMode === "hybrid"
-          ? `Offers a hybrid option that includes your ${studentLearningMode} learning preference`
-          : `Fits your ${studentLearningMode} learning preference`
-    );
+    if (studentLearningMode === "online") {
+      reasons.push(programLearningMode === "hybrid"
+        ? "Includes online learning as part of a hybrid program."
+        : "Fits your online learning preference");
+    }
   }
 
   return {
@@ -293,6 +291,7 @@ export function recommendSaitPrograms(
           informationUrl: program.informationUrl,
         },
         score,
+        matchLabel: directInterestCount > 0 || matchedWorkshopIds.length > 0 ? "Strong match" : "Good match",
         directInterestCount,
         reasons,
         matchedWorkshopIds,

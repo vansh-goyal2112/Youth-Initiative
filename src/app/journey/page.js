@@ -270,7 +270,7 @@ export default function JourneyPage() {
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        <Sparkles size={12} /> {rec.score}% MATCH
+                        <Sparkles size={12} /> {rec.matchLabel}
                       </span>
                       <GraduationCap size={18} className="text-slate-400" />
                     </div>

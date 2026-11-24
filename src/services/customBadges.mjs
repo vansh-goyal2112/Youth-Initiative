@@ -10,18 +10,22 @@ export const BUILT_IN_BADGES = [
   ["tech-explorer", "Tech Explorer", "Complete a Technology experience.", "sessions_category", 1, "Technology"],
   ["skill-builder", "Skill Builder", "Complete 3 experiences.", "sessions_any", 3],
   ["curious-learner", "Curious Learner", "Explore 3 different skill areas.", "distinct_categories", 3],
-  ["workshop-champion", "Workshop Champion", "Complete 5 experiences.", "sessions_any", 5],
+  ["workshop-champion", "Experience Champion", "Complete 5 experiences.", "sessions_any", 5],
 ].map(([badgeId, name, description, type, minCount, matchValue = ""]) => ({
   id: "badge-def:" + badgeId, badgeId, name, description,
   status: "active", artworkUrl: "", rule: { type, minCount, matchValue },
 }));
+
+export function currentBadgeName(badgeId, name) {
+  return badgeId === "workshop-champion" && name === "Workshop Champion" ? "Experience Champion" : name;
+}
 
 export function mergeBadgeDefinitions(savedDefinitions) {
   const byId = new Map(savedDefinitions.map(definition => [definition.id, definition]));
   const builtIns = BUILT_IN_BADGES.map(defaultBadge => {
     const saved = byId.get(defaultBadge.id);
     byId.delete(defaultBadge.id);
-    return { ...defaultBadge, ...saved, badgeId: defaultBadge.badgeId, builtIn: true };
+    return { ...defaultBadge, ...saved, name: currentBadgeName(defaultBadge.badgeId, saved?.name ?? defaultBadge.name), badgeId: defaultBadge.badgeId, builtIn: true };
   });
   return [...builtIns, ...byId.values()];
 }

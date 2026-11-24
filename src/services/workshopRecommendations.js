@@ -125,11 +125,9 @@ function scoreWorkshop(workshop, student, interests, completedWorkshops, weights
       workshopMode === "hybrid")
   ) {
     score += weights.learningMode;
-    reasons.push(
-      studentMode === "both"
-        ? "Fits your preference to consider both online and in-person options"
-        : `Fits your ${studentMode} learning preference`
-    );
+    if (studentMode === "online") {
+      reasons.push(workshopMode === "hybrid" ? "Includes online learning." : "Fits your online learning preference");
+    }
   }
 
   return { score: Math.min(100, Math.round(score)), reasons };

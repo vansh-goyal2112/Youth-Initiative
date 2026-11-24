@@ -389,6 +389,8 @@ test("uses program-specific evidence for the mixed-interest student", () => {
     programs,
   });
   const byTitle = new Map(results.map((result) => [result.program.title, result]));
+  assert.equal(byTitle.get(welding.title).matchLabel, "Good match");
+  assert.equal(byTitle.get("Software Development Diploma").matchLabel, "Strong match");
   assert.deepEqual(byTitle.get(welding.title).reasons, ["Explore a SAIT program in the skilled trades."]);
   assert.deepEqual(byTitle.get(sonography.title).reasons, ["Explore a SAIT program in health care."]);
   assert.deepEqual(byTitle.get("Software Development Diploma").reasons, ["Learn about software development."]);
@@ -435,6 +437,7 @@ test("two distinct direct interests rank above three welding pathways", () => {
     "Learn about artificial intelligence.",
     "Learn about programming.",
   ]);
+  assert.ok(results.every(result => result.reasons.every(reason => !reason.includes("learning preference"))));
   assert.ok(results[1].score > results[0].score);
   assert.equal("directInterestCount" in results[0], false);
 });

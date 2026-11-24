@@ -839,7 +839,7 @@ function AdminBadgeRemoval({ student, onBadgeRemoved }) {
   },[]);
   if (!allowed) return null;
   const badges = Array.isArray(student.badges) ? student.badges : [];
-  const known = {"first-step":"First Step","tech-explorer":"Tech Explorer","skill-builder":"Skill Builder","curious-learner":"Curious Learner","workshop-champion":"Workshop Champion"};
+  const known = {"first-step":"First Step","tech-explorer":"Tech Explorer","skill-builder":"Skill Builder","curious-learner":"Curious Learner","workshop-champion":"Experience Champion"};
   async function revoke(event){
     event.preventDefault();
     if (saving || !selected || reason.trim().length<5) return;

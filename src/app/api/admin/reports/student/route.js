@@ -1,3 +1,4 @@
+import { currentBadgeName } from "@/services/customBadges.mjs";
 import { requireAdminPermission, adminAccessResponse } from "@/services/adminAccess";
 import { recordAdminAudit } from "@/services/adminAudit";
 import { queryCosmosDocuments, readCosmosDocument } from "@/services/cosmosData";
@@ -137,7 +138,7 @@ export async function GET(request) {
       })),
       badges: badges.map((item) => ({
         badgeId: item.badgeId || null,
-        badgeName: item.name || item.title || null,
+        badgeName: currentBadgeName(item.badgeId, item.name || item.title || null),
         awardedAt: item.awardedAt || item.createdAt || null,
       })),
     };
