@@ -2,7 +2,8 @@ import { getWorkshopGradeBounds, parseGradeRange } from "./workshopGrades.mjs";
 
 export const workshopProgramAreas = ["Digital Youth", "Dual Credit", "Summer Camps", "School Outreach", "Youth Programs"];
 export const workshopCategories = ["Technology", "Trades", "Business & Leadership", "Culinary & Hospitality", "Design & Creativity", "Health", "Aviation", "General"];
-export const workshopInterests = ["Coding", "Artificial Intelligence", "Robotics", "Skilled Trades", "Business", "Design", "Health", "Aviation", "Culinary"];
+import { acceptedInterestLabels, schoolInterests } from "./schoolInterests.mjs";
+export const workshopInterests = schoolInterests;
 
 export function normalizeWorkshopOption(value, options) {
   const cleaned = typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "";
@@ -11,8 +12,8 @@ export function normalizeWorkshopOption(value, options) {
 
 export function normalizeWorkshopTags(tags) {
   if (!Array.isArray(tags)) return [];
-  const canonical = tags.map(tag => normalizeWorkshopOption(tag, workshopInterests));
-  return [...new Set(canonical.filter(tag => workshopInterests.includes(tag)))];
+  const canonical = tags.map(tag => normalizeWorkshopOption(tag, acceptedInterestLabels));
+  return [...new Set(canonical.filter(tag => acceptedInterestLabels.includes(tag)))];
 }
 
 export function workshopEditorGradeBounds(workshop) {

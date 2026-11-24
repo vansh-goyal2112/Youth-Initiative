@@ -40,17 +40,7 @@ import {
 import { formatStudentBirthDate, studentContactEmail } from "@/utils/studentProfileDisplay.mjs";
 import styles from "./editProfile.module.css";
 
-const availableInterests = [
-  "coding",
-  "artificial intelligence",
-  "robotics",
-  "skilled trades",
-  "business",
-  "design",
-  "health",
-  "aviation",
-  "culinary",
-];
+import { interestChoices } from "@/utils/schoolInterests.mjs";
 
 export default function EditProfilePage() {
   const router =
@@ -377,7 +367,8 @@ function EditProfileForm({
               <span className={styles.counter} aria-live="polite">{interests.length} of 5 selected</span>
             </div>
             <div className={styles.interestGrid} role="group" aria-label="Student interests">
-              {availableInterests.map(interest => {
+              {interestChoices(initialInterests).map(label => {
+                const interest = label.toLowerCase();
                 const selected = interests.includes(interest);
                 return (
                   <button

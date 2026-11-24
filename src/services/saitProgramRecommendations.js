@@ -1,3 +1,4 @@
+import { inferSchoolInterests, schoolInterestIds } from "../utils/schoolInterests.mjs";
 import { getWorkshopGradeBounds, matchesStudentGrade, schoolGradeNumber } from "../utils/workshopGrades.mjs";
 
 import {
@@ -108,11 +109,15 @@ function getRecommendationReasons(
   const programCategory = titleCategory === "General"
     ? findSaitCategory(program.description)
     : titleCategory;
-  const categoryInterestMatch = interests.some((interest) =>
-    SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]?.category === programCategory
+  const titleSchools = inferSchoolInterests(program.title);
+  const schools = titleSchools.length ? titleSchools : inferSchoolInterests(program.description);
+  const schoolMatches = schools.filter(school => interests.includes(school.toLowerCase()));
+  const categoryInterestMatch = schoolMatches.length > 0 || interests.some(interest =>
+    !schoolInterestIds.includes(interest) && SAIT_INTEREST_PATHWAY_MAPPINGS[interest]?.category === programCategory
   );
 
   const subjectMatches = interests.flatMap((interest) => {
+    if (schoolInterestIds.includes(interest)) return [];
     const terms = SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]?.subjects ||
       [normalizeMatchText(interest)];
     const titleTerm = terms.find((term) => textIncludesTerm(program.title, term));
@@ -123,6 +128,7 @@ function getRecommendationReasons(
 
   if (categoryInterestMatch) {
     score += weights.interestCategory;
+    if (schoolMatches.length > 1) score += INTEREST_KEYWORD_BONUS * (schoolMatches.length - 1) / interests.length;
   }
 
   if (subjectMatches.length > 0) {
@@ -140,8 +146,8 @@ function getRecommendationReasons(
       reasons.push(`Learn about ${label}.`);
     }
   } else if (categoryInterestMatch) {
-    const area = { Trades: "the skilled trades", Health: "health care" }[programCategory] ||
-      programCategory.toLowerCase();
+    const matchedCategory = schoolMatches.join(" and ") || programCategory;
+    const area = { Trades: "the skilled trades", Health: "health care" }[matchedCategory] || matchedCategory.toLowerCase();
     reasons.push(`Explore a SAIT program in ${area}.`);
   }
 
@@ -179,6 +185,15 @@ function getRecommendationReasons(
       reasons.push(`Keep exploring ${topic.toLowerCase()} after ${workshop.title}.`);
     } else {
       reasons.push(`Keep exploring ${topic.toLowerCase()} from an experience you completed.`);
+    }
+  }
+
+  if (!topicWorkshopMatch) {
+    const sharedSchool = schools.find(school => completedWorkshops.some(workshop =>
+      workshop.interestTags?.some(tag => normalizeMatchText(tag) === school.toLowerCase())));
+    if (sharedSchool) {
+      score += weights.completedWorkshopCategory;
+      reasons.push(`Continue exploring ${sharedSchool.toLowerCase()} after a completed experience in that area.`);
     }
   }
 

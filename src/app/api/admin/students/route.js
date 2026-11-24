@@ -32,17 +32,7 @@ const VALID_ACCOUNT_STATUSES = [
   "inactive",
 ];
 
-const VALID_INTERESTS = [
-  "coding",
-  "artificial intelligence",
-  "robotics",
-  "skilled trades",
-  "business",
-  "design",
-  "health",
-  "aviation",
-  "culinary",
-];
+import { acceptedInterestIds as VALID_INTERESTS } from "@/utils/schoolInterests.mjs";
 
 const NAME_REGEX =
   /^[A-Za-zÀ-ÖØ-öø-ÿ' -]+$/;

@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 
+import { experienceSchools, schoolInterests } from "@/utils/schoolInterests.mjs";
 import WorkshopCard from "@/components/workshops/WorkshopCard";
 import { workshopGradeOptions, matchesWorkshopGrade } from "@/utils/workshopGrades.mjs";
 import { groupWorkshopsByAvailability } from "@/utils/workshopAvailability.mjs";
@@ -40,6 +41,7 @@ export default function WorkshopsPage() {
   const [retryKey, setRetryKey] = useState(0);
 
   const [searchText, setSearchText] = useState("");
+  const [schoolFilter, setSchoolFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] =
     useState("all");
   const [programFilter, setProgramFilter] =
@@ -164,6 +166,7 @@ export default function WorkshopsPage() {
       return (
         matchesSearch &&
         matchesCategory &&
+        (schoolFilter === "all" || experienceSchools(workshop).includes(schoolFilter)) &&
         matchesProgram &&
         matchesMode &&
         matchesGrade
@@ -173,6 +176,7 @@ export default function WorkshopsPage() {
     workshops,
     searchText,
     categoryFilter,
+    schoolFilter,
     programFilter,
     modeFilter,
     gradeFilter,
@@ -185,6 +189,7 @@ export default function WorkshopsPage() {
 
   const activeFilterCount = [
     categoryFilter,
+    schoolFilter,
     programFilter,
     modeFilter,
     gradeFilter,
@@ -193,6 +198,7 @@ export default function WorkshopsPage() {
   function clearFilters() {
     setSearchText("");
     setCategoryFilter("all");
+    setSchoolFilter("all");
     setProgramFilter("all");
     setModeFilter("all");
     setGradeFilter("all");
@@ -382,6 +388,8 @@ export default function WorkshopsPage() {
             showMobileFilters ? "show" : ""
           }`}
         >
+          <FilterSelect label="School interest" value={schoolFilter} onChange={setSchoolFilter} options={schoolInterests} />
+
           <FilterSelect
             label="Category"
             value={categoryFilter}

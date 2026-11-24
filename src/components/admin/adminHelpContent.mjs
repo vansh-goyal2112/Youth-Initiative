@@ -51,7 +51,7 @@ const guides = {
       { permission: "workshops.create", text: "To add an experience, choose Create experience and fill in the program details." },
       { permission: "workshops.edit", text: "Open the experience editor to update the description, image or grade range. Use the session controls to add or update experience dates." },
     ],
-    tip: "Active, open experiences can appear in student recommendations the next time students load Home or Journey. Check the grade range, date and registration link, and add accurate interest tags. Future SAIT pathways use a separate catalogue refreshed by the Ingest SAIT programs and experiences workflow in GitHub Actions.",
+    tip: "Active, open experiences can appear in student recommendations the next time students load Home or Journey. Check the grade range, date and registration link, and choose the school interest tags. Use Needs school tags to find experiences with no matching school. Future SAIT pathways use a separate catalogue refreshed by the Ingest SAIT programs and experiences workflow in GitHub Actions.",
   },
   "/admin/badges": {
     title: "Badges",

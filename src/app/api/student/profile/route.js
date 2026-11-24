@@ -17,17 +17,7 @@ const VALID_LEARNING_MODES = [
   "both",
 ];
 
-const VALID_INTERESTS = [
-  "coding",
-  "artificial intelligence",
-  "robotics",
-  "skilled trades",
-  "business",
-  "design",
-  "health",
-  "aviation",
-  "culinary",
-];
+import { acceptedInterestIds as VALID_INTERESTS } from "@/utils/schoolInterests.mjs";
 
 const VALID_SCHOOL_GRADES = new Set([
   "K",

@@ -1,3 +1,4 @@
+import { experienceSchools, legacyTagMatches, schoolInterestIds } from "./schoolInterests.mjs";
 import { matchesStudentGrade } from "./workshopGrades.mjs";
 import { normalizeWorkshopTags } from "./workshopCatalogueFields.mjs";
 import { isRegistrationClosed } from "./workshopAvailability.mjs";
@@ -17,7 +18,10 @@ export function recommendYouthWorkshops({workshops=[],registrations=[],student={
   }).map(w=>{
     const searchable=[w.title,w.category,w.programArea,w.description].filter(Boolean).join(" ").toLowerCase();
     const tags = normalizeWorkshopTags(w.interestTags).map(tag => tag.toLowerCase());
-    const matched = interests.filter(interest => tags.length ? tags.includes(interest) : searchable.includes(interest));
+    const schools = experienceSchools(w).map(label => label.toLowerCase());
+    const matched = interests.filter(interest => schoolInterestIds.includes(interest)
+      ? schools.includes(interest)
+      : tags.length ? legacyTagMatches(interest, w, tags, schools) : searchable.includes(interest));
     const category=String(w.category||"").toLowerCase();
     const categoryMatch=areas.has(category);
     const modeMatch=mode==="both"||!mode||w.learningMode==="both"||w.learningMode===mode;

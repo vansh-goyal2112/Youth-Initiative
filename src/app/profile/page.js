@@ -49,6 +49,8 @@ import {
 import styles from "./profileAdventure.module.css";
 
 const interestIcons = {
+  energy: "⚡", "public safety": "🛡️", technology: "💻", construction: "🛠️",
+  hospitality: "🏨", tourism: "🧭", manufacturing: "🏭", automation: "🦾", transportation: "🚆",
   coding: "💻",
   "artificial intelligence": "🤖",
   robotics: "🦾",

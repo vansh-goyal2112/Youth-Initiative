@@ -1,3 +1,4 @@
+import { experienceSchools, legacyTagMatches, schoolInterestIds } from "../utils/schoolInterests.mjs";
 import { normalizeWorkshopTags } from "../utils/workshopCatalogueFields.mjs";
 import {
   normalizeMatchText,
@@ -55,6 +56,7 @@ function scoreWorkshop(workshop, student, interests, completedWorkshops, weights
 
   const tags = normalizeWorkshopTags(workshop.interestTags).map(normalizeMatchText);
   const categoryInterest = !tags.length && interests.find((interest) => {
+    if (schoolInterestIds.includes(normalizeMatchText(interest))) return false;
     const category =
       SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]?.category;
     return category && normalizeMatchText(category) === workshopCategory;
@@ -65,8 +67,10 @@ function scoreWorkshop(workshop, student, interests, completedWorkshops, weights
     reasons.push(`Matches your interest in ${categoryInterest}`);
   }
 
+  const schools = experienceSchools(workshop).map(normalizeMatchText);
   const topicInterest = interests.find((interest) => {
-    if (tags.length) return tags.includes(normalizeMatchText(interest));
+    if (schoolInterestIds.includes(normalizeMatchText(interest))) return schools.includes(normalizeMatchText(interest));
+    if (tags.length) return legacyTagMatches(normalizeMatchText(interest), workshop, tags, schools);
     const terms = [
       normalizeMatchText(interest),
       ...(SAIT_INTEREST_PATHWAY_MAPPINGS[normalizeMatchText(interest)]

@@ -13,7 +13,7 @@ import {
 } from "firebase/app-check";
 
 import {
-  Bot,
+  Zap, ShieldCheck, Hotel, Compass, Factory,
   BriefcaseBusiness,
   Check,
   Code2,
@@ -34,53 +34,11 @@ import {
   useAuth,
 } from "@/contexts/AuthContext";
 
-const interestOptions = [
-  {
-    id: "coding",
-    title: "Coding",
-    icon: Code2,
-  },
-  {
-    id: "artificial intelligence",
-    title: "AI",
-    icon: Bot,
-  },
-  {
-    id: "robotics",
-    title: "Robotics",
-    icon: Cpu,
-  },
-  {
-    id: "skilled trades",
-    title: "Skilled Trades",
-    icon: Hammer,
-  },
-  {
-    id: "business",
-    title: "Business",
-    icon: BriefcaseBusiness,
-  },
-  {
-    id: "design",
-    title: "Design & Creativity",
-    icon: Palette,
-  },
-  {
-    id: "health",
-    title: "Health",
-    icon: HeartPulse,
-  },
-  {
-    id: "aviation",
-    title: "Aviation",
-    icon: Plane,
-  },
-  {
-    id: "culinary",
-    title: "Culinary",
-    icon: Utensils,
-  },
-];
+import { interestChoices } from "@/utils/schoolInterests.mjs";
+
+const icons = { Energy: Zap, Health: HeartPulse, "Public Safety": ShieldCheck, Technology: Code2,
+  Business: BriefcaseBusiness, Construction: Hammer, Culinary: Utensils, Hospitality: Hotel,
+  Tourism: Compass, Manufacturing: Factory, Automation: Cpu, Transportation: Plane };
 
 export default function InterestsPage() {
   const router =
@@ -342,10 +300,10 @@ function InterestsForm({
         </span>
 
         <div className="interest-grid">
-          {interestOptions.map(
-            (interest) => {
-              const Icon =
-                interest.icon;
+          {interestChoices(student.interests || []).map(
+            (title) => {
+              const interest = { id: title.toLowerCase(), title };
+              const Icon = icons[title] || Palette;
 
               const selected =
                 selectedInterests.includes(

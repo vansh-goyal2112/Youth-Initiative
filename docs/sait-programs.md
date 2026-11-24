@@ -219,3 +219,14 @@ try {
 Use the account's primary key from Azure Portal > Cosmos DB account > Keys.
 Do not paste it into source files, chat, or a command-line literal. Rotate the
 key if it is exposed.
+
+### School interests
+
+Onboarding, Profile and the experience editor share the twelve school interests.
+Students can keep or remove older choices. Staff tags take priority for school
+matching. For older and imported experiences, the app reads the title, legacy
+topics, description and catalogue category. Use **Needs school tags** in the
+experience editor to find unresolved records. Review suggested matches when
+the subject spans multiple schools. School matches describe subject relevance,
+not an official school assignment from SAIT. Weekly program imports use the
+same pathway rules at recommendation time. A school match alone is a Good match.

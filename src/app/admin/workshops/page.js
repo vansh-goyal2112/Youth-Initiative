@@ -29,6 +29,8 @@ import MediaUploader from "@/components/admin/MediaUploader";
 import { getWorkshopGradeBounds } from "@/utils/workshopGrades.mjs";
 import { normalizeWorkshopOption, normalizeWorkshopTags, workshopCategories, workshopInterests, workshopProgramAreas } from "@/utils/workshopCatalogueFields.mjs";
 
+import { experienceSchools } from "@/utils/schoolInterests.mjs";
+
 const gradeOptions = Array.from({ length: 13 }, (_, grade) => grade);
 
 function workshopFormFields(workshop) {
@@ -202,6 +204,10 @@ export default function AdminWorkshopsPage() {
     ].sort();
   }, [workshops]);
 
+  const [reviewTagsOnly, setReviewTagsOnly] = useState(false);
+  const needsTags = useMemo(() => new Set(workshops.filter(workshop =>
+    experienceSchools(workshop).length === 0).map(workshop => workshop.id)), [workshops]);
+
   const filteredWorkshops = useMemo(() => {
     return workshops.filter((workshop) => {
       const searchValue =
@@ -229,7 +235,7 @@ export default function AdminWorkshopsPage() {
 
       return (
         matchesSearch &&
-        matchesStatus &&
+        matchesStatus && (!reviewTagsOnly || needsTags.has(workshop.id)) &&
         matchesProgram
       );
     });
@@ -237,7 +243,7 @@ export default function AdminWorkshopsPage() {
     workshops,
     searchText,
     statusFilter,
-    programFilter,
+    programFilter, reviewTagsOnly, needsTags,
   ]);
 
   function openCreateForm() {
@@ -687,6 +693,7 @@ export default function AdminWorkshopsPage() {
             Inactive
           </option>
         </select>
+        <label><input type="checkbox" checked={reviewTagsOnly} onChange={event => setReviewTagsOnly(event.target.checked)} /> Needs school tags ({needsTags.size})</label>
       </section>
 
       <section className="admin-workshop-table-card">
@@ -888,7 +895,7 @@ export default function AdminWorkshopsPage() {
               <fieldset className="rounded-xl border border-slate-200 p-3">
                 <legend className="px-1 text-sm font-semibold">Interest tags</legend>
                 <div className="flex flex-wrap gap-3 text-sm">
-                  {workshopInterests.map(interest => (
+                  {[...new Set([...workshopInterests, ...formData.interestTags])].map(interest => (
                     <label key={interest} className="inline-flex items-center gap-2">
                       <input type="checkbox" checked={formData.interestTags.includes(interest)}
                         onChange={event => {

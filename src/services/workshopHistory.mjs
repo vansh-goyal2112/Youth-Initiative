@@ -12,6 +12,7 @@ export function workshopCompletionSnapshot(workshop, registration, transaction) 
     programArea: workshop.programArea || "",
     offeringYear: workshop.offeringYear || (registration.completedAt ? new Date(registration.completedAt).getUTCFullYear() : null),
     category: workshop.category || "General",
+    ...(Array.isArray(workshop.interestTags) ? { interestTags: [...workshop.interestTags] } : {}),
     grade: workshop.grade || "",
     learningMode: workshop.learningMode || null,
     // Preserve the image as it appeared when this workshop was completed.
