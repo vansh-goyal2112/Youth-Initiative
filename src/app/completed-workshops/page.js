@@ -24,17 +24,20 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { useAuth } from "@/contexts/AuthContext";
+import StudentExperienceGate from "@/components/workshops/StudentExperienceGate";
 import WorkshopArtwork from "@/components/workshops/WorkshopArtwork";
 import { formatWorkshopDate } from "@/utils/workshopDate.mjs";
 import { isSelfReportedCompletion } from "@/utils/completionSourceLabels.mjs";
 
 export default function CompletedWorkshopsPage() {
-  const {
-    user,
-    loading: authLoading,
-  } = useAuth();
+  return (
+    <StudentExperienceGate statusClass="completed-workshops-status" loginMessage="Log in to view your completed experiences.">
+      <CompletedWorkshops />
+    </StudentExperienceGate>
+  );
+}
 
+function CompletedWorkshops() {
   const [
     registrations,
     setRegistrations,
@@ -57,13 +60,6 @@ export default function CompletedWorkshopsPage() {
   ] = useState("");
 
   useEffect(() => {
-    if (
-      authLoading ||
-      !user
-    ) {
-      return;
-    }
-
     let cancelled = false;
 
     async function loadCompletedWorkshops() {
@@ -121,8 +117,6 @@ export default function CompletedWorkshopsPage() {
       cancelled = true;
     };
   }, [
-    user,
-    authLoading,
     refreshKey,
   ]);
 
@@ -162,28 +156,6 @@ export default function CompletedWorkshopsPage() {
       registrations,
       searchText,
     ]);
-
-  if (
-    !authLoading &&
-    !user
-  ) {
-    return (
-      <main className="completed-workshops-status">
-        <h1>
-          Login Required
-        </h1>
-
-        <p>
-          Log in to view your
-          completed experiences.
-        </p>
-
-        <Link href="/login">
-          Go to Login
-        </Link>
-      </main>
-    );
-  }
 
   return (
     <main className="completed-workshops-page">

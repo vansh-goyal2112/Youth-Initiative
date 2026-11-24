@@ -25,8 +25,18 @@ import {
   studentFetch,
 } from "@/services/studentApi";
 
+import StudentExperienceGate from "@/components/workshops/StudentExperienceGate";
+
 export default function WorkshopDetailsPage() {
-  const params = useParams();
+  const { id } = useParams();
+  return (
+    <StudentExperienceGate statusClass="workshop-details-status" loginMessage="Log in to view this experience.">
+      <WorkshopDetails key={id} id={id} />
+    </StudentExperienceGate>
+  );
+}
+
+function WorkshopDetails({ id }) {
 
   const [workshop, setWorkshop] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +47,7 @@ export default function WorkshopDetailsPage() {
     async function loadWorkshop() {
       try {
         const response = await studentFetch(
-          `/api/workshops/${encodeURIComponent(params.id)}`,
+          `/api/workshops/${encodeURIComponent(id)}`,
           { cache: "no-store" }
         );
 
@@ -58,10 +68,10 @@ export default function WorkshopDetailsPage() {
       }
     }
 
-    if (params.id) {
+    if (id) {
       loadWorkshop();
     }
-  }, [params.id]);
+  }, [id]);
 
   if (loading) {
     return (

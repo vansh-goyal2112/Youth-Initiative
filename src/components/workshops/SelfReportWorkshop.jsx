@@ -6,7 +6,7 @@ import { studentFetch } from "@/services/studentApi";
 import styles from "./selfReportWorkshop.module.css";
 
 export default function SelfReportWorkshop({ onClaimed }) {
-  const [workshops, setWorkshops] = useState([]);
+  const [workshops, setWorkshops] = useState(null);
   const [selected, setSelected] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [completedOn, setCompletedOn] = useState("");
@@ -25,7 +25,8 @@ export default function SelfReportWorkshop({ onClaimed }) {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || "Unable to load past experiences.");
         if (!active) return;
-        const available = Array.isArray(result.workshops) ? result.workshops : [];
+        if (!Array.isArray(result.workshops)) throw new Error("Unable to load past experiences.");
+        const available = result.workshops;
         setGradeRequired(Boolean(result.gradeRequired));
         setWorkshops(available);
         const params = new URLSearchParams(window.location.search);
@@ -44,7 +45,7 @@ export default function SelfReportWorkshop({ onClaimed }) {
     return () => { active = false; };
   }, []);
 
-  const workshop = workshops.find(item => item.id === selected);
+  const workshop = workshops?.find(item => item.id === selected);
 
   async function submit(event) {
     event.preventDefault();
@@ -98,6 +99,7 @@ export default function SelfReportWorkshop({ onClaimed }) {
             Self-reported experiences earn <strong>half the regular XP</strong> immediately and remain subject to admin review.
           </div>
           {loading ? <p className={styles.status}><LoaderCircle size={17} aria-hidden="true"/> Loading experiences…</p> :
+          workshops === null ? null :
           gradeRequired ? <p className={styles.status}>Add your current school grade in My Identity before claiming past experiences.</p> :
           workshops.length === 0 ? <p className={styles.status}>No unclaimed experiences are available for your current or earlier grades or school outreach activities.</p> :
           <form onSubmit={submit} className={styles.form}>
