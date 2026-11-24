@@ -15,6 +15,7 @@ import {
 export const runtime = "nodejs";
 
 function createQuestData({
+  badgeNames,
   completedCount,
   categoryCount,
   technologyCount,
@@ -22,7 +23,7 @@ function createQuestData({
   return [
     {
       id: "first-steps",
-      title: "First Steps",
+      title: badgeNames.get("first-step"),
       description:
         "Complete your first experience",
       current: completedCount,
@@ -35,7 +36,7 @@ function createQuestData({
 
     {
       id: "skill-builder",
-      title: "Skill Builder",
+      title: badgeNames.get("skill-builder"),
       description:
         "Complete 3 experiences",
       current: Math.min(
@@ -51,7 +52,7 @@ function createQuestData({
 
     {
       id: "curious-explorer",
-      title: "Curious Explorer",
+      title: badgeNames.get("curious-learner"),
       description:
         "Explore 3 different skill areas",
       current: Math.min(
@@ -67,7 +68,7 @@ function createQuestData({
 
     {
       id: "tech-journey",
-      title: "Tech Journey",
+      title: badgeNames.get("tech-explorer"),
       description:
         "Complete 3 Technology experiences",
       current: Math.min(
@@ -83,7 +84,7 @@ function createQuestData({
 
     {
       id: "workshop-champion",
-      title: "Experience Champion",
+      title: badgeNames.get("workshop-champion"),
       description:
         "Complete 5 experiences",
       current: Math.min(
@@ -251,8 +252,10 @@ export async function GET(request) {
         .Technology
         ?.completed || 0;
 
+    const definitions = await loadBadgeDefinitions();
     const quests =
       createQuestData({
+        badgeNames: new Map(definitions.map(badge => [badge.badgeId, badge.name])),
         completedCount:
           completedWorkshops.length,
 
@@ -264,7 +267,6 @@ export async function GET(request) {
         technologyCount,
       });
 
-    const definitions = await loadBadgeDefinitions();
     const badgeCatalog = definitions.map(definition => ({
       id: definition.badgeId,
       name: definition.name,
