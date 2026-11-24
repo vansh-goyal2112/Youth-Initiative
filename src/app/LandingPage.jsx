@@ -16,7 +16,6 @@ import {
   Code2,
   Compass,
   Hammer,
-  Monitor,
   QrCode,
   Sparkles,
   Target,
@@ -297,14 +296,6 @@ export default function HomePage() {
         </div>
 
         <div className="site-container impact-strip">
-          <div>
-            <Monitor size={22} />
-            <span>
-              <strong>Flexible learning</strong>
-              Online and in-person experiences
-            </span>
-          </div>
-
           <div>
             <Compass size={22} />
             <span>
@@ -656,7 +647,7 @@ export default function HomePage() {
         </div>
 
         <div className="site-container landing-footer-bottom">
-          <span>SAIT Youth Initiatives prototype</span>
+          <span>SAIT Youth Initiatives</span>
           <span>Designed for mobile and desktop</span>
         </div>
       </footer>
