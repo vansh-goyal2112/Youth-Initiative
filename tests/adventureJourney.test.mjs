@@ -14,10 +14,11 @@ const welding = { id: "welding", title: "Welding", matchedInterests: ["manufactu
 
 test("The next badge stop follows the five completed milestones and links to a qualifying experience", () => {
   const result = adventureJourney({ quests: starterStops, badgeCatalog: [badge] }, [welding, ai]);
-  assert.equal(result.quests.length, 5);
-  assert.equal(result.nextStop.title, "AI Explorer");
-  assert.equal(result.nextStop.current, 1);
-  assert.equal(result.nextStop.href, "/workshops/ai%20intro");
+  assert.equal(result.quests.length, 6);
+  assert.equal(result.activeQuestId, "badge:custom:ai");
+  assert.equal(result.quests[5].title, "AI Explorer");
+  assert.equal(result.quests[5].current, 1);
+  assert.equal(result.quests[5].href, "/workshops/ai%20intro");
 });
 
 test("An earned additional badge remains visible and the next eligible experience takes its place", () => {
@@ -47,4 +48,14 @@ test("Journey can suggest an upcoming booking while regular recommendations stil
   };
   assert.deepEqual(recommendYouthWorkshops(options), []);
   assert.deepEqual(recommendYouthWorkshops({ ...options, includeUpcoming: true })[0].matchedInterests, ["technology"]);
+});
+
+test("Active admin badges appear before the starter milestones are finished, even without recommendations", () => {
+  const quests = [{ ...starterStops[0], completed: false }, ...starterStops.slice(1)];
+  const archived = { ...badge, id: "custom:retired", status: "archived" };
+  const result = adventureJourney({ quests, badgeCatalog: [badge, archived] }, null);
+  assert.equal(result.quests.length, 6);
+  assert.equal(result.quests[5].title, badge.name);
+  assert.equal(result.quests[5].completed, false);
+  assert.equal(result.activeQuestId, undefined);
 });

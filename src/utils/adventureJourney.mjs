@@ -45,9 +45,11 @@ export function adventureJourney(gameData, recommendations, registrations = []) 
     if (badge.status === "archived" && !earned.has(badge.id)) return [];
     return [{ ...badgeStop(badge, earned.has(badge.id)), id: quest.id, icon: quest.icon }];
   });
-  const extras = catalog.filter(badge => !starterIds.has(badge.id));
-  quests.push(...extras.filter(badge => earned.has(badge.id)).map(badge => badgeStop(badge, true)));
-  if (quests.some(quest => !quest.completed)) return { quests };
+  const extras = catalog.filter(badge => !starterIds.has(badge.id) &&
+    (badge.status === "active" || earned.has(badge.id)));
+  const startersComplete = quests.every(quest => quest.completed);
+  quests.push(...extras.map(badge => badgeStop(badge, earned.has(badge.id))));
+  if (!startersComplete) return { quests };
 
   if (recommendations === null) return { quests };
   const matching = recommendations.filter(experience => experience.matchedInterests.length > 0);
@@ -55,11 +57,15 @@ export function adventureJourney(gameData, recommendations, registrations = []) 
     const badge = extras.find(item => item.status === "active" && !earned.has(item.id) &&
       item.current < item.target && item.rule.matchValue &&
       countMatchingSessions(item.rule, [{ status: "completed", workshopSnapshot: experience }]) > 0);
-    if (badge) return {
-      quests,
-      nextStop: { ...badgeStop(badge, false), href: experienceLink(experience) },
-    };
+    if (badge) {
+      const activeQuestId = `badge:${badge.id}`;
+      const stop = quests.find(quest => quest.id === activeQuestId);
+      stop.href = experienceLink(experience);
+      return { quests, activeQuestId };
+    }
   }
+
+  if (quests.some(quest => !quest.completed)) return { quests };
 
   const completedIds = new Set(registrations.filter(item => item.status === "completed").map(item => item.workshopId));
   const experience = matching.find(item => !completedIds.has(item.id));

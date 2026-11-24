@@ -23,9 +23,8 @@ const questIcons = {
   trophy: Trophy,
 };
 
-export default function AdventureTrail({ quests = [], nextStop, catalogueStatus, showBadgeLink = true }) {
-  const firstIncomplete = quests.findIndex((quest) => !quest.completed);
-  const activeIndex = firstIncomplete;
+export default function AdventureTrail({ quests = [], activeQuestId, nextStop, catalogueStatus, showBadgeLink = true }) {
+  const activeIndex = quests.findIndex(quest => activeQuestId ? quest.id === activeQuestId : !quest.completed);
   const completedCount = quests.filter((quest) => quest.completed).length;
 
   return (
@@ -102,8 +101,8 @@ export default function AdventureTrail({ quests = [], nextStop, catalogueStatus,
                   <div className={styles.stopFooter}>
                     <span>{current} of {target} completed</span>
                     {status === "current" ? (
-                      <Link href="/workshops" className={styles.action}>
-                        Explore experiences <ArrowRight size={16} aria-hidden="true" />
+                      <Link href={quest.href || "/workshops"} className={styles.action}>
+                        {quest.href ? "View experience" : "Explore experiences"} <ArrowRight size={16} aria-hidden="true" />
                       </Link>
                     ) : (
                       <span>{quest.completed ? "Milestone reached!" : "Keep exploring"}</span>
