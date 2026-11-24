@@ -10,7 +10,7 @@ test("Journey section order matches requested priority exactly", () => {
     'id="journey-recommended-heading"',
     'id="journey-pathways-heading"',
     'id="journey-upcoming-heading"',
-    '<AdventureTrail quests={gameData.quests || []}',
+    '<AdventureTrail {...adventure}',
     'id="journey-badges-heading"',
   ];
   const indices = anchors.map(anchor => page.indexOf(anchor));
@@ -42,7 +42,7 @@ test("Recommendations reuse student interests/history/grade rules and do not blo
   assert.match(page, /setPathways\(pathwayData\.recommendations\)/);
   assert.match(page, /setWorkshops\(workshopData\.workshops\)/);
   assert.match(page, /setRegistrations\(registrationData\.registrations\)/);
-  assert.match(page, /<AdventureTrail quests=\{gameData\.quests \|\| \[\]\} totalXp=\{gameData\.totalXp\} showBadgeLink=\{false\} \/>/);
+  assert.match(page, /<AdventureTrail \{\.\.\.adventure\} catalogueStatus=\{catalogueStatus\} showBadgeLink=\{false\} \/>/);
   const adventure = read("../src/components/gamification/AdventureTrail.jsx");
   assert.match(adventure, /showBadgeLink = true/);
   assert.match(adventure, /\{showBadgeLink && <Link href="\/badges">/);

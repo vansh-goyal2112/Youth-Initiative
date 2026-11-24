@@ -14,6 +14,7 @@ import { studentFetch } from "@/services/studentApi";
 import { recommendYouthWorkshops } from "@/utils/youthWorkshopRecommendations.mjs";
 import { findJourneyUpcomingSessions } from "@/utils/journeyUpcomingSessions.mjs";
 import { formatWorkshopDate } from "@/utils/workshopDate.mjs";
+import { adventureJourney } from "@/utils/adventureJourney.mjs";
 import { workshopDateLabel } from "@/utils/upcomingWorkshops.mjs";
 
 export default function JourneyPage() {
@@ -22,6 +23,7 @@ export default function JourneyPage() {
   const [pathways, setPathways] = useState([]);
   const [workshops, setWorkshops] = useState([]);
   const [registrations, setRegistrations] = useState([]);
+  const [catalogueStatus, setCatalogueStatus] = useState("loading");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [rewardStatus, setRewardStatus] = useState("");
@@ -32,6 +34,7 @@ export default function JourneyPage() {
 
     async function loadGameProgress() {
       setLoading(true);
+      setCatalogueStatus("loading");
       setErrorMessage("");
 
       // XP progress is the critical data. Discovery panels load independently
@@ -57,6 +60,8 @@ export default function JourneyPage() {
           extract(pathwayRequest), extract(workshopRequest), extract(registrationRequest),
         ]);
         if (cancelled) return;
+        setCatalogueStatus(Array.isArray(workshopData?.workshops) && Array.isArray(registrationData?.registrations)
+          ? "ready" : "unavailable");
         if (Array.isArray(pathwayData?.recommendations)) setPathways(pathwayData.recommendations);
         if (Array.isArray(workshopData?.workshops)) setWorkshops(workshopData.workshops);
         if (Array.isArray(registrationData?.registrations)) setRegistrations(registrationData.registrations);
@@ -121,6 +126,10 @@ export default function JourneyPage() {
   if (errorMessage || !gameData) {
     return <main className="game-loading"><h1>Journey unavailable</h1><p>{errorMessage}</p></main>;
   }
+
+  const adventure = adventureJourney(gameData, catalogueStatus === "ready"
+    ? recommendYouthWorkshops({ workshops, registrations, student, limit: workshops.length, includeUpcoming: true })
+    : null, registrations);
 
   return (
     <main className={`journey-game-page ${playfulSkin.journeyShell}`}>
@@ -338,7 +347,7 @@ export default function JourneyPage() {
         )}
 
         {/* 4. ADVENTURE MAP */}
-        <AdventureTrail quests={gameData.quests || []} totalXp={gameData.totalXp} showBadgeLink={false} />
+        <AdventureTrail {...adventure} catalogueStatus={catalogueStatus} showBadgeLink={false} />
 
         {/* 5. BADGES */}
         <section className="journey-achievement-section" aria-labelledby="journey-badges-heading">

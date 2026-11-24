@@ -23,9 +23,9 @@ const questIcons = {
   trophy: Trophy,
 };
 
-export default function AdventureTrail({ quests = [], showBadgeLink = true }) {
+export default function AdventureTrail({ quests = [], nextStop, catalogueStatus, showBadgeLink = true }) {
   const firstIncomplete = quests.findIndex((quest) => !quest.completed);
-  const activeIndex = firstIncomplete === -1 ? -1 : firstIncomplete;
+  const activeIndex = firstIncomplete;
   const completedCount = quests.filter((quest) => quest.completed).length;
 
   return (
@@ -77,7 +77,7 @@ export default function AdventureTrail({ quests = [], showBadgeLink = true }) {
                   <span className={styles.markerArt} aria-hidden="true">
                     {quest.completed ? <Check size={32} /> : <Icon size={32} />}
                   </span>
-                  <span className={styles.stepNo}>0{index + 1}</span>
+                  <span className={styles.stepNo}>{String(index + 1).padStart(2, "0")}</span>
                 </div>
 
                 <div className={styles.stopContent}>
@@ -119,8 +119,23 @@ export default function AdventureTrail({ quests = [], showBadgeLink = true }) {
       <div className={styles.footer}>
         <div className={styles.footerIcon}><Trophy size={29} aria-hidden="true" /></div>
         <div>
-          <strong>{completedCount === quests.length && quests.length > 0 ? "You finished the adventure!" : "Your story is just getting started!"}</strong>
-          <p>XP earned through learning. New adventures are waiting for you.</p>
+          {nextStop ? (
+            <>
+              <span className={styles.eyebrow}>UP NEXT</span>
+              <strong>{nextStop.title}</strong>
+              <p>{nextStop.description}{nextStop.target && ` ${nextStop.current} of ${nextStop.target} completed.`}</p>
+              <Link href={nextStop.href}>View experience <ArrowRight size={16} aria-hidden="true" /></Link>
+            </>
+          ) : activeIndex >= 0 ? (
+            <p>Follow your next stop to keep building your Learning Journey.</p>
+          ) : (
+            <>
+              <strong>{catalogueStatus === "ready" ? "You’re all caught up" : "Your Learning Journey continues"}</strong>
+              <p>{catalogueStatus === "ready"
+                ? "Your next stop will appear when a new experience or badge matches your interests."
+                : catalogueStatus === "loading" ? "Looking for your next stop…" : "Your next stop is temporarily unavailable."}</p>
+            </>
+          )}
         </div>
         {showBadgeLink && <Link href="/badges">See my badges <ArrowRight size={16} aria-hidden="true" /></Link>}
       </div>

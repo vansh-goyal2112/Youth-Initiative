@@ -3,9 +3,9 @@ import { matchesStudentGrade } from "./workshopGrades.mjs";
 import { normalizeWorkshopTags } from "./workshopCatalogueFields.mjs";
 import { isRegistrationClosed } from "./workshopAvailability.mjs";
 
-export function recommendYouthWorkshops({workshops=[],registrations=[],student={}}) {
+export function recommendYouthWorkshops({workshops=[],registrations=[],student={},limit=3,includeUpcoming=false}) {
   student = student || {};
-  const joined=new Set(registrations.filter(r=>r.status!=="cancelled").map(r=>r.workshopId));
+  const joined=new Set(registrations.filter(r=>r.status!=="cancelled" && !(includeUpcoming && r.status==="upcoming")).map(r=>r.workshopId));
   const history=registrations.filter(r=>r.status==="completed").map(r=>r.workshopSnapshot||r.workshop).filter(Boolean);
   const interests=(student.interests||[]).map(i=>String(i).toLowerCase());
   const mode=String(student.learningMode||"").toLowerCase();
@@ -32,6 +32,6 @@ export function recommendYouthWorkshops({workshops=[],registrations=[],student={
     if(categoryMatch)reasons.push("Builds on experiences you've completed");
     if (modeMatch && mode === "online") reasons.push("Offers online learning.");
     if(upcoming)reasons.push("Starting soon");
-    return {...w,recommendationScore:score,recommendationReasons:reasons};
-  }).sort((a,b)=>b.recommendationScore-a.recommendationScore||String(a.title).localeCompare(String(b.title))).slice(0,3);
+    return {...w,matchedInterests:matched,recommendationScore:score,recommendationReasons:reasons};
+  }).sort((a,b)=>b.recommendationScore-a.recommendationScore||String(a.title).localeCompare(String(b.title))).slice(0,limit);
 }

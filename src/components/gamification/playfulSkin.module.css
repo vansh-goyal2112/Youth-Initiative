@@ -225,3 +225,27 @@
   .programLink { transition: none; }
   .programLink:hover { transform: none; }
 }
+
+.journeyShell :global(.journey-game-content) {
+  display: grid;
+  gap: clamp(24px, 4vw, 40px);
+}
+
+.journeyShell :global(.journey-game-content > section) {
+  min-width: 0;
+  margin-block: 0;
+}
+
+.journeyShell :global(.dashboard-section-heading),
+.journeyShell :global(.game-section-heading) {
+  row-gap: 10px;
+  margin-bottom: 16px;
+}
+
+.journeyShell :global(.dashboard-section-heading > div > span),
+.journeyShell :global(.game-section-heading > div > span),
+.journeyShell :global(.journey-achievement-section span),
+.journeyShell :global(.journey-game-label) {
+  font-size: 13px;
+  line-height: 1.4;
+}

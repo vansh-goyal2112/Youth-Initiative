@@ -271,3 +271,8 @@
     transition: none !important;
   }
 }
+
+.eyebrow { font-size: 13px; }
+.footer .eyebrow { display: block; margin-bottom: 4px; }
+.footer a svg { flex-shrink: 0; }
+.footer p + a { margin-top: 12px; }
