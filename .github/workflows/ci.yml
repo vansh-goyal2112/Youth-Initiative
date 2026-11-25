@@ -1,64 +1,35 @@
-name: Youth Initiative CI
-
+name: CPRG305 isolated Docker exercise
 on:
   push:
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
-
+    branches: [cprg305-isolated-qa]
 permissions:
   contents: read
-
 jobs:
-  quality-check:
-    name: Lint and Build
-
+  execute:
     runs-on: ubuntu-latest
-
-    timeout-minutes: 15
-
-    env:
-      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-      NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY: ${{ secrets.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY }}
-
-      FIREBASE_ADMIN_PROJECT_ID: ${{ secrets.FIREBASE_ADMIN_PROJECT_ID }}
-      FIREBASE_ADMIN_CLIENT_EMAIL: ${{ secrets.FIREBASE_ADMIN_CLIENT_EMAIL }}
-      FIREBASE_ADMIN_PRIVATE_KEY: ${{ secrets.FIREBASE_ADMIN_PRIVATE_KEY }}
-
-      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-
-      EMAIL_FROM: "SAIT Youth Initiatives <onboarding@resend.dev>"
-      EMAIL_REPLY_TO: "youth.programs@sait.ca"
-
-      NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-
+    timeout-minutes: 16
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
+      - name: Build and start application on internal network
+        run: |
+          mkdir -p evidence
+          printf 'NEXT_PUBLIC_FIREBASE_API_KEY=demo-local-test-key\nNEXT_PUBLIC_APP_URL=http://youth-app:3000\n' > /tmp/qa.env
+          printf 'Cg==' > /tmp/qa-key
+          docker build --secret id=env_local,src=/tmp/qa.env --secret id=firebase_key_b64,src=/tmp/qa-key -t youth-qa .
+          docker pull node:22-alpine
+          docker network create --internal cprg305
+          docker run -d --network cprg305 --name youth-app youth-qa
+          docker version > evidence/docker.txt
+          docker network inspect cprg305 --format '{{.Name}} internal={{.Internal}}' >> evidence/docker.txt
+          git log -2 --format='%H %s' > evidence/build.txt
+      - name: Run HTTP functional and performance checks across containers
+        run: |
+          docker run --rm --network cprg305 -v "$PWD/scripts/cprg305-qa.mjs:/qa.mjs:ro" -v "$PWD/evidence:/evidence" node:22-alpine node /qa.mjs
+      - name: Capture application logs
+        if: always()
+        run: docker logs youth-app > evidence/application.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          node-version: "22"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-
-      - name: Run unit tests
-        run: npm test
-
-      - name: Build Next.js application
-        run: npm run build
-
-      - name: Run production HTTP smoke tests
-        run: npm run test:smoke
+          name: cprg305-docker-evidence
+          path: evidence/
