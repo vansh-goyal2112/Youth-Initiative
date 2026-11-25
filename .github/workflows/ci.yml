@@ -1,4 +1,4 @@
-name: CPRG305 fixture-backed Docker execution
+name: CPRG305 constrained network and Excel import
 on:
   push:
     branches: [cprg305-isolated-qa]
@@ -23,9 +23,18 @@ jobs:
           docker version > evidence/docker.txt
           docker network inspect cprg305 --format '{{.Name}} internal={{.Internal}}' >> evidence/docker.txt
           git log -2 --format='%H %s' > evidence/build.txt
-      - name: Run HTTP functional and performance checks across containers
+      - name: Test constrained network with Chrome
         run: |
-          docker run --rm --network cprg305 -v "$PWD/scripts/cprg305-qa.mjs:/qa.mjs:ro" -v "$PWD/evidence:/evidence" node:22-alpine node /qa.mjs
+          APP_IP=$(docker inspect youth-app --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}')
+          google-chrome --headless --no-sandbox --disable-dev-shm-usage --no-proxy-server --remote-debugging-port=9222 --user-data-dir=/tmp/cprg305-chrome about:blank > evidence/chrome.log 2>&1 &
+          node scripts/cprg305-throttle.mjs "http://$APP_IP:3000" > evidence/throttled-network.json
+          cat evidence/throttled-network.json
+      - name: Run batch Excel import in Docker
+        if: always()
+        run: |
+          docker build --target deps -t youth-qa-deps .
+          docker run --rm --network cprg305 -v "$PWD/src:/app/src:ro" -v "$PWD/scripts/cprg305-import.mjs:/app/import.mjs:ro" youth-qa-deps node import.mjs "$(git rev-parse HEAD~3)" > evidence/batch-import.json
+          cat evidence/batch-import.json
       - name: Capture application logs
         if: always()
         run: docker logs youth-app > evidence/application.log 2>&1 || true
