@@ -1,4 +1,4 @@
-name: CPRG305 isolated Docker exercise
+name: CPRG305 fixture-backed Docker execution
 on:
   push:
     branches: [cprg305-isolated-qa]
@@ -15,6 +15,7 @@ jobs:
           mkdir -p evidence
           printf 'NEXT_PUBLIC_FIREBASE_API_KEY=demo-local-test-key\nNEXT_PUBLIC_APP_URL=http://youth-app:3000\n' > /tmp/qa.env
           printf 'Cg==' > /tmp/qa-key
+          node scripts/install-cprg305-fixtures.mjs
           docker build --secret id=env_local,src=/tmp/qa.env --secret id=firebase_key_b64,src=/tmp/qa-key -t youth-qa .
           docker pull node:22-alpine
           docker network create --internal cprg305
