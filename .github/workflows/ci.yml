@@ -33,7 +33,7 @@ jobs:
         if: always()
         run: |
           docker build --target deps -t youth-qa-deps .
-          docker run --rm --network cprg305 -v "$PWD/src:/app/src:ro" -v "$PWD/scripts/cprg305-import.mjs:/app/import.mjs:ro" youth-qa-deps node import.mjs "$(git rev-parse HEAD~3)" > evidence/batch-import.json
+          docker run --rm --network cprg305 -v "$PWD/src:/app/src:ro" -v "$PWD/scripts/cprg305-import.mjs:/app/import.mjs:ro" youth-qa-deps node import.mjs "bfd580f7e1da43ba85ad8bacb20ea00da6e5b219" > evidence/batch-import.json
           cat evidence/batch-import.json
       - name: Capture application logs
         if: always()

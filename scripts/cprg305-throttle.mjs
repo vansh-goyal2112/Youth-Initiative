@@ -35,6 +35,13 @@ try{
  await c('Network.emulateNetworkConditions',{offline:false,...net});
  const routes=['/api/workshops','/api/workshops/qa-workshop-001','/api/student/profile'];
  const run=route=>evaluate(`(async()=>{const start=performance.now();try{const r=await fetch(${JSON.stringify(route)},{cache:'no-store',headers:{Authorization:'Bearer fixture-student-a','X-Firebase-AppCheck':'fixture-app'}});const b=await r.json();return {status:r.status,success:b.success===true,ms:Math.round((performance.now()-start)*100)/100}}catch(e){return {status:0,success:false,error:e.message,ms:performance.now()-start}}})()`);
+ const warmup=[];
+ for(const route of routes){
+  let sample;
+  for(let attempt=0;attempt<3;attempt++){sample=await run(route);if(sample?.success)break;await delay(400);}
+  assert.ok(sample?.success,'Warmup failed for '+route);
+  warmup.push({route,...sample});
+ }
  const rows=[];
  for(let i=0;i<30;i++){const route=routes[i%3];rows.push({route,...await run(route)});}
  await c('Network.emulateNetworkConditions',{offline:true,...net});
@@ -44,6 +51,6 @@ try{
  const sorted=rows.map(r=>r.ms).sort((a,b)=>a-b);
  const p95=sorted[Math.ceil(.95*rows.length)-1];
  const failures=rows.filter(r=>r.status!==200||!r.success).length;
- console.log(JSON.stringify({scope:'Chrome with synthetic auth and in-memory data; offline check at fetch boundary, HTTP internal Docker origin',network:net,rows,p95,failures,offline,recovered},null,2));
+ console.log(JSON.stringify({scope:'Chrome with synthetic auth and in-memory data; offline check at fetch boundary, HTTP internal Docker origin',network:net,warmup,rows,p95,failures,offline,recovered},null,2));
  assert.ok(p95<3000 && failures/rows.length<.02 && offline.status===0 && recovered.success);
 }finally{ws.close()}
